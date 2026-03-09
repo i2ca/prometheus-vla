@@ -1,0 +1,14 @@
+robot:
+  type: unitree_g1_dex3
+  is_simulation: true
+
+teleop:
+  type: keyboard_g1_arm
+
+dataset:
+  repo_id: Seu_Usuario/g1_pick_kettle_custom
+  root: /Dados/Prometheus-datasets/
+  push_to_hub: false
+  single_task: "Pick up the kettle"
+
+play_sounds: false
