@@ -113,6 +113,9 @@ class UnitreeG1(Robot):
         self.subscribe_thread = None
         self.remote_controller = self.RemoteController()
 
+        self.last_action_q = {}
+        self.smoothing_alpha = 0.1  # Ajuste entre 0.05 (muito suave) e 0.3 (mais responsivo)
+
     def _subscribe_motor_state(self):  # polls robot state @ 250Hz
         while not self._shutdown_event.is_set():
             start_time = time.time()
@@ -219,6 +222,7 @@ class UnitreeG1(Robot):
             
             # Chamamos a sua função. Ela cria e nos devolve o UnitreeG1Env instanciado!
             self.sim_env = make_local_env()
+            
             # --- FIM DA MODIFICAÇÃO ---
 
         else:
@@ -393,11 +397,35 @@ class UnitreeG1(Robot):
         # Select joints based on control mode
         joint_index = G1_29_JointArmIndex if self.config.control_mode == "upper_body" else G1_29_JointIndex
 
+        max_delta = 0.02  # Radianos por ciclo. (~5 rad/s a 250Hz). Ajuste conforme necessário.
+
         for motor in joint_index:
             key = f"{motor.name}.q"
             if key in action:
-                self.msg.motor_cmd[motor.value].q = action[key]
-                self.msg.motor_cmd[motor.value].qd = 0
+                target_q = action[key]
+                
+                # Inicializa se for a primeira vez. 
+                # Pega a posição ATUAL do robô para evitar um tranco no primeiro frame.
+                if key not in self.last_action_q:
+                    if self._lowstate is not None:
+                        self.last_action_q[key] = self._lowstate.motor_state[motor.value].q
+                    else:
+                        self.last_action_q[key] = target_q
+                
+                # 1. FILTRO: Suaviza a transição (Low-pass)
+                smoothed_q = (1 - self.smoothing_alpha) * self.last_action_q[key] + self.smoothing_alpha * target_q
+                
+                # 2. LIMITADOR: Garante que a variação não ultrapasse o max_delta
+                delta = smoothed_q - self.last_action_q[key]
+                delta_clipped = np.clip(delta, -max_delta, max_delta)
+                final_q = float(self.last_action_q[key] + delta_clipped)
+                
+                # 3. ATUALIZA ESTADO E COMANDO
+                self.last_action_q[key] = final_q
+                self.msg.motor_cmd[motor.value].q = final_q
+                
+                # Restante dos parâmetros...
+                self.msg.motor_cmd[motor.value].qd = 0  # Velocidade desejada zero
                 self.msg.motor_cmd[motor.value].kp = self.kp[motor.value]
                 self.msg.motor_cmd[motor.value].kd = self.kd[motor.value]
                 self.msg.motor_cmd[motor.value].tau = 0

@@ -1,0 +1,38 @@
+# ==========================================
+# Configuração do Robô
+# ==========================================
+robot:
+  type: unitree_g1_dex3
+
+# ==========================================
+# Configuração do Teleoperador XR (VR Vuer) para G1
+# Salve em: lerobot/configs/teleoperator/xr_g1_arm.yaml
+# ==========================================
+
+teleop:
+  # Define o nome registrado no decorator @TeleoperatorConfig.register_subclass
+  type: xr_g1_arm
+
+  zmq: true
+  # --- Configuração de Rede ---
+  # IP da máquina onde o script e o servidor de imagem estão rodando.
+  # Para simulação local (MuJoCo/Isaac) na mesma máquina, use 127.0.0.1.
+  # Se o robô real estiver na rede, use o IP do PC2 (ex: 192.168.123.164).
+  #img_server_ip: "192.168.123.164"
+
+  # --- Configuração de Entrada (VR Tracking) ---
+  # 'hand': Rastreia os dedos e a mão livre (Hand Tracking do Quest/Vision Pro).
+  # 'controller': Usa os controles físicos do headset.
+  input_mode: "hand"
+
+  # --- Configuração de Visualização (Display VR) ---
+  # 'immersive': O usuário vê apenas a câmera do robô (Visão em 1ª pessoa total).
+  # 'ego': Pass-through ativo com uma tela flutuante da visão do robô.
+  # 'pass-through': Apenas visão do ambiente real do usuário (sem a câmera do robô).
+  display_mode: "ego"
+
+  # --- Configuração do End-Effector (Mãos do Robô) ---
+  # Qual atuador final o robô está usando. O script usa isso para ativar 
+  # o HandRetargeting correto.
+  # Opções: 'dex3', 'dex1', 'inspire_dfx', 'inspire_ftp', 'brainco'
+  ee_type: "dex3"

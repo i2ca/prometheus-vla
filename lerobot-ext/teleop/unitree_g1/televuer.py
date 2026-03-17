@@ -25,40 +25,65 @@ from .televuer_utils import (
 )
 from lerobot.processor import RobotAction
 from lerobot.teleoperators.config import TeleoperatorConfig
-
 from dataclasses import dataclass
 
+# Import do seu solver IK e dos nomes exatos do robô
+from .utils.g1_arm_ik import G1_29_ArmIK
+from robot.unitree_g1.g1_utils import LEFT_HAND_JOINT_NAMES, RIGHT_HAND_JOINT_NAMES
+
+logger = logging.getLogger(__name__)
+
+# ==================== CONSTANTES DAS JUNTAS DO G1 ====================
+# O SEGREDO ESTAVA AQUI: Usar a nomenclatura "kLeft..." do Unitree SDK
+ARM_JOINT_NAMES = [
+    "kLeftShoulderPitch.q", "kLeftShoulderRoll.q", "kLeftShoulderYaw.q",
+    "kLeftElbow.q", "kLeftWristRoll.q", "kLeftWristPitch.q", "kLeftWristYaw.q",
+    "kRightShoulderPitch.q", "kRightShoulderRoll.q", "kRightShoulderYaw.q",
+    "kRightElbow.q", "kRightWristRoll.q", "kRightWristPitch.q", "kRightWristYaw.q"
+]
+
+# Pega os nomes exatos das mãos importados do utilitário do G1
+LEFT_HAND_NAMES = [f"{name}.q" for name in LEFT_HAND_JOINT_NAMES]
+RIGHT_HAND_NAMES = [f"{name}.q" for name in RIGHT_HAND_JOINT_NAMES]
+
+# Alvos cinemáticos para fechar a mão (igual ao seu teclado)
+LEFT_HAND_CLOSED_TARGETS =  [0.0,  1.5,  1.5, -1.5, -1.5, -1.5, -1.5]
+RIGHT_HAND_CLOSED_TARGETS = [0.0, -1.5, -1.5,  1.5,  1.5,  1.5,  1.5]
+# =====================================================================
+
+@TeleoperatorConfig.register_subclass("televuer")
 @dataclass
-class TeleVuerConfig(TeleoperatorConfig):
+class VuerTeleopConfig(TeleoperatorConfig):
     binocular: bool = False
     use_hand_tracking: bool = True
-    img_shape: tuple = (480, 640, 3) # Height, Width, Channels
+    img_shape: tuple = (480, 640, 3) 
     img_shm_name: str | None = None
     left_img_shm_name: str | None = None
     right_img_shm_name: str | None = None
-    cert_file: str | None = None
-    key_file: str | None = None
+    cert_file: str | None = "/home/miguel/DEV/prometheus-vla/lerobot-ext/cert.pem"
+    key_file: str | None = "/home/miguel/DEV/prometheus-vla/lerobot-ext/key.pem"
     ngrok: bool = False
     webrtc: bool = False
-    webrtc_offer_url: str | None = None  # Required if webrtc=True
+    webrtc_offer_url: str | None = None
 
-class TeleVuerTeleoperator(Teleoperator):
-    config_class = TeleVuerConfig
+class VuerTeleop(Teleoperator):
+    config_class = VuerTeleopConfig
     name = "televuer"
 
-    def __init__(self, config: TeleVuerConfig):
+    def __init__(self, config: VuerTeleopConfig):
         super().__init__(config)
         self.config = config
         self.tvuer: TeleVuer | None = None
         self._is_connected = False
+
+        # Inicia o tradutor (IK Solver)
+        self.ik_solver = G1_29_ArmIK(visualization=False)
         
-        # State for safe updates
         self.last_valid_head_pose = CONST_HEAD_POSE.copy()
         self.last_valid_left_arm_pose = CONST_LEFT_ARM_POSE.copy()
         self.last_valid_right_arm_pose = CONST_RIGHT_ARM_POSE.copy()
         self.last_valid_left_hand_rot = CONST_HAND_ROT.copy()
         self.last_valid_right_hand_rot = CONST_HAND_ROT.copy()
-
 
     def connect(self, calibrate: bool = True) -> None:
         if self._is_connected:
@@ -84,22 +109,18 @@ class TeleVuerTeleoperator(Teleoperator):
 
     def disconnect(self) -> None:
         if self.tvuer and self.tvuer.process:
-            # Gracefully terminate the process
             self.tvuer.process.terminate()
-            # Wait with timeout to avoid hanging
             self.tvuer.process.join(timeout=5.0)
-            # Force kill if still alive
             if self.tvuer.process.is_alive():
                 self.tvuer.process.kill()
                 self.tvuer.process.join(timeout=1.0)
         
-        # Clean up shared memory if it exists
         if self.tvuer:
             try:
                 if hasattr(self.tvuer, 'img_shm') and self.tvuer.img_shm:
                     self.tvuer.img_shm.close()
             except Exception:
-                pass  # Shared memory may already be closed
+                pass
         
         self.tvuer = None
         self._is_connected = False
@@ -110,7 +131,7 @@ class TeleVuerTeleoperator(Teleoperator):
 
     @property
     def is_calibrated(self) -> bool:
-        return True # For now, assume always calibrated or no calibration needed
+        return True
 
     def calibrate(self) -> None:
         pass
@@ -120,33 +141,15 @@ class TeleVuerTeleoperator(Teleoperator):
     
     @property
     def action_features(self) -> dict:
-        # Define the structure of actions returned by this teleoperator
-        # This mirrors the structure produced by get_action
-        features = {
-            "head_pose": np.ndarray,
-            "left_arm_pose": np.ndarray,
-            "right_arm_pose": np.ndarray,
-        }
-        if self.config.use_hand_tracking:
-             features.update({
-                 "left_hand_pos": np.ndarray,
-                 "right_hand_pos": np.ndarray,
-                 "left_hand_rot": np.ndarray,
-                 "right_hand_rot": np.ndarray,
-                 "left_pinch_value": float,
-                 "right_pinch_value": float,
-             })
-        else:
-             features.update({
-                 "left_trigger_value": float,
-                 "right_trigger_value": float,
-                 # Add other controller fields as needed
-             })
+        features = {}
+        # Prepara o LeRobot para receber as 14 juntas + 14 dedos
+        for name in ARM_JOINT_NAMES + LEFT_HAND_NAMES + RIGHT_HAND_NAMES:
+            features[name] = float
         return features
 
     @property
     def feedback_features(self) -> dict:
-        return {} # No force feedback supported yet
+        return {}
 
     def send_feedback(self, feedback: dict[str, Any]) -> None:
         pass
@@ -155,111 +158,60 @@ class TeleVuerTeleoperator(Teleoperator):
         if not self.tvuer:
              raise ConnectionError("Teleoperator is not connected.")
         
-        # Logic ported from TeleVuerWrapper.get_motion_state_data
-        
-        # 1. Head Pose
+        # 1. Pega os dados brutos e acha as matrizes espaciais (XYZ)
         Bxr_world_head, head_pose_is_valid = safe_mat_update(self.last_valid_head_pose, self.tvuer.head_pose)
         if head_pose_is_valid:
              self.last_valid_head_pose = Bxr_world_head
-
         Brobot_world_head = T_ROBOT_OPENXR @ Bxr_world_head @ T_OPENXR_ROBOT
 
-        action_data = {
-            "head_pose": Brobot_world_head
-        }
+        # Calcula a Pose do Braço Esquerdo
+        left_IPxr_Bxr_world_arm, left_arm_is_valid = safe_mat_update(self.last_valid_left_arm_pose, self.tvuer.left_arm_pose)
+        if left_arm_is_valid: self.last_valid_left_arm_pose = left_IPxr_Bxr_world_arm
+        left_IPxr_Brobot_world_arm = T_ROBOT_OPENXR @ left_IPxr_Bxr_world_arm @ T_OPENXR_ROBOT
+        left_IPunitree_Brobot_world_arm = left_IPxr_Brobot_world_arm @ (T_TO_UNITREE_HUMANOID_LEFT_ARM if left_arm_is_valid else np.eye(4))
+        left_IPunitree_Brobot_head_arm = left_IPunitree_Brobot_world_arm.copy()
+        left_IPunitree_Brobot_head_arm[0:3, 3] -= Brobot_world_head[0:3, 3]
+        left_pose = left_IPunitree_Brobot_head_arm.copy()
+        left_pose[0, 3] += 0.15
+        left_pose[2, 3] += 0.45
 
+        # Calcula a Pose do Braço Direito
+        right_IPxr_Bxr_world_arm, right_arm_is_valid = safe_mat_update(self.last_valid_right_arm_pose, self.tvuer.right_arm_pose)
+        if right_arm_is_valid: self.last_valid_right_arm_pose = right_IPxr_Bxr_world_arm
+        right_IPxr_Brobot_world_arm = T_ROBOT_OPENXR @ right_IPxr_Bxr_world_arm @ T_OPENXR_ROBOT
+        right_IPunitree_Brobot_world_arm = right_IPxr_Brobot_world_arm @ (T_TO_UNITREE_HUMANOID_RIGHT_ARM if right_arm_is_valid else np.eye(4))
+        right_IPunitree_Brobot_head_arm = right_IPunitree_Brobot_world_arm.copy()
+        right_IPunitree_Brobot_head_arm[0:3, 3] -= Brobot_world_head[0:3, 3]
+        right_pose = right_IPunitree_Brobot_head_arm.copy()
+        right_pose[0, 3] += 0.15
+        right_pose[2, 3] += 0.45
+
+        # =========================================================================
+        # CONVERSÃO IK: De matriz XYZ para Ângulos de Motor (.q)
+        # =========================================================================
+        sol_q, _ = self.ik_solver.solve_ik(left_pose, right_pose)
+        
+        robot_action = {}
+
+        # 1. Popula os ângulos dos 14 motores do braço com os nomes corretos do SDK
+        for i, name in enumerate(ARM_JOINT_NAMES):
+            robot_action[name] = float(sol_q[i])
+
+        # 2. Lógica das Mãos (Pinch / Trigger)
         if self.config.use_hand_tracking:
-            # Arm Pose
-            left_IPxr_Bxr_world_arm, left_arm_is_valid = safe_mat_update(self.last_valid_left_arm_pose, self.tvuer.left_arm_pose)
-            if left_arm_is_valid: self.last_valid_left_arm_pose = left_IPxr_Bxr_world_arm
-            
-            right_IPxr_Bxr_world_arm, right_arm_is_valid = safe_mat_update(self.last_valid_right_arm_pose, self.tvuer.right_arm_pose)
-            if right_arm_is_valid: self.last_valid_right_arm_pose = right_IPxr_Bxr_world_arm
-            
-            # Basis transform
-            left_IPxr_Brobot_world_arm = T_ROBOT_OPENXR @ left_IPxr_Bxr_world_arm @ T_OPENXR_ROBOT
-            right_IPxr_Brobot_world_arm = T_ROBOT_OPENXR @ right_IPxr_Bxr_world_arm @ T_OPENXR_ROBOT
-            
-            # Initial Pose transform
-            left_IPunitree_Brobot_world_arm = left_IPxr_Brobot_world_arm @ (T_TO_UNITREE_HUMANOID_LEFT_ARM if left_arm_is_valid else np.eye(4))
-            right_IPunitree_Brobot_world_arm = right_IPxr_Brobot_world_arm @ (T_TO_UNITREE_HUMANOID_RIGHT_ARM if right_arm_is_valid else np.eye(4))
-            
-            # Head-relative (translation adjustment)
-            left_IPunitree_Brobot_head_arm = left_IPunitree_Brobot_world_arm.copy()
-            right_IPunitree_Brobot_head_arm = right_IPunitree_Brobot_world_arm.copy()
-            left_IPunitree_Brobot_head_arm[0:3, 3] -= Brobot_world_head[0:3, 3]
-            right_IPunitree_Brobot_head_arm[0:3, 3] -= Brobot_world_head[0:3, 3]
-            
-            # Waist-relative (Origin offset)
-            left_IPunitree_Brobot_waist_arm = left_IPunitree_Brobot_head_arm.copy()
-            right_IPunitree_Brobot_waist_arm = right_IPunitree_Brobot_head_arm.copy()
-            left_IPunitree_Brobot_waist_arm[0, 3] += 0.15
-            right_IPunitree_Brobot_waist_arm[0, 3] += 0.15
-            left_IPunitree_Brobot_waist_arm[2, 3] += 0.45
-            right_IPunitree_Brobot_waist_arm[2, 3] += 0.45
-            
-            action_data["left_arm_pose"] = left_IPunitree_Brobot_waist_arm
-            action_data["right_arm_pose"] = right_IPunitree_Brobot_waist_arm
-
-            # Hand Position
-            if left_arm_is_valid and right_arm_is_valid:
-                left_IPxr_Bxr_world_hand_pos = np.concatenate([self.tvuer.left_hand_positions.T, np.ones((1, 25))])
-                right_IPxr_Bxr_world_hand_pos = np.concatenate([self.tvuer.right_hand_positions.T, np.ones((1, 25))])
-                
-                left_IPxr_Brobot_world_hand_pos = T_ROBOT_OPENXR @ left_IPxr_Bxr_world_hand_pos
-                right_IPxr_Brobot_world_hand_pos = T_ROBOT_OPENXR @ right_IPxr_Bxr_world_hand_pos
-                
-                left_IPxr_Brobot_arm_hand_pos = fast_mat_inv(left_IPxr_Brobot_world_arm) @ left_IPxr_Brobot_world_hand_pos
-                right_IPxr_Brobot_arm_hand_pos = fast_mat_inv(right_IPxr_Brobot_world_arm) @ right_IPxr_Brobot_world_hand_pos
-                
-                left_IPunitree_Brobot_arm_hand_pos = (T_TO_UNITREE_HAND @ left_IPxr_Brobot_arm_hand_pos)[0:3, :].T
-                right_IPunitree_Brobot_arm_hand_pos = (T_TO_UNITREE_HAND @ right_IPxr_Brobot_arm_hand_pos)[0:3, :].T
-            else:
-                left_IPunitree_Brobot_arm_hand_pos = np.zeros((25, 3))
-                right_IPunitree_Brobot_arm_hand_pos = np.zeros((25, 3))
-            
-            action_data["left_hand_pos"] = left_IPunitree_Brobot_arm_hand_pos
-            action_data["right_hand_pos"] = right_IPunitree_Brobot_arm_hand_pos
-            
-            # Hand Rotation
-            # (Skipping advanced rotation logic for brevity unless requested, as it was optional in source)
-            # But wait, original code did meaningful transforms for rotation if requested. 
-            # I'll implement basic retrieval if it was critical. The original had a `return_hand_rot_data` flag.
-            
-            action_data["left_pinch_value"] = self.tvuer.left_hand_pinch_value * 100.0
-            action_data["right_pinch_value"] = self.tvuer.right_hand_pinch_value * 100.0
-            
+            left_grasp = min(max(self.tvuer.left_hand_pinch_value, 0.0), 1.0)
+            right_grasp = min(max(self.tvuer.right_hand_pinch_value, 0.0), 1.0)
         else:
-            # Controller tracking logic
-            left_IPunitree_Bxr_world_arm, left_arm_is_valid = safe_mat_update(self.last_valid_left_arm_pose, self.tvuer.left_arm_pose)
-            if left_arm_is_valid: self.last_valid_left_arm_pose = left_IPunitree_Bxr_world_arm
-            
-            right_IPunitree_Bxr_world_arm, right_arm_is_valid = safe_mat_update(self.last_valid_right_arm_pose, self.tvuer.right_arm_pose)
-            if right_arm_is_valid: self.last_valid_right_arm_pose = right_IPunitree_Bxr_world_arm
+            left_grasp = min(max(self.tvuer.left_controller_trigger_value, 0.0), 1.0)
+            right_grasp = min(max(self.tvuer.right_controller_trigger_value, 0.0), 1.0)
 
-            # Change basis
-            left_IPunitree_Brobot_world_arm = T_ROBOT_OPENXR @ left_IPunitree_Bxr_world_arm @ T_OPENXR_ROBOT
-            right_IPunitree_Brobot_world_arm = T_ROBOT_OPENXR @ right_IPunitree_Bxr_world_arm @ T_OPENXR_ROBOT
+        # 3. Multiplica o Grasp (0 a 1) pelos alvos de fechamento dos dedos Dex3
+        for i, name in enumerate(LEFT_HAND_NAMES):
+            robot_action[name] = float(left_grasp * LEFT_HAND_CLOSED_TARGETS[i])
             
-            # Waist relative
-            left_IPunitree_Brobot_head_arm = left_IPunitree_Brobot_world_arm.copy()
-            left_IPunitree_Brobot_head_arm[0:3, 3] -= Brobot_world_head[0:3, 3]
-            
-            right_IPunitree_Brobot_head_arm = right_IPunitree_Brobot_world_arm.copy()
-            right_IPunitree_Brobot_head_arm[0:3, 3] -= Brobot_world_head[0:3, 3]
-            
-            left_IPunitree_Brobot_waist_arm = left_IPunitree_Brobot_head_arm.copy()
-            left_IPunitree_Brobot_waist_arm[0, 3] += 0.15
-            left_IPunitree_Brobot_waist_arm[2, 3] += 0.45
-            
-            right_IPunitree_Brobot_waist_arm = right_IPunitree_Brobot_head_arm.copy()
-            right_IPunitree_Brobot_waist_arm[0, 3] += 0.15
-            right_IPunitree_Brobot_waist_arm[2, 3] += 0.45
+        for i, name in enumerate(RIGHT_HAND_NAMES):
+            robot_action[name] = float(right_grasp * RIGHT_HAND_CLOSED_TARGETS[i])
 
-            action_data["left_arm_pose"] = left_IPunitree_Brobot_waist_arm
-            action_data["right_arm_pose"] = right_IPunitree_Brobot_waist_arm
-            
-            action_data["left_trigger_value"] = 10.0 - self.tvuer.left_controller_trigger_value * 10
-            action_data["right_trigger_value"] = 10.0 - self.tvuer.right_controller_trigger_value * 10
+        #print(f"🤖 ENVIADO PRO MUJOCO | Ombro L: {robot_action['kLeftShoulderPitch.q']:.2f}, Cotovelo L: {robot_action['kLeftElbow.q']:.2f}")
 
-        return action_data
+        return robot_action

@@ -109,17 +109,30 @@ class TeleVuer:
             self.vuer.add_handler("CONTROLLER_MOVE")(self.on_controller_move)
 
         # Image shared memory setup
+        # --- ESTRATÉGIA DO BALDE: televuer_utils.py ---
         if self._using_split_shm:
-            left_shm = shared_memory.SharedMemory(name=left_img_shm_name)
-            right_shm = shared_memory.SharedMemory(name=right_img_shm_name)
-            self.left_img_array = np.ndarray(img_shape, dtype=np.uint8, buffer=left_shm.buf)
-            self.right_img_array = np.ndarray(img_shape, dtype=np.uint8, buffer=right_shm.buf)
-            self._left_shm = left_shm
-            self._right_shm = right_shm
+            # Caso use memórias separadas (Left/Right)
+            for shm_name in [left_img_shm_name, right_img_shm_name]:
+                try:
+                    shared_memory.SharedMemory(name=shm_name)
+                except FileNotFoundError:
+                    size = int(np.prod(img_shape)) # Calcula tamanho total
+                    shared_memory.SharedMemory(name=shm_name, create=True, size=size)
+            
+            self._left_shm = shared_memory.SharedMemory(name=left_img_shm_name)
+            self._right_shm = shared_memory.SharedMemory(name=right_img_shm_name)
+            self.left_img_array = np.ndarray(img_shape, dtype=np.uint8, buffer=self._left_shm.buf)
+            self.right_img_array = np.ndarray(img_shape, dtype=np.uint8, buffer=self._right_shm.buf)
         else:
-            if img_shm_name is None:
-                raise ValueError("img_shm_name must be provided when left/right shared memories are not used.")
-            existing_shm = shared_memory.SharedMemory(name=img_shm_name)
+            # Caso use memória única (Single Camera)
+            try:
+                existing_shm = shared_memory.SharedMemory(name=img_shm_name)
+            except FileNotFoundError:
+                # Se o simulador ainda não iniciou, o TeleVuer cria o balde vazio
+                size = int(np.prod(img_shape))
+                existing_shm = shared_memory.SharedMemory(name=img_shm_name, create=True, size=size)
+                logger.info(f"[TeleVuer] Criada memória {img_shm_name} (Placeholder).")
+
             self.img_array = np.ndarray(img_shape, dtype=np.uint8, buffer=existing_shm.buf)
             self._img_shm = existing_shm
 
@@ -221,10 +234,16 @@ class TeleVuer:
 
     async def on_hand_move(self, event, session, fps=60):
         try:
+            
             left_hand_data = event.value["left"]
             right_hand_data = event.value["right"]
             left_hand_state = event.value["leftState"]
             right_hand_state = event.value["rightState"]
+
+            pos_x = left_hand_data[12]
+            pos_y = left_hand_data[13]
+            pos_z = left_hand_data[14]
+            #print(f"🚨 POSIÇÃO BRAÇO ESQ | X: {pos_x:.3f}, Y: {pos_y:.3f}, Z: {pos_z:.3f}")
 
             def extract_hand_poses(hand_data, arm_pose_shared, hand_position_shared, hand_orientation_shared):
                 with arm_pose_shared.get_lock():
@@ -327,48 +346,65 @@ class TeleVuer:
             await asyncio.sleep(0.016 * 2)
 
     async def main_image_monocular(self, session, fps=60):
+        # 1. Imports necessários do seu próprio sistema
+        from .utils.sensor_utils import SensorClient, ImageUtils
+        import cv2
+
+        # 2. Setup da interface (Hands/Controllers) - Mantido
         if self.use_hand_tracking:
-            session.upsert(
-                Hands(
-                    stream=True,
-                    key="hands",
-                    hideLeft=True,
-                    hideRight=True
-                ),
-                to="bgChildren",
-            )
+            session.upsert(Hands(stream=True, key="hands", hideLeft=True, hideRight=True), to="bgChildren")
         else:
-            session.upsert(
-                MotionControllers(
-                    stream=True, 
-                    key="motionControllers",
-                    left=True,
-                    right=True,
-                ),
-                to="bgChildren",
-            )
+            session.upsert(MotionControllers(stream=True, key="motionControllers", left=True, right=True), to="bgChildren")
+
+        # 3. Inicializa o Cliente ZMQ (Igual ao seu script de teste)
+        client = SensorClient()
+
+        
+        # Usamos a porta 5555 que o seu simulador já está usando
+        client.start_client(server_ip="192.168.123.164", port=5555)
+        logger.info("[Vuer] Conectado ao stream ZMQ na porta 5555")
 
         while True:
-            if self._using_split_shm:
-                mono_rgb = cv2.cvtColor(self.left_img_array, cv2.COLOR_BGR2RGB)
-            else:
-                mono_rgb = cv2.cvtColor(self.img_array, cv2.COLOR_BGR2RGB)
-            session.upsert(
-                [
-                    ImageBackground(
-                        mono_rgb,
-                        aspect=1.778,
-                        height=1,
-                        distanceToCamera=1,
-                        format="jpeg",
-                        quality=50,
-                        key="background-mono",
-                        interpolate=True,
-                    ),
-                ],
-                to="bgChildren",
-            )
-            await asyncio.sleep(0.016)
+#            try:
+#                # 4. Recebe a mensagem via TCP
+#                data = client.receive_message()
+#                
+#                # Extrai a imagem (considerando a estrutura que você mandou)
+#                if "images" in data and "head_camera" in data["images"]:
+#                    img_data = data["images"]["head_camera"]
+#                elif "head_camera" in data:
+#                    img_data = data["head_camera"]
+#                else:
+#                    continue
+#
+#                # 5. Decodifica e converte BGR para RGB
+#                img = ImageUtils.decode_image(img_data)
+#                img_rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+#                
+#                # MuJoCo pode precisar de flip vertical dependendo da câmera
+#                #img_rgb = np.flipud(img_rgb)
+#
+#                # 6. Envia para o navegador
+#                session.upsert(
+#                    [
+#                        # Em vez de ImageBackground, usamos um objeto 3D fixo
+#                        ImageBackground(
+#                            img_rgb,
+#                            aspect=1.33,
+#                            height=2, # Aumentei o tamanho
+#                            distanceToCamera=4.0, # Afastei um pouco da "lente"
+#                            format="jpeg",
+#                            quality=75,
+#                            key="background-mono",
+#                        ),
+#                    ],
+#                    to="bgChildren",
+#                )
+#            except Exception as e:
+#                logger.debug(f"Erro na recepção ZMQ: {e}")
+#            
+#            # Pequeno delay para não sobrecarregar o cliente
+            await asyncio.sleep(0.01)
 
     async def main_image_webrtc(self, session, fps=60):
         if self.use_hand_tracking:

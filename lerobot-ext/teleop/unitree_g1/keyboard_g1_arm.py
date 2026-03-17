@@ -110,7 +110,7 @@ class KeyboardG1Arm(Teleoperator):
         
         # D-Pad (Cotovelo: R/F | Rotação: Q/E)
         dpad_x = keys[pygame.K_e] - keys[pygame.K_q]
-        dpad_y = keys[pygame.K_r] - keys[pygame.K_f]
+        dpad_y = keys[pygame.K_f] - keys[pygame.K_r]
         
         # Modificador de Pulso Esquerdo (LSHIFT)
         lb = keys[pygame.K_LSHIFT]

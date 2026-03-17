@@ -1,10 +1,13 @@
-import time, zmq, json, threading
+import time, zmq, json, threading, signal, sys
 from unitree_sdk2py.core.channel import ChannelFactoryInitialize, ChannelPublisher, ChannelSubscriber
 from unitree_sdk2py.idl.unitree_hg.msg.dds_ import HandCmd_, HandState_
+# O SEU IMPORT CORRETO:
 from unitree_sdk2py.idl.default import unitree_hg_msg_dds__HandCmd_ as HandCmd_default
 
 class PonteG1Completa:
     def __init__(self):
+        self.running = True
+        
         # 1. DDS Setup (Fala com MuJoCo)
         ChannelFactoryInitialize(0, "lo")
         
@@ -21,32 +24,54 @@ class PonteG1Completa:
 
         # 2. ZMQ Setup (Fala com LeRobot)
         self.ctx = zmq.Context()
-        # Porta 6003: Recebe comandos do LeRobot
+        
+        # ZMQ_PULL (Comando): Adicionado LINGER para evitar Address Already in Use
         self.zmq_pull = self.ctx.socket(zmq.PULL)
+        self.zmq_pull.setsockopt(zmq.LINGER, 0) 
         self.zmq_pull.bind("tcp://127.0.0.1:6003")
-        # Porta 6002: Envia estado para o LeRobot
+        
+        # ZMQ_PUB (Estado): Adicionado LINGER
         self.zmq_pub = self.ctx.socket(zmq.PUB)
+        self.zmq_pub.setsockopt(zmq.LINGER, 0)
         self.zmq_pub.bind("tcp://127.0.0.1:6002")
         
         print("[OK] Ponte G1 Ativa! Esperando LeRobot em 127.0.0.1...")
 
+    def finalizar(self):
+        """Libera as portas na hora de sair"""
+        print("\n[Limpando] Encerrando processos e liberando portas...")
+        self.running = False
+        try:
+            self.zmq_pull.close()
+            self.zmq_pub.close()
+            self.ctx.term()
+        except:
+            pass
+        sys.exit(0)
+
     def callback_left_state(self, msg):
-        self._enviar_zmq("rt/dex3/left/state", msg)
+        if self.running:
+            self._enviar_zmq("rt/dex3/left/state", msg)
 
     def callback_right_state(self, msg):
-        self._enviar_zmq("rt/dex3/right/state", msg)
+        if self.running:
+            self._enviar_zmq("rt/dex3/right/state", msg)
 
     def _enviar_zmq(self, topic, msg):
         """Converte DDS para JSON e manda pro LeRobot"""
+        if not self.running: return
         data = {
             "topic": topic,
             "data": {"motor_state": [{"q": m.q, "dq": m.dq} for m in msg.motor_state]}
         }
-        self.zmq_pub.send_string(json.dumps(data))
+        try:
+            self.zmq_pub.send_string(json.dumps(data))
+        except:
+            pass
 
     def rodar_loop_comandos(self):
         """Recebe do LeRobot e injeta no MuJoCo"""
-        while True:
+        while self.running:
             try:
                 msg_json = self.zmq_pull.recv_string()
                 payload = json.loads(msg_json)
@@ -65,9 +90,21 @@ class PonteG1Completa:
                 else:
                     self.dds_right_pub.Write(cmd_dds)
             except Exception as e:
-                print(f"Erro: {e}")
+                if self.running:
+                    print(f"Erro: {e}")
 
 if __name__ == "__main__":
     p = PonteG1Completa()
-    threading.Thread(target=p.rodar_loop_comandos, daemon=True).start()
-    while True: time.sleep(1)
+    
+    # Configura o tratamento de sinais (Ctrl+C)
+    signal.signal(signal.SIGINT, lambda s, f: p.finalizar())
+    signal.signal(signal.SIGTERM, lambda s, f: p.finalizar())
+
+    t = threading.Thread(target=p.rodar_loop_comandos, daemon=True)
+    t.start()
+    
+    try:
+        while True: 
+            time.sleep(1)
+    except KeyboardInterrupt:
+        p.finalizar()

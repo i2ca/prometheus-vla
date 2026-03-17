@@ -10,6 +10,7 @@ import os
 try:
     import robot.unitree_g1
     import teleop.unitree_g1
+    import teleop
 except ImportError as e:
     print(f"\n[IMPORT ERROR]: Failed to load custom G1 modules: {e}")
     sys.exit(1)
@@ -79,10 +80,12 @@ if __name__ == "__main__":
     if force_sim:
         # Injetamos a modificação com os dois traços (Padrão do draccus/argparse)
         sys.argv.append("--robot.is_simulation=true")
+        sys.argv.append("--teleop.is_simulation=true")
         print("[INFO]: Overriding YAML config: robot.is_simulation set to TRUE")
     else:
         # Modo robô real com os dois traços
         sys.argv.append("--robot.is_simulation=false")
+        sys.argv.append("--teleop.is_simulation=false")
         print("[INFO]: Using Real Robot mode (robot.is_simulation=false)")
 
     # 4. Launch teleoperation loop
