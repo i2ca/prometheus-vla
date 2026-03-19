@@ -1,0 +1,48 @@
+# Robot Configuration
+ROBOT_TYPE: 'g1_29dof'
+ROBOT_SCENE: "assets/scene_43dof.xml"
+
+# DDS Communication
+DOMAIN_ID: 0
+INTERFACE: "lo"  # "lo" for simulation, network interface with "192.168.123.222" for real robot
+SIMULATOR: "mujoco"
+
+# Joystick (auto-detected at startup; these are defaults when a controller is found)
+JOYSTICK_TYPE: "xbox"  # "xbox" or "switch"
+JOYSTICK_DEVICE: 0
+
+# Simulation Settings
+FREE_BASE: False
+enable_waist: False  # False = band on torso, True = band on pelvis
+ENABLE_ELASTIC_BAND: True
+
+# Timing
+SIMULATE_DT: 0.004  # 250Hz physics
+VIEWER_DT: 0.02     # 50Hz viewer update
+IMAGE_DT: 0.033333  # ~30Hz camera
+
+# Rendering
+ENABLE_ONSCREEN: true
+ENABLE_OFFSCREEN: false
+MP_START_METHOD: "spawn"
+
+# Sensors
+USE_SENSOR: False
+PRINT_SCENE_INFORMATION: True
+
+# Robot Dimensions
+NUM_MOTORS: 29
+NUM_JOINTS: 29
+NUM_HAND_MOTORS: 7
+NUM_HAND_JOINTS: 7
+
+# Torque Limits (Nm) - 29 body + 14 hand = 43 total
+motor_effort_limit_list: [
+    88.0, 88.0, 88.0, 139.0, 50.0, 50.0,   # left leg
+    88.0, 88.0, 88.0, 139.0, 50.0, 50.0,   # right leg
+    88.0, 50.0, 50.0,                       # waist
+    25.0, 25.0, 25.0, 25.0, 25.0, 5.0, 5.0, # left arm
+    2.45, 0.7, 0.7, 0.7, 0.7, 0.7, 0.7,    # left hand
+    25.0, 25.0, 25.0, 25.0, 25.0, 5.0, 5.0, # right arm
+    2.45, 0.7, 0.7, 0.7, 0.7, 0.7, 0.7     # right hand
+]
