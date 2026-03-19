@@ -110,6 +110,52 @@ kTopicDex3RightState = "rt/dex3/right/state"
 # Number of motors per hand
 Dex3_Num_Motors = 7
 
+# ==============================================================================
+# Dex3 Tactile & Temperature Sensor Constants
+# ==============================================================================
+
+class Dex3_1_Left_PressureTemperatureSensors(IntEnum):
+    kLeftThumbBase = 0
+    kLeftThumbTip = 1
+    kLeftMiddleBase = 2
+    kLeftMiddleTip = 3
+    kLeftIndexBase = 4
+    kLeftIndexTip = 5
+    kLeftPalm0 = 6
+    kLeftPalm1 = 7
+    kLeftPalm2 = 8
+
+class Dex3_1_Right_PressureTemperatureSensors(IntEnum):
+    kRightThumbBase = 0
+    kRightThumbTip = 1
+    kRightMiddleBase = 2
+    kRightMiddleTip = 3
+    kRightIndexBase = 4
+    kRightIndexTip = 5
+    kRightPalm0 = 6
+    kRightPalm1 = 7
+    kRightPalm2 = 8
+
+sensor_index = {
+    Dex3_1_Left_PressureTemperatureSensors.kLeftThumbBase: [0, 2, 9, 11],
+    Dex3_1_Left_PressureTemperatureSensors.kLeftThumbTip: [3, 6, 8],
+    Dex3_1_Left_PressureTemperatureSensors.kLeftMiddleBase: [0, 2, 9, 11],
+    Dex3_1_Left_PressureTemperatureSensors.kLeftMiddleTip: [3, 6, 8],
+    Dex3_1_Left_PressureTemperatureSensors.kLeftIndexBase: [0, 2, 9, 11],
+    Dex3_1_Left_PressureTemperatureSensors.kLeftIndexTip: [3, 6, 8],
+    Dex3_1_Left_PressureTemperatureSensors.kLeftPalm0: [0, 2, 9, 11],
+    Dex3_1_Left_PressureTemperatureSensors.kLeftPalm1: [0, 2, 9, 11],
+    Dex3_1_Left_PressureTemperatureSensors.kLeftPalm2: [0, 2, 9, 11],
+    Dex3_1_Right_PressureTemperatureSensors.kRightThumbBase: [0, 2, 9, 11],
+    Dex3_1_Right_PressureTemperatureSensors.kRightThumbTip: [3, 6, 8],
+    Dex3_1_Right_PressureTemperatureSensors.kRightMiddleBase: [0, 2, 9, 11],
+    Dex3_1_Right_PressureTemperatureSensors.kRightMiddleTip: [3, 6, 8],
+    Dex3_1_Right_PressureTemperatureSensors.kRightIndexBase: [0, 2, 9, 11],
+    Dex3_1_Right_PressureTemperatureSensors.kRightIndexTip: [3, 6, 8],
+    Dex3_1_Right_PressureTemperatureSensors.kRightPalm0: [0, 2, 9, 11],
+    Dex3_1_Right_PressureTemperatureSensors.kRightPalm1: [0, 2, 9, 11],
+    Dex3_1_Right_PressureTemperatureSensors.kRightPalm2: [0, 2, 9, 11],
+}
 
 class Dex3_1_Left_JointIndex(IntEnum):
     """Left Dex3-1 hand joint indices (matches DDS message structure)."""

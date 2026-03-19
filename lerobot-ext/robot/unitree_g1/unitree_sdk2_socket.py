@@ -133,13 +133,27 @@ class LowStateMsg:
         self.mode_machine: int = data.get("mode_machine", 0)
 
 
+#class HandStateMsg:
+#    """Wrapper class that mimics the Unitree SDK HandState_ message structure."""
+#    def __init__(self, data: dict[str, Any]) -> None:
+#        """Initialize from deserialized JSON data."""
+#        self.side: str = data.get("side", "")
+#        self.motor_state = [MotorState(m) for m in data.get("motor_state", [])]
+
+class PressSensorState:
+    """Sensor state data for a specific area of the hand."""
+    def __init__(self, data: dict[str, Any]) -> None:
+        # Pega a lista do JSON. Se não existir, cria uma lista vazia grande o suficiente para evitar IndexError
+        self.pressure: list[float] = data.get("pressure", [0.0] * 12)
+        self.temperature: list[float] = data.get("temperature", [0.0] * 12)
+
 class HandStateMsg:
     """Wrapper class that mimics the Unitree SDK HandState_ message structure."""
     def __init__(self, data: dict[str, Any]) -> None:
         """Initialize from deserialized JSON data."""
         self.side: str = data.get("side", "")
         self.motor_state = [MotorState(m) for m in data.get("motor_state", [])]
-
+        self.press_sensor_state = [PressSensorState(p) for p in data.get("press_sensor_state", [])]
 
 # ==============================================================================
 # Serialization helpers

@@ -21,6 +21,9 @@ from lerobot.robots.config import RobotConfig
 from .g1_utils import (
     Dex3_1_Left_JointIndex, 
     Dex3_1_Right_JointIndex,
+    Dex3_1_Left_PressureTemperatureSensors,
+    Dex3_1_Right_PressureTemperatureSensors,
+    sensor_index,
     Dex3_Num_Motors,
     DEX3_LEFT_LOWER_LIMITS,
     DEX3_LEFT_UPPER_LIMITS,
@@ -51,6 +54,9 @@ class HandState:
     motor_state: list[HandMotorState] = field(
         default_factory=lambda: [HandMotorState() for _ in range(Dex3_Num_Motors)]
     )
+    # Adicionando 27 sensores de pressão e 27 de temperatura por mão
+    pressure: np.ndarray = field(default_factory=lambda: np.zeros(33, dtype=np.float32))
+    temperature: np.ndarray = field(default_factory=lambda: np.zeros(33, dtype=np.float32))
 
 
 @RobotConfig.register_subclass("unitree_g1_dex3")
@@ -131,6 +137,22 @@ class UnitreeG1Dex3(UnitreeG1):
                 left_state = HandState()
                 for idx, joint_id in enumerate(Dex3_1_Left_JointIndex):
                     left_state.motor_state[idx].q = left_msg.motor_state[joint_id].q
+                #self._left_hand_state = left_state
+
+                # --- LÓGICA DE SENSORES EXTRAÍDA DO robot_hand_unitree.py ---
+                idx = 0
+                has_sensors = len(left_msg.press_sensor_state) > 0
+                for area_idx, id in enumerate(Dex3_1_Left_PressureTemperatureSensors):
+                    for sensor_idx in sensor_index[id]:
+                        # Proteção: verifica se o simulador/robô mandou os sensores
+                        if has_sensors and area_idx < len(left_msg.press_sensor_state):
+                            try:
+                                left_state.pressure[idx] = left_msg.press_sensor_state[area_idx].pressure[sensor_idx]
+                                left_state.temperature[idx] = left_msg.press_sensor_state[area_idx].temperature[sensor_idx]
+                            except IndexError:
+                                pass # Ignora se o array interno do sensor for menor que o esperado
+                        idx += 1
+                
                 self._left_hand_state = left_state
             
             # Read right hand state
@@ -139,6 +161,21 @@ class UnitreeG1Dex3(UnitreeG1):
                 right_state = HandState()
                 for idx, joint_id in enumerate(Dex3_1_Right_JointIndex):
                     right_state.motor_state[idx].q = right_msg.motor_state[joint_id].q
+                #self._right_hand_state = right_state
+
+                # --- LÓGICA DE SENSORES EXTRAÍDA DO robot_hand_unitree.py ---
+                idx = 0
+                has_sensors = len(right_msg.press_sensor_state) > 0
+                for area_idx, id in enumerate(Dex3_1_Right_PressureTemperatureSensors):
+                    for sensor_idx in sensor_index[id]:
+                        if has_sensors and area_idx < len(right_msg.press_sensor_state):
+                            try:
+                                right_state.pressure[idx] = right_msg.press_sensor_state[area_idx].pressure[sensor_idx]
+                                right_state.temperature[idx] = right_msg.press_sensor_state[area_idx].temperature[sensor_idx]
+                            except IndexError:
+                                pass
+                        idx += 1
+                
                 self._right_hand_state = right_state
             
             # Maintain control rate
@@ -284,6 +321,11 @@ class UnitreeG1Dex3(UnitreeG1):
             features[f"{name}.q"] = float
         for name in self.right_hand_joint_names:
             features[f"{name}.q"] = float
+
+        for i in range(33):
+            features[f"left_hand_pressure_{i}"] = float
+            features[f"right_hand_pressure_{i}"] = float
+
         return features
 
     def get_observation(self) -> RobotObservation:
@@ -303,7 +345,41 @@ class UnitreeG1Dex3(UnitreeG1):
                 obs[f"{name}.q"] = float(self._right_hand_state.motor_state[i].q)
             else:
                 obs[f"{name}.q"] = 0.0  # Default when hands not available
+
+        # Add left hand sensors
+        #if self._left_hand_state is not None:
+        #    obs["left_hand_pressure"] = self._left_hand_state.pressure
+        #    obs["left_hand_temperature"] = self._left_hand_state.temperature
+        #else:
+        #    obs["left_hand_pressure"] = np.zeros(33, dtype=np.float32)
+        #    obs["left_hand_temperature"] = np.zeros(33, dtype=np.float32)
+        #    
+        # Add right hand sensors
+        #if self._right_hand_state is not None:
+        #    obs["right_hand_pressure"] = self._right_hand_state.pressure
+        #    obs["right_hand_temperature"] = self._right_hand_state.temperature
+        #else:
+        #    obs["right_hand_pressure"] = np.zeros(33, dtype=np.float32)
+        #    obs["right_hand_temperature"] = np.zeros(33, dtype=np.float32)
+
+        # Injeção das pressões desmembradas
+        left_pressure = self._left_hand_state.pressure if self._left_hand_state is not None else np.zeros(33)
+        right_pressure = self._right_hand_state.pressure if self._right_hand_state is not None else np.zeros(33)
+
+        for i in range(33):
+            obs[f"left_hand_pressure_{i}"] = float(left_pressure[i])
+            obs[f"right_hand_pressure_{i}"] = float(right_pressure[i])
         
+        # ==========================================================
+        # DEBUG TEMPORÁRIO: Só printa se houver alguma pressão!
+        # ==========================================================
+        max_l = np.max(left_pressure)
+        max_r = np.max(right_pressure)
+        if max_l > 0.01 or max_r > 0.01:
+            print(f"👉 TATO DETECTADO! Pressão Esq: {max_l:.2f} | Pressão Dir: {max_r:.2f}")
+        # ==========================================================
+        return obs
+
         return obs
 
     def send_action(self, action: RobotAction) -> RobotAction:

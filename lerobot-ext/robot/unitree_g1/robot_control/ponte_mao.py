@@ -60,10 +60,24 @@ class PonteG1Completa:
     def _enviar_zmq(self, topic, msg):
         """Converte DDS para JSON e manda pro LeRobot"""
         if not self.running: return
+        
+        # Extrai os dados de pressão e temperatura (se existirem na mensagem)
+        press_sensors = []
+        if hasattr(msg, 'press_sensor_state'):
+            for p in msg.press_sensor_state:
+                press_sensors.append({
+                    "pressure": list(p.pressure),
+                    "temperature": list(p.temperature)
+                })
+
         data = {
             "topic": topic,
-            "data": {"motor_state": [{"q": m.q, "dq": m.dq} for m in msg.motor_state]}
+            "data": {
+                "motor_state": [{"q": m.q, "dq": m.dq} for m in msg.motor_state],
+                "press_sensor_state": press_sensors
+            }
         }
+        
         try:
             self.zmq_pub.send_string(json.dumps(data))
         except:

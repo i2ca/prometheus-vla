@@ -15,6 +15,7 @@ logger = logging.getLogger(__name__)
 class KeyboardG1ArmConfig(TeleoperatorConfig):
     speed: float = 0.02  # Sensibilidade
     fps: int = 60
+    is_simulation: bool = False
 
 # A classe principal não tem a palavra Config
 class KeyboardG1Arm(Teleoperator):
