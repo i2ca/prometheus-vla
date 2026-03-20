@@ -68,21 +68,36 @@ class UnitreeG1Dex3Config(UnitreeG1Config):
     hand_control_dt: float = 0.01  # 100 Hz control loop
     
     def __post_init__(self):
-
+        # LÓGICA DE RESOLUÇÃO DINÂMICA
         if self.is_simulation:
             self.robot_ip = "127.0.0.1"
-
-        # Add default ZMQ camera if no cameras specified
+            # Simulação: Leve e rápida para não gargalar a GPU/CPU
+            cam_width = 320
+            cam_height = 240
+        else:
+            # Hardware Real: Resolução máxima da Intel RealSense
+            cam_width = 640
+            cam_height = 480
+            
+        # Adiciona TODAS as câmeras ZMQ ao LeRobot usando as variáveis dinâmicas
         if not self.cameras:
             from lerobot.cameras.zmq.configuration_zmq import ZMQCameraConfig
+            
             self.cameras = {
-                "cam_rgb_high": ZMQCameraConfig(
-                    server_address=self.robot_ip,
-                    port=5555,
-                    camera_name="head_camera",
-                    # Match the resolution expected by the policy
-                    width=640,
-                    height=480,
+                "head_camera": ZMQCameraConfig(
+                    server_address=self.robot_ip, port=5555, camera_name="head_camera", width=cam_width, height=cam_height
+                ),
+                "d435i_rgb": ZMQCameraConfig(
+                    server_address=self.robot_ip, port=5555, camera_name="d435i_rgb", width=cam_width, height=cam_height
+                ),
+                "d435i_depth": ZMQCameraConfig(
+                    server_address=self.robot_ip, port=5555, camera_name="d435i_depth", width=cam_width, height=cam_height
+                ),
+                "d435i_ir_left": ZMQCameraConfig(
+                    server_address=self.robot_ip, port=5555, camera_name="d435i_ir_left", width=cam_width, height=cam_height
+                ),
+                "d435i_ir_right": ZMQCameraConfig(
+                    server_address=self.robot_ip, port=5555, camera_name="d435i_ir_right", width=cam_width, height=cam_height
                 )
             }
 

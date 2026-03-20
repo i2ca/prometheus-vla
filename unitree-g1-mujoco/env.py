@@ -40,7 +40,7 @@ def make_env(n_envs=1, use_async_envs=False, **kwargs):
     camera_configs = {}
     if enable_offscreen:
         for cam_name in cameras:
-            camera_configs[cam_name] = {"height": 480, "width": 640}
+            camera_configs[cam_name] = {"height": 240, "width": 320}
     
     # Initialize DDS channel
     init_channel(config=config)

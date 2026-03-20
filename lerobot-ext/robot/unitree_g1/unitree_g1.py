@@ -220,8 +220,10 @@ class UnitreeG1(Robot):
             # Importamos a função criadora do seu env.py (renomeamos para não dar conflito)
             from env import make_env as make_local_env
             
-            # Chamamos a sua função. Ela cria e nos devolve o UnitreeG1Env instanciado!
-            self.sim_env = make_local_env()
+            lista_de_cameras = list(self.config.cameras.keys())
+            
+            # Chamamos a sua função passando a lista de câmeras exigida!
+            self.sim_env = make_local_env(cameras=lista_de_cameras)
             
             # --- FIM DA MODIFICAÇÃO ---
 
@@ -389,9 +391,11 @@ class UnitreeG1(Robot):
 
     @property
     def _cameras_ft(self) -> dict[str, tuple]:
-        return {
-            cam: (self.config.cameras[cam].height, self.config.cameras[cam].width, 3) for cam in self.cameras
-        }
+        """Define os tensores de imagem. O cliente ZMQ do LeRobot converte tudo para 3 canais por padrão."""
+        features = {}
+        for cam in self.cameras:
+            features[cam] = (self.config.cameras[cam].height, self.config.cameras[cam].width, 3)
+        return features
 
     @cached_property
     def observation_features(self) -> dict[str, type | tuple]:

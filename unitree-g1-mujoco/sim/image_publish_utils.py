@@ -3,7 +3,7 @@ from multiprocessing import shared_memory
 import time
 from typing import Any, Dict
 import numpy as np
-import cv2  # Adicionado para conversões de cor super rápidas
+import cv2
 
 def get_multiprocessing_info(verbose: bool = True):
     if verbose: print(f"Available start methods: {mp.get_all_start_methods()}")
@@ -30,19 +30,11 @@ class ImagePublishProcess:
             width = camera_config["width"]
             target_name = f"g1_{camera_name}_shm" 
 
-            # ALOCAÇÃO DE MEMÓRIA REALISTA PARA CADA SENSOR
-            if 'depth' in camera_name.lower():
-                size = height * width * 2  # uint16 (Milímetros)
-                shape = (height, width, 1)
-                dtype = np.uint16
-            elif 'ir_' in camera_name.lower():
-                size = height * width * 1  # uint8 (Monocromático/Grayscale)
-                shape = (height, width, 1)
-                dtype = np.uint8
-            else:
-                size = height * width * 3  # uint8 (RGB)
-                shape = (height, width, 3)
-                dtype = np.uint8
+            # SOLUÇÃO PARA O LEROBOT (.mp4): 
+            # Todas as memórias forçadas para 3 Canais (RGB) e 8-bits!
+            size = height * width * 3
+            shape = (height, width, 3)
+            dtype = np.uint8
 
             try:
                 shm = shared_memory.SharedMemory(name=target_name, create=True, size=size)
@@ -68,25 +60,21 @@ class ImagePublishProcess:
             if image_key in render_caches:
                 image = render_caches[image_key]
 
-                # FILTRO BLINDADO E PROCESSAMENTO DE SINAL
                 if 'depth' in camera_name.lower():
-                    if image.dtype == np.float32 or image.dtype == np.float64:
-                        processed_img = (image * 1000.0).astype(np.uint16)
-                    else:
-                        processed_img = image
-                    if len(processed_img.shape) == 2:
-                        processed_img = processed_img[..., np.newaxis]
+                    # Converte metros (0.0 a 3.0m) para escala de cinza de 8-bits (0 a 255)
+                    depth_clipped = np.clip(image, 0.0, 3.0)
+                    depth_8u = (depth_clipped * (255.0 / 3.0)).astype(np.uint8)
+                    # Clona para 3 canais pro LeRobot achar que é uma imagem normal
+                    processed_img = cv2.cvtColor(depth_8u, cv2.COLOR_GRAY2BGR)
                         
                 elif 'ir_' in camera_name.lower():
-                    # Converte o RGB do simulador para a visão Infravermelha real (Grayscale)
                     if len(image.shape) == 3 and image.shape[2] == 3:
-                        processed_img = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
-                        processed_img = processed_img[..., np.newaxis]
+                        gray = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
+                        processed_img = cv2.cvtColor(gray, cv2.COLOR_GRAY2BGR)
                     else:
-                        processed_img = image
+                        processed_img = cv2.cvtColor(image, cv2.COLOR_GRAY2BGR)
                         
                 else:
-                    # Converte RGB nativo do MuJoCo para BGR do OpenCV (corrige o azul/laranja na fonte)
                     if len(image.shape) == 3 and image.shape[2] == 3:
                         processed_img = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
                     else:
@@ -126,7 +114,7 @@ class ImagePublishProcess:
 
     @staticmethod
     def _image_publish_worker(shared_memory_info, image_dt, zmq_port, stop_event, data_ready_event, verbose):
-        from .sensor_utils import ImageMessageSchema, ImageUtils, SensorServer
+        from .sensor_utils import ImageUtils, SensorServer
         try:
             sensor_server = SensorServer()
             sensor_server.start_server(port=zmq_port)
@@ -142,16 +130,14 @@ class ImagePublishProcess:
                     data_ready_event.clear()
                     try:
                         image_copies = {name: arr.copy() for name, arr in shared_arrays.items()}
-                        message_dict = {"images": image_copies, "timestamps": {name: time.time() for name in image_copies.keys()}}
-                        image_msg = ImageMessageSchema(timestamps=message_dict["timestamps"], images=message_dict["images"])
-                        serialized_data = image_msg.serialize()
-
+                        timestamps = {name: time.time() for name in image_copies.keys()}
+                        
+                        # Codifica TUDO como imagem de vídeo padrão (compatível com o codec AV1 do LeRobot)
+                        encoded_images = {}
                         for camera_name, image_copy in image_copies.items():
-                            if 'depth' in camera_name.lower():
-                                serialized_data[f"{camera_name}"] = ImageUtils.encode_depth_image(image_copy)
-                            else:
-                                serialized_data[f"{camera_name}"] = ImageUtils.encode_image(image_copy)
-
+                            encoded_images[camera_name] = ImageUtils.encode_image(image_copy)
+                            
+                        serialized_data = {"timestamps": timestamps, "images": encoded_images}
                         sensor_server.send_message(serialized_data)
                     except Exception as e: print(f"Error publishing images: {e}")
                 else:
