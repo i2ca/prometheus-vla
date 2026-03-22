@@ -74,22 +74,26 @@ class UnitreeG1Dex3Config(UnitreeG1Config):
             # Simulação: Leve e rápida para não gargalar a GPU/CPU
             cam_width = 320
             cam_height = 240
+            cam2_width = 1280
+            cam2_height = 720
         else:
             # Hardware Real: Resolução máxima da Intel RealSense
             cam_width = 640
             cam_height = 480
+            cam2_width = 1280
+            cam2_height = 720
             
-        # Adiciona TODAS as câmeras ZMQ ao LeRobot usando as variáveis dinâmicas
+        # Adiciona as câmeras ZMQ ao LeRobot usando as variáveis dinâmicas
         if not self.cameras:
             from lerobot.cameras.zmq.configuration_zmq import ZMQCameraConfig
             
             self.cameras = {
+                # A NOSSA ÚNICA CÂMERA RGB (HD para o VR e para a IA)
                 "head_camera": ZMQCameraConfig(
-                    server_address=self.robot_ip, port=5555, camera_name="head_camera", width=cam_width, height=cam_height
+                    server_address=self.robot_ip, port=5555, camera_name="head_camera", width=cam2_width, height=cam2_height
                 ),
-                "d435i_rgb": ZMQCameraConfig(
-                    server_address=self.robot_ip, port=5555, camera_name="d435i_rgb", width=cam_width, height=cam_height
-                ),
+                
+                # AS 3 LENTES TÉCNICAS (Baixa Resolução para o processamento ser imediato)
                 "d435i_depth": ZMQCameraConfig(
                     server_address=self.robot_ip, port=5555, camera_name="d435i_depth", width=cam_width, height=cam_height
                 ),

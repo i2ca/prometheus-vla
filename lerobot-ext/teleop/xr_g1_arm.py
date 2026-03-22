@@ -75,7 +75,7 @@ class XRG1Arm(Teleoperator):
         self.tv_wrapper = TeleVuerWrapper(
             use_hand_tracking=(self.config.input_mode == "hand"),
             binocular=False,
-            img_shape=(480, 640),
+            img_shape=(720, 1280),
             display_mode=self.config.display_mode,
             zmq=self.config.zmq,
             webrtc=self.config.webrtc,
@@ -137,8 +137,11 @@ class XRG1Arm(Teleoperator):
                         img = img_data  # Assume que já é numpy array
 
                     if img is not None and isinstance(img, np.ndarray):
-                        # Converte de BGR (formato do OpenCV) para RGB (formato padrão de VR/Web)
+                        # Converte de BGR para RGB
                         img_rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+                        
+                        # REDIMENSIONAMENTO DE SEGURANÇA: Garante HD exato pro Vuer
+                        img_rgb = cv2.resize(img_rgb, (1280, 720)) 
                         
                         # Envia para o VR
                         self.tv_wrapper.render_to_xr(img_rgb)

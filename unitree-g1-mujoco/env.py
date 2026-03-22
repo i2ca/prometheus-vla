@@ -40,7 +40,10 @@ def make_env(n_envs=1, use_async_envs=False, **kwargs):
     camera_configs = {}
     if enable_offscreen:
         for cam_name in cameras:
-            camera_configs[cam_name] = {"height": 240, "width": 320}
+            if cam_name == "head_camera":
+                camera_configs[cam_name] = {"height": 720, "width": 1280} # HD pro VR
+            else:
+                camera_configs[cam_name] = {"height": 240, "width": 320} # Leve pra IA
     
     # Initialize DDS channel
     init_channel(config=config)

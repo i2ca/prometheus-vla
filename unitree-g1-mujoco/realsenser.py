@@ -28,11 +28,9 @@ class CameraViewer:
         """Decode and process image based on camera type"""
         if isinstance(img_data, str):
             try:
-                # O sensor_utils sabe qual método de descompressão usar baseado no nome
-                if 'depth' in cam_name.lower():
-                    img = ImageUtils.decode_depth_image(img_data)
-                else:
-                    img = ImageUtils.decode_image(img_data)
+                # Como padronizamos tudo para o formato do LeRobot (JPG 8-bits 3-canais),
+                # usamos decode_image para TODAS as lentes, incluindo Depth!
+                img = ImageUtils.decode_image(img_data)
             except Exception:
                 return None
         elif isinstance(img_data, np.ndarray):
@@ -45,14 +43,11 @@ class CameraViewer:
 
         # RENDERIZAÇÃO ULTRA-RÁPIDA (OpenCV)
         if 'depth' in cam_name.lower():
-            # A imagem chegou em milímetros reais (uint16). 
-            # Recorta visão para o limite de 3 metros (3000mm) para gerar um bom Heatmap.
-            depth_clipped = np.clip(img, 0, 3000)
-            depth_8u = cv2.normalize(depth_clipped, None, 0, 255, cv2.NORM_MINMAX, dtype=cv2.CV_8U)
-            img_out = cv2.applyColorMap(depth_8u, cv2.COLORMAP_JET)
+            # A imagem já chega padronizada (0-255). 
+            # Isolamos apenas 1 canal (Grayscale) para o mapa de calor não dar erro.
+            gray = img[:, :, 0]
+            img_out = cv2.applyColorMap(gray, cv2.COLORMAP_JET)
         else:
-            # As câmeras RGB e IR já foram corrigidas na memória pelo image_publish_utils.py.
-            # O OpenCV carrega JPGs do IR como BGR-Grayscale automaticamente, então é só passar reto.
             img_out = img
             
         return img_out
@@ -90,6 +85,10 @@ class CameraViewer:
                     img_bgr = self._process_image(cam_name, img_data)
                     if img_bgr is None:
                         continue
+
+                    # Se for a câmera HD do VR, encolhe pela metade só para caber no monitor
+                    if cam_name == "head_camera":
+                        img_bgr = cv2.resize(img_bgr, (640, 360))
                     
                     # Desenha a tarja preta transparente e o texto verde do FPS
                     cv2.rectangle(img_bgr, (5, 5), (150, 45), (0, 0, 0), -1)

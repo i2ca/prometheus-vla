@@ -61,9 +61,13 @@ class ImagePublishProcess:
                 image = render_caches[image_key]
 
                 if 'depth' in camera_name.lower():
-                    # Converte metros (0.0 a 3.0m) para escala de cinza de 8-bits (0 a 255)
+                    # MATEMÁTICA CORRIGIDA: O simulador manda em METROS!
+                    # Limitamos até 3.0 metros para ter resolução de detalhes próximos
                     depth_clipped = np.clip(image, 0.0, 3.0)
+                    
+                    # Converte de 3.0m para a escala de 8-bits (0 a 255)
                     depth_8u = (depth_clipped * (255.0 / 3.0)).astype(np.uint8)
+                    
                     # Clona para 3 canais pro LeRobot achar que é uma imagem normal
                     processed_img = cv2.cvtColor(depth_8u, cv2.COLOR_GRAY2BGR)
                         
@@ -136,6 +140,17 @@ class ImagePublishProcess:
                         encoded_images = {}
                         for camera_name, image_copy in image_copies.items():
                             encoded_images[camera_name] = ImageUtils.encode_image(image_copy)
+                            
+                            # =========================================================
+                            # A MÁGICA: CRIA A "d435i_rgb" A PARTIR DA HEAD_CAMERA
+                            # =========================================================
+                            # Se esta for a imagem da cabeça (1280x720 HD pro VR)
+                            if camera_name == "head_camera":
+                                # Cria uma cópia SD (320x240) na hora para a IA do LeRobot
+                                img_sd = cv2.resize(image_copy, (320, 240))
+                                encoded_images["d435i_rgb"] = ImageUtils.encode_image(img_sd)
+                                # Copia o timestamp exato para sincronia perfeita
+                                timestamps["d435i_rgb"] = timestamps["head_camera"]
                             
                         serialized_data = {"timestamps": timestamps, "images": encoded_images}
                         sensor_server.send_message(serialized_data)
