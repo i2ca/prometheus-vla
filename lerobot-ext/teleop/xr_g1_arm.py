@@ -287,9 +287,7 @@ class XRG1Arm(Teleoperator):
                 left_hand_q = self.hand_retargeter.left_retargeting.retarget(ref_left_value)[self.hand_retargeter.left_dex_retargeting_to_hardware]
                 right_hand_q = self.hand_retargeter.right_retargeting.retarget(ref_right_value)[self.hand_retargeter.right_dex_retargeting_to_hardware]
 
-                # --- AJUSTE DE PINÇA (OFFSET) ---
-                # Valor em radianos para forçar o fechamento. Você terá que testar se no seu robô
-                # o sentido de fechar é somar (+) ou subtrair (-). Comece com 0.15 ou -0.15.
+                # --- AJUSTE DE PINÇA (OFFSET FIXO PARA TOQUE LEVE) ---
                 OFFSET_ESQUEDA = 0.17 
                 OFFSET_DIREITA = 0.0
 
@@ -300,6 +298,34 @@ class XRG1Arm(Teleoperator):
                 # Mão Direita (Ordem diferente! Thumb 0,1,2, Index 3,4, Middle 5,6)
                 right_hand_q[3] += OFFSET_DIREITA # Base do indicador direito
                 right_hand_q[4] += OFFSET_DIREITA # Ponta do indicador direito
+                
+                # =========================================================
+                # NOVO: DETECÇÃO REAL DE PUNHO (Pelo Esqueleto 3D)
+                # =========================================================
+                # Calcula a distância (em metros) entre o Pulso (0) e a Ponta do Dedo Médio (14)
+                dist_medio_esq = np.linalg.norm(left_hand_data[14] - left_hand_data[0])
+                dist_medio_dir = np.linalg.norm(right_hand_data[14] - right_hand_data[0])
+                
+                # Mapeia a distância: ~0.15m (mão aberta) para ~0.06m (punho fechado)
+                # Gera um valor progressivo de 0.0 (aberto) a 1.0 (fechado)
+                punho_esq = np.clip((0.15 - dist_medio_esq) / 0.09, 0.0, 1.0)
+                punho_dir = np.clip((0.15 - dist_medio_dir) / 0.09, 0.0, 1.0)
+                
+                # Força extra em radianos aplicada aos dedos quando faz o punho
+                FORCA_PUNHO = 1.6 
+                
+                # Mão Esquerda: Fecha o Dedo Médio (3, 4) e reforça o Indicador (5, 6)
+                left_hand_q[3] -= (FORCA_PUNHO * punho_esq)
+                left_hand_q[4] -= (FORCA_PUNHO * punho_esq)
+                left_hand_q[5] -= (FORCA_PUNHO * punho_esq) 
+                left_hand_q[6] -= (FORCA_PUNHO * punho_esq)
+                
+                # Mão Direita: Fecha o Dedo Médio (5, 6) e reforça o Indicador (3, 4)
+                right_hand_q[5] += (FORCA_PUNHO * punho_dir)
+                right_hand_q[6] += (FORCA_PUNHO * punho_dir)
+                right_hand_q[3] += (FORCA_PUNHO * punho_dir) 
+                right_hand_q[4] += (FORCA_PUNHO * punho_dir)
+                # =========================================================
                 # --------------------------------
 
                 # Aplica as juntas calculadas no dicionário do LeRobot

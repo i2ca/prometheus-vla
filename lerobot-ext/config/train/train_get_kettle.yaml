@@ -1,0 +1,31 @@
+# =================================================================
+# LEROBOT TRAINING CONFIGURATION
+# Task: Get the kettle
+# =================================================================
+
+# 1. DADOS: Onde estão os arquivos salvos pelo seu script de gravação
+dataset:
+  repo_id: Mrwlker/get_the_kettle
+  root: meu_dataset/get_the_kettle
+
+# 2. IA: Qual é o modelo neural que vai aprender
+policy:
+  type: act
+  repo_id: Mrwlker/get_the_kettle_policy
+  push_to_hub: false
+  use_amp: true
+  
+# --- TREINO ---
+steps: 80000
+batch_size: 4
+log_freq: 200
+save_freq: 500
+save_checkpoint: true
+
+# --- EVAL ---
+eval_freq: 100000
+
+# --- LOG ---
+wandb:
+  enable: false
+  project: prometheus_g1
