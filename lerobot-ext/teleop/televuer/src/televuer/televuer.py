@@ -318,8 +318,8 @@ class TeleVuer:
                 Hands(
                     stream=True,
                     key="hands",
-                    hideLeft=True,
-                    hideRight=True
+                    hideLeft=False,
+                    hideRight=False
                 ),
                 to="bgChildren",
             )

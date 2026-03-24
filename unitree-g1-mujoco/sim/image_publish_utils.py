@@ -118,7 +118,23 @@ class ImagePublishProcess:
 
     @staticmethod
     def _image_publish_worker(shared_memory_info, image_dt, zmq_port, stop_event, data_ready_event, verbose):
-        from .sensor_utils import ImageUtils, SensorServer
+        # =========================================================
+        # CORREÇÃO DE PACOTE NO MULTIPROCESSING 
+        # =========================================================
+        import sys
+        import os
+        import time
+        import numpy as np
+
+        # 1. Força a pasta raiz do simulador a entrar no path do novo processo
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+        root_dir = os.path.dirname(current_dir)
+        if root_dir not in sys.path:
+            sys.path.insert(0, root_dir)
+
+        # 2. Faz o import absoluto do utils (agora o Python acha com certeza!)
+        from sim.sensor_utils import ImageUtils, SensorServer
+        
         try:
             sensor_server = SensorServer()
             sensor_server.start_server(port=zmq_port)
@@ -136,27 +152,18 @@ class ImagePublishProcess:
                         image_copies = {name: arr.copy() for name, arr in shared_arrays.items()}
                         timestamps = {name: time.time() for name in image_copies.keys()}
                         
-                        # Codifica TUDO como imagem de vídeo padrão (compatível com o codec AV1 do LeRobot)
+                        # Codifica as imagens dinamicamente baseando-se no nome que o MuJoCo enviar
                         encoded_images = {}
                         for camera_name, image_copy in image_copies.items():
                             encoded_images[camera_name] = ImageUtils.encode_image(image_copy)
                             
-                            # =========================================================
-                            # A MÁGICA: CRIA A "d435i_rgb" A PARTIR DA HEAD_CAMERA
-                            # =========================================================
-                            # Se esta for a imagem da cabeça (1280x720 HD pro VR)
-                            if camera_name == "head_camera":
-                                # Cria uma cópia SD (320x240) na hora para a IA do LeRobot
-                                img_sd = cv2.resize(image_copy, (320, 240))
-                                encoded_images["d435i_rgb"] = ImageUtils.encode_image(img_sd)
-                                # Copia o timestamp exato para sincronia perfeita
-                                timestamps["d435i_rgb"] = timestamps["head_camera"]
-                            
                         serialized_data = {"timestamps": timestamps, "images": encoded_images}
                         sensor_server.send_message(serialized_data)
-                    except Exception as e: print(f"Error publishing images: {e}")
+                    except Exception as e: 
+                        print(f"Error publishing images: {e}")
                 else:
                     time.sleep(0.001)
         finally:
-            for shm in shm_blocks.values(): shm.close()
+            for shm in shm_blocks.values(): 
+                shm.close()
             sensor_server.stop_server()

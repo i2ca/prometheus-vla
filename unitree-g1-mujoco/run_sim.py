@@ -23,12 +23,12 @@ def main(n_envs=1, use_async_envs: bool = False,
     camera_configs = {}
     if enable_offscreen:
         # REMOVIDO: "d435i_rgb"
-        camera_list = cameras or ["head_camera", "d435i_depth", "d435i_ir_left", "d435i_ir_right"]
+        camera_list = cameras or ["head_camera", "head_camera_depth"]
         for cam_name in camera_list:
             if cam_name == "head_camera":
-                camera_configs[cam_name] = {"height": 720, "width": 1280} # HD pro VR (e RGB da IA)
+                camera_configs[cam_name] = {"height": 480, "width": 640} # HD pro VR (e RGB da IA)
             else:
-                camera_configs[cam_name] = {"height": 240, "width": 320} # SD pra IA (Depth/IR)
+                camera_configs[cam_name] = {"height": 480, "width": 640} # SD pra IA (Depth/IR)
         print(f"📷 Cameras: {', '.join(camera_list)} → ZMQ port {camera_port}")
     
     print("="*60)

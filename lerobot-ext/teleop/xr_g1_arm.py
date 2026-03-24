@@ -291,7 +291,7 @@ class XRG1Arm(Teleoperator):
                 # Valor em radianos para forçar o fechamento. Você terá que testar se no seu robô
                 # o sentido de fechar é somar (+) ou subtrair (-). Comece com 0.15 ou -0.15.
                 OFFSET_ESQUEDA = 0.17 
-                OFFSET_DIREITA = 0.25
+                OFFSET_DIREITA = 0.0
 
                 # Mão Esquerda (Ordem: Thumb 0,1,2, Middle 3,4, Index 5,6)
                 left_hand_q[5] -= OFFSET_ESQUEDA # Base do indicador esquerdo

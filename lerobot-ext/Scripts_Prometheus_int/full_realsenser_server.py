@@ -84,11 +84,11 @@ def start_real_robot_cameras():
             message = {
                 "images": {
                     "head_camera": ImageUtils.encode_image(img_rgb),
-                    "d435i_depth": ImageUtils.encode_image(img_depth)
+                    "head_camera_depth": ImageUtils.encode_image(img_depth)
                 },
                 "timestamps": {
                     "head_camera": current_time,
-                    "d435i_depth": current_time
+                    "head_camera_depth": current_time
                 }
             }
 

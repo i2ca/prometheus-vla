@@ -81,11 +81,13 @@ if __name__ == "__main__":
     if force_sim:
         # Injetamos a flag correta para sobrescrever o YAML
         sys.argv.append("--robot.is_simulation=true")
-        print("[INFO]: Overriding YAML config: robot.is_simulation set to TRUE")
+        sys.argv.append("--teleop.is_simulation=true") # <-- AVISANDO O VR!
+        print("[INFO]: Overriding YAML config: robot and teleop is_simulation set to TRUE")
     else:
         # Por padrão, assumimos robô real
         sys.argv.append("--robot.is_simulation=false")
-        print("[INFO]: Using Real Robot mode (robot.is_simulation=false)")
+        sys.argv.append("--teleop.is_simulation=false") # <-- AVISANDO O VR!
+        print("[INFO]: Using Real Robot mode (robot and teleop is_simulation=false)")
 
     # 4. Launch the recording process
     try:

@@ -1,0 +1,18 @@
+robot:
+  type: unitree_g1_dex3
+
+teleop:
+  type: xr_g1_arm
+  zmq: true
+  input_mode: "hand"
+  display_mode: "ego"
+  ee_type: "dex3"
+
+dataset:
+  repo_id: Mrwlker/open_the_sugar_bowl
+  root: "meu_dataset/open_the_sugar_bowl"
+  push_to_hub: false
+  single_task: "Open the sugar bowl"
+  vcodec: "h264"
+
+play_sounds: false

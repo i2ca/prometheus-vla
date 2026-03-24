@@ -72,10 +72,10 @@ class UnitreeG1Dex3Config(UnitreeG1Config):
         if self.is_simulation:
             self.robot_ip = "127.0.0.1"
             # Simulação: Leve e rápida para não gargalar a GPU/CPU
-            cam_width = 320
-            cam_height = 240
-            cam2_width = 1280
-            cam2_height = 720
+            cam_width = 640
+            cam_height = 480
+            cam2_width = 640
+            cam2_height = 480
         else:
             # Hardware Real: Resolução máxima da Intel RealSense
             cam_width = 640
@@ -95,7 +95,7 @@ class UnitreeG1Dex3Config(UnitreeG1Config):
                 
                 # AS 3 LENTES TÉCNICAS (Baixa Resolução para o processamento ser imediato)
                 "head_camera_depth": ZMQCameraConfig(
-                    server_address=self.robot_ip, port=5555, camera_name="d435i_depth", width=cam_width, height=cam_height
+                    server_address=self.robot_ip, port=5555, camera_name="head_camera_depth", width=cam_width, height=cam_height
                 )
                 #,
                 #"d435i_ir_left": ZMQCameraConfig(
@@ -124,6 +124,10 @@ class UnitreeG1Dex3(UnitreeG1):
         # Hand state (similar to _lowstate for body)
         self._left_hand_state: HandState | None = None
         self._right_hand_state: HandState | None = None
+
+        # NOVO: Memória de Auto-Tara (Calibração para Zero dos sensores)
+        self._left_pressure_baseline = None
+        self._right_pressure_baseline = None
         
         # Threading control
         self._hand_shutdown_event = threading.Event()
@@ -382,22 +386,52 @@ class UnitreeG1Dex3(UnitreeG1):
         #    obs["right_hand_pressure"] = np.zeros(33, dtype=np.float32)
         #    obs["right_hand_temperature"] = np.zeros(33, dtype=np.float32)
 
-        # Injeção das pressões desmembradas
-        left_pressure = self._left_hand_state.pressure if self._left_hand_state is not None else np.zeros(33)
-        right_pressure = self._right_hand_state.pressure if self._right_hand_state is not None else np.zeros(33)
+        # ==========================================================
+        # PROCESSAMENTO DE PRESSÃO E TEMPERATURA COM AUTO-TARA
+        # ==========================================================
+        left_pressure_raw = self._left_hand_state.pressure if self._left_hand_state is not None else np.zeros(33)
+        right_pressure_raw = self._right_hand_state.pressure if self._right_hand_state is not None else np.zeros(33)
+        
+        # Puxa os dados de temperatura das mãos
+        left_temp = self._left_hand_state.temperature if self._left_hand_state is not None else np.zeros(33)
+        right_temp = self._right_hand_state.temperature if self._right_hand_state is not None else np.zeros(33)
 
+        # 1. Cria a Tara no primeiro frame que recebe dados reais
+        if self._left_pressure_baseline is None and np.max(left_pressure_raw) > 0:
+            self._left_pressure_baseline = left_pressure_raw.copy()
+        if self._right_pressure_baseline is None and np.max(right_pressure_raw) > 0:
+            self._right_pressure_baseline = right_pressure_raw.copy()
+
+        # 2. Subtrai a Tara para a força começar exatamente em Zero! 
+        # (O np.clip corta ruídos negativos caso o sensor puxe um pouco pra baixo solto)
+        if self._left_pressure_baseline is not None:
+            left_pressure = np.clip(left_pressure_raw - self._left_pressure_baseline, 0, None)
+        else:
+            left_pressure = np.zeros(33)
+
+        if self._right_pressure_baseline is not None:
+            right_pressure = np.clip(right_pressure_raw - self._right_pressure_baseline, 0, None)
+        else:
+            right_pressure = np.zeros(33)
+
+        # 3. Injeta a pressão calibrada para a IA (agora os números serão pequenos e limpos)
         for i in range(33):
             obs[f"left_hand_pressure_{i}"] = float(left_pressure[i])
             obs[f"right_hand_pressure_{i}"] = float(right_pressure[i])
         
         # ==========================================================
-        # DEBUG TEMPORÁRIO: Só printa se houver alguma pressão!
+        # DEBUG TEMPORÁRIO: Print Limpo com Força e Temperatura
         # ==========================================================
         max_l = np.max(left_pressure)
         max_r = np.max(right_pressure)
-        if max_l > 0.01 or max_r > 0.01:
-            print(f"👉 TATO DETECTADO! Pressão Esq: {max_l:.2f} | Pressão Dir: {max_r:.2f}")
+        max_lt = np.max(left_temp)
+        max_rt = np.max(right_temp)
+        
+        # Como calibramos para zero, podemos usar um limite baixo (ex: 200 de diferença no ADC) para registrar o toque real
+        if max_l > 200 or max_r > 200:
+            print(f"👉 TATO! Esq: Força {max_l:.0f} | {max_lt:.1f}°C  ---  Dir: Força {max_r:.0f} | {max_rt:.1f}°C")
         # ==========================================================
+        
         return obs
 
     def send_action(self, action: RobotAction) -> RobotAction:
