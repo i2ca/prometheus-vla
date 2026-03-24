@@ -94,15 +94,16 @@ class UnitreeG1Dex3Config(UnitreeG1Config):
                 ),
                 
                 # AS 3 LENTES TÉCNICAS (Baixa Resolução para o processamento ser imediato)
-                "d435i_depth": ZMQCameraConfig(
+                "head_camera_depth": ZMQCameraConfig(
                     server_address=self.robot_ip, port=5555, camera_name="d435i_depth", width=cam_width, height=cam_height
-                ),
-                "d435i_ir_left": ZMQCameraConfig(
-                    server_address=self.robot_ip, port=5555, camera_name="d435i_ir_left", width=cam_width, height=cam_height
-                ),
-                "d435i_ir_right": ZMQCameraConfig(
-                    server_address=self.robot_ip, port=5555, camera_name="d435i_ir_right", width=cam_width, height=cam_height
                 )
+                #,
+                #"d435i_ir_left": ZMQCameraConfig(
+                #    server_address=self.robot_ip, port=5555, camera_name="d435i_ir_left", width=cam_width, height=cam_height
+                #),
+                #"d435i_ir_right": ZMQCameraConfig(
+                #    server_address=self.robot_ip, port=5555, camera_name="d435i_ir_right", width=cam_width, height=cam_height
+                #)
             }
 
 
@@ -399,7 +400,7 @@ class UnitreeG1Dex3(UnitreeG1):
         # ==========================================================
         return obs
 
-        return obs
+        #return obs
 
     def send_action(self, action: RobotAction) -> RobotAction:
         """Send action to robot including hand commands."""
