@@ -11,13 +11,13 @@ from sim.sensor_utils import SensorServer, ImageUtils
 
 def start_real_robot_cameras():
     # ==========================================================
-    # CONFIGURAÇÕES DE RESOLUÇÃO HÍBRIDA
+    # CONFIGURAÇÕES DE RESOLUÇÃO
     # ==========================================================
-    # Câmera da cabeça (Visão do VR) -> HD para nitidez
-    HEAD_WIDTH, HEAD_HEIGHT = 1280, 720
+    # Câmera RGB da RealSense (Agora é a nossa head_camera oficial) -> HD
+    HEAD_WIDTH, HEAD_HEIGHT = 640, 480
     
-    # Câmeras da RealSense (Inteligência Artificial) -> Padrão
-    RS_WIDTH, RS_HEIGHT = 640, 480 
+    # Câmera de Profundidade (Depth)
+    DEPTH_WIDTH, DEPTH_HEIGHT = 640, 480 
     
     FPS = 30
 
@@ -27,11 +27,9 @@ def start_real_robot_cameras():
     pipeline = rs.pipeline()
     config = rs.config()
 
-    # Habilita as 4 lentes da RealSense com a resolução dela
-    config.enable_stream(rs.stream.color, RS_WIDTH, RS_HEIGHT, rs.format.bgr8, FPS)
-    config.enable_stream(rs.stream.depth, RS_WIDTH, RS_HEIGHT, rs.format.z16, FPS)
-    config.enable_stream(rs.stream.infrared, 1, RS_WIDTH, RS_HEIGHT, rs.format.y8, FPS) # IR Esquerdo
-    config.enable_stream(rs.stream.infrared, 2, RS_WIDTH, RS_HEIGHT, rs.format.y8, FPS) # IR Direito
+    # Habilita apenas RGB e Depth (Sem as lentes IR para economizar USB/CPU)
+    config.enable_stream(rs.stream.color, HEAD_WIDTH, HEAD_HEIGHT, rs.format.bgr8, FPS)
+    config.enable_stream(rs.stream.depth, DEPTH_WIDTH, DEPTH_HEIGHT, rs.format.z16, FPS)
 
     try:
         profile = pipeline.start(config)
@@ -40,32 +38,15 @@ def start_real_robot_cameras():
         depth_sensor = profile.get_device().first_depth_sensor()
         depth_scale = depth_sensor.get_depth_scale()
         
-        print(f"[RealSense D435i] 4 Lentes iniciadas em {RS_WIDTH}x{RS_HEIGHT}.")
+        print(f"[RealSense D435i] Iniciada com sucesso!")
+        print(f" -> RGB (head_camera): {HEAD_WIDTH}x{HEAD_HEIGHT} (Visão do VR)")
+        print(f" -> Depth (d435i_depth): {DEPTH_WIDTH}x{DEPTH_HEIGHT} (Visão da IA)")
     except Exception as e:
         print(f"[Erro RealSense] {e}")
         return
 
     # ==========================================================
-    # 2. INICIALIZA A CÂMERA DE FÁBRICA DO UNITREE G1 (VR)
-    # ==========================================================
-    head_cam_index = 0 
-    head_cap = cv2.VideoCapture(head_cam_index)
-    
-    if not head_cap.isOpened():
-        print(f"[Aviso] Câmera de fábrica (Index {head_cam_index}) não encontrada. Tente outro index.")
-    else:
-        # Força a câmera da cabeça a rodar em HD (720p)
-        head_cap.set(cv2.CAP_PROP_FRAME_WIDTH, HEAD_WIDTH)
-        head_cap.set(cv2.CAP_PROP_FRAME_HEIGHT, HEAD_HEIGHT)
-        head_cap.set(cv2.CAP_PROP_FPS, FPS)
-        
-        # Lê de volta para garantir que a câmera aceitou o comando HD
-        actual_w = head_cap.get(cv2.CAP_PROP_FRAME_WIDTH)
-        actual_h = head_cap.get(cv2.CAP_PROP_FRAME_HEIGHT)
-        print(f"[Unitree G1 Head] Câmera iniciada em {int(actual_w)}x{int(actual_h)} para o VR.")
-
-    # ==========================================================
-    # 3. INICIALIZA O SERVIDOR ZMQ
+    # 2. INICIALIZA O SERVIDOR ZMQ
     # ==========================================================
     server = SensorServer()
     server.start_server(port=5555)
@@ -73,39 +54,27 @@ def start_real_robot_cameras():
 
     try:
         while True:
-            # Puxa o frame da cabeça do G1 (HD)
-            ret, head_frame = head_cap.read()
-            if not ret:
-                # Manda tela preta do tamanho certo (HD) se falhar
-                head_frame = np.zeros((HEAD_HEIGHT, HEAD_WIDTH, 3), dtype=np.uint8)
-
-            # Puxa os frames da RealSense (Padrão 640x480)
+            # Puxa os frames sincronizados da RealSense
             frames = pipeline.wait_for_frames()
             color_frame = frames.get_color_frame()
             depth_frame = frames.get_depth_frame()
-            ir_left_frame = frames.get_infrared_frame(1)
-            ir_right_frame = frames.get_infrared_frame(2)
 
-            if not color_frame or not depth_frame or not ir_left_frame or not ir_right_frame:
+            if not color_frame or not depth_frame:
                 continue
 
             # ==========================================================
-            # TRATAMENTO DAS IMAGENS (Padrão LeRobot)
+            # TRATAMENTO DAS IMAGENS
             # ==========================================================
             
+            # RGB assume a identidade da head_camera
             img_rgb = np.asanyarray(color_frame.get_data())
 
+            # Profundidade (Convertendo para o formato visual de 3 canais)
             depth_raw = np.asanyarray(depth_frame.get_data())
             depth_meters = depth_raw * depth_scale
             depth_clipped = np.clip(depth_meters, 0.0, 3.0) 
             depth_8u = (depth_clipped * (255.0 / 3.0)).astype(np.uint8)
             img_depth = cv2.cvtColor(depth_8u, cv2.COLOR_GRAY2BGR) 
-
-            ir_left_raw = np.asanyarray(ir_left_frame.get_data())
-            img_ir_left = cv2.cvtColor(ir_left_raw, cv2.COLOR_GRAY2BGR)
-
-            ir_right_raw = np.asanyarray(ir_right_frame.get_data())
-            img_ir_right = cv2.cvtColor(ir_right_raw, cv2.COLOR_GRAY2BGR)
 
             # ==========================================================
             # EMPACOTAMENTO E ENVIO
@@ -114,18 +83,12 @@ def start_real_robot_cameras():
             
             message = {
                 "images": {
-                    "head_camera": ImageUtils.encode_image(head_frame),
-                    "d435i_rgb": ImageUtils.encode_image(img_rgb),
-                    "d435i_depth": ImageUtils.encode_image(img_depth),
-                    "d435i_ir_left": ImageUtils.encode_image(img_ir_left),
-                    "d435i_ir_right": ImageUtils.encode_image(img_ir_right)
+                    "head_camera": ImageUtils.encode_image(img_rgb),
+                    "d435i_depth": ImageUtils.encode_image(img_depth)
                 },
                 "timestamps": {
                     "head_camera": current_time,
-                    "d435i_rgb": current_time,
-                    "d435i_depth": current_time,
-                    "d435i_ir_left": current_time,
-                    "d435i_ir_right": current_time
+                    "d435i_depth": current_time
                 }
             }
 
@@ -136,8 +99,6 @@ def start_real_robot_cameras():
 
     finally:
         pipeline.stop()
-        if head_cap.isOpened():
-            head_cap.release()
         server.stop_server()
 
 if __name__ == "__main__":

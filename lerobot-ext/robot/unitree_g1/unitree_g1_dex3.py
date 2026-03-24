@@ -80,8 +80,8 @@ class UnitreeG1Dex3Config(UnitreeG1Config):
             # Hardware Real: Resolução máxima da Intel RealSense
             cam_width = 640
             cam_height = 480
-            cam2_width = 1280
-            cam2_height = 720
+            cam2_width = 640
+            cam2_height = 480
             
         # Adiciona as câmeras ZMQ ao LeRobot usando as variáveis dinâmicas
         if not self.cameras:
@@ -399,8 +399,6 @@ class UnitreeG1Dex3(UnitreeG1):
             print(f"👉 TATO DETECTADO! Pressão Esq: {max_l:.2f} | Pressão Dir: {max_r:.2f}")
         # ==========================================================
         return obs
-
-        #return obs
 
     def send_action(self, action: RobotAction) -> RobotAction:
         """Send action to robot including hand commands."""
