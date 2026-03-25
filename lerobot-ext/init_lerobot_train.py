@@ -6,20 +6,31 @@ Uses the provided YAML configuration to initialize the training session.
 import sys
 import os
 
-# 1. Register custom G1 modules into the global registry
+# 1. Garante que o Python enxergue a nova pasta 'train'
+current_dir = os.path.dirname(os.path.abspath(__file__))
+if current_dir not in sys.path:
+    sys.path.append(current_dir)
+
+# 2. Register custom G1 modules into the global registry
 try:
     import robot.unitree_g1
 except ImportError as e:
     print(f"\n[IMPORT ERROR]: Failed to load custom G1 modules: {e}")
     sys.exit(1)
 
-# Import the core training logic from the LeRobot library
-from lerobot.scripts.lerobot_train import main
+# 3. --- A MÁGICA ACONTECE AQUI ---
+# Importa o motor de treinamento TURBINADO do seu colega
+try:
+    from train.run_train import main
+except ImportError as e:
+    print(f"\n[IMPORT ERROR]: Não encontrei o motor customizado: {e}")
+    print("Verifique se a pasta 'train' existe e possui o arquivo '__init__.py'.")
+    sys.exit(1)
 
 def display_help():
     """Prints a professional usage guide for training."""
     print("\n" + "="*70)
-    print("LEROBOT TRAINING INTERFACE - UNITREE G1")
+    print("LEROBOT TRAINING INTERFACE - UNITREE G1 (CUSTOM ENGINE)")
     print("="*70)
     print("\nUSAGE:")
     print("  python init_lerobot_train.py --config_path=<PATH_TO_YAML_CONFIG> [OPTIONS]")
@@ -61,9 +72,9 @@ if __name__ == "__main__":
         print("Use '-h' or '--help' for usage instructions.")
         sys.exit(1)
 
-    print(f"[INFO]: Initializing LeRobot Training Pipeline...")
+    print(f"[INFO]: Initializing Custom LeRobot Training Pipeline...")
 
-    # 3. Inicia o processo de treinamento passando os argumentos direto!
+    # 3. Inicia o processo de treinamento passando os argumentos direto para o script do seu colega!
     try:
         sys.exit(main())
     except KeyboardInterrupt:

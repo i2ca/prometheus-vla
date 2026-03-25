@@ -1,0 +1,19 @@
+policy:
+  type: act
+  n_action_steps: 100
+  chunk_size: 100
+  # ESTA LINHA ABAIXO É A SOLUÇÃO:
+  push_to_hub: false
+
+dataset:
+  repo_id: lerobot/pusht
+
+env:
+  type: pusht
+
+# Parâmetros gerais
+batch_size: 8
+steps: 50000
+save_freq: 10000
+eval_freq: 5000
+save_checkpoint: true
