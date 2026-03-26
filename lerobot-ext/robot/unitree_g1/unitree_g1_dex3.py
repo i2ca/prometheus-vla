@@ -142,6 +142,8 @@ class UnitreeG1Dex3(UnitreeG1):
         # Command messages (initialized in connect)
         self._left_hand_msg = None
         self._right_hand_msg = None
+
+        self._last_action_time = time.time()
         
         # Use joint name constants from g1_utils
         self.left_hand_joint_names = LEFT_HAND_JOINT_NAMES
@@ -305,6 +307,34 @@ class UnitreeG1Dex3(UnitreeG1):
         else:
             logger.warning("Dex3 Hands not fully connected - hand state unavailable.")
 
+        logger.info("Iniciando Heartbeat Anti-Queda...")
+        self._heartbeat_thread = threading.Thread(target=self._heartbeat_worker, daemon=True)
+        self._heartbeat_thread.start()
+
+    def _heartbeat_worker(self):
+        """Mantém os motores rígidos quando o PC trava para salvar o episódio"""
+        while not self._hand_shutdown_event.is_set():
+            # Se passou mais de 0.05s (50ms) sem receber comando do LeRobot, o PC está salvando dados!
+            if time.time() - self._last_action_time > 0.05:
+                
+                # 1. Re-envia o comando de Corpo (Braços e Cintura) para segurar a posição
+                if hasattr(self, 'msg') and hasattr(self, 'lowcmd_publisher') and self.lowcmd_publisher is not None:
+                    try:
+                        self.lowcmd_publisher.Write(self.msg)
+                    except Exception:
+                        pass
+                
+                # 2. Re-envia o comando das Mãos (Dedos Dex3)
+                if self._left_hand_cmd_pub is not None and self._right_hand_cmd_pub is not None:
+                    try:
+                        self._left_hand_cmd_pub.Write(self._left_hand_msg)
+                        self._right_hand_cmd_pub.Write(self._right_hand_msg)
+                    except Exception:
+                        pass
+            
+            # Checa o pulso a cada 10 milissegundos
+            time.sleep(0.01)
+
     def disconnect(self):
         """Disconnect from robot body and hands."""
         # Signal hand thread to stop
@@ -426,9 +456,11 @@ class UnitreeG1Dex3(UnitreeG1):
         max_r = np.max(right_pressure)
         max_lt = np.max(left_temp)
         max_rt = np.max(right_temp)
+
+        tato_log = False
         
         # Como calibramos para zero, podemos usar um limite baixo (ex: 200 de diferença no ADC) para registrar o toque real
-        if max_l > 200 or max_r > 200:
+        if tato_log and (max_l > 200 or max_r > 200):
             print(f"👉 TATO! Esq: Força {max_l:.0f} | {max_lt:.1f}°C  ---  Dir: Força {max_r:.0f} | {max_rt:.1f}°C")
         # ==========================================================
         
@@ -436,6 +468,9 @@ class UnitreeG1Dex3(UnitreeG1):
 
     def send_action(self, action: RobotAction) -> RobotAction:
         """Send action to robot including hand commands."""
+
+        self._last_action_time = time.time()
+
         # Send body action
         super().send_action(action)
         

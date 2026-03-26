@@ -204,7 +204,6 @@ class UnitreeG1(Robot):
         self._ChannelSubscriber = ChannelSubscriber
 
         # Initialize DDS channel and simulation environment
-        # Initialize DDS channel and simulation environment
         if self.config.is_simulation:
             # Como o seu env.py já inicializa o canal internamente, 
             # podemos só chamar a função principal dele.
@@ -408,7 +407,7 @@ class UnitreeG1(Robot):
         # Select joints based on control mode
         joint_index = G1_29_JointArmIndex if self.config.control_mode == "upper_body" else G1_29_JointIndex
 
-        max_delta = 0.04  # Radianos por ciclo. (~5 rad/s a 250Hz). Ajuste conforme necessário.
+        max_delta = 0.08  # Radianos por ciclo. (~5 rad/s a 250Hz). Ajuste conforme necessário.
 
         for motor in joint_index:
             key = f"{motor.name}.q"
