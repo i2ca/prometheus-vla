@@ -268,11 +268,29 @@ class UnitreeG1(Robot):
         self.kp = np.array(self.config.kp, dtype=np.float32)
         self.kd = np.array(self.config.kd, dtype=np.float32)
 
+
+        #  Soltas as configurações para o Carmen Controla as pernas ou o LOCO
         for id in G1_29_JointIndex:
-            self.msg.motor_cmd[id].mode = 1
-            self.msg.motor_cmd[id].kp = self.kp[id.value]
-            self.msg.motor_cmd[id].kd = self.kd[id.value]
-            self.msg.motor_cmd[id].q = lowstate.motor_state[id.value].q
+            motor_name = id.name.lower()
+            
+            # Se estivermos no modo upper_body, DESLIGAMOS a força das pernas e cintura
+            if self.config.control_mode == "upper_body" and ('leg' in motor_name or 'waist' in motor_name):
+                self.msg.motor_cmd[id.value].mode = 0  # 0 = Motor livre para outro controlador (WBC/Joystick)
+                self.msg.motor_cmd[id.value].kp = 0.0
+                self.msg.motor_cmd[id.value].kd = 0.0
+                self.msg.motor_cmd[id.value].q = 0.0
+            else:
+                # Comportamento normal para os braços
+                self.msg.motor_cmd[id.value].mode = 1
+                self.msg.motor_cmd[id.value].kp = self.kp[id.value]
+                self.msg.motor_cmd[id.value].kd = self.kd[id.value]
+                self.msg.motor_cmd[id.value].q = lowstate.motor_state[id.value].q
+
+        #for id in G1_29_JointIndex:
+        #    self.msg.motor_cmd[id].mode = 1
+        #    self.msg.motor_cmd[id].kp = self.kp[id.value]
+        #    self.msg.motor_cmd[id].kd = self.kd[id.value]
+        #    self.msg.motor_cmd[id].q = lowstate.motor_state[id.value].q
 
     def disconnect(self):
         # Signal thread to stop and unblock any waits
@@ -467,10 +485,13 @@ class UnitreeG1(Robot):
         if default_positions is None:
             default_positions = np.array(self.config.default_positions, dtype=np.float32)
 
+        # SELECIONA OS MOTORES BASEADO NO MODO (Igual fizemos no send_action)
+        joint_index = G1_29_JointArmIndex if self.config.control_mode == "upper_body" else G1_29_JointIndex
+
         if self.config.is_simulation and self.sim_env is not None:
             self.sim_env.reset()
 
-            for motor in G1_29_JointIndex:
+            for motor in joint_index:
                 self.msg.motor_cmd[motor.value].q = default_positions[motor.value]
                 self.msg.motor_cmd[motor.value].qd = 0
                 self.msg.motor_cmd[motor.value].kp = self.kp[motor.value]
@@ -487,7 +508,7 @@ class UnitreeG1(Robot):
 
             # record current positions
             init_dof_pos = np.zeros(29, dtype=np.float32)
-            for motor in G1_29_JointIndex:
+            for motor in joint_index:
                 init_dof_pos[motor.value] = obs[f"{motor.name}.q"]
 
             # Interpolate to default position
@@ -496,7 +517,7 @@ class UnitreeG1(Robot):
 
                 alpha = step / num_steps
                 action_dict = {}
-                for motor in G1_29_JointIndex:
+                for motor in joint_index:
                     target_pos = default_positions[motor.value]
                     interp_pos = init_dof_pos[motor.value] * (1 - alpha) + target_pos * alpha
                     action_dict[f"{motor.name}.q"] = float(interp_pos)
