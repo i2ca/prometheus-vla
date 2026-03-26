@@ -3,14 +3,14 @@ dataset:
   repo_id: Mrwlker/get_the_kettle
   root: meu_dataset/get_the_kettle
   # ALERTA: Coloque aqui a lista dos seus episódios (ex: do 0 ao 15)
-  episodes: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
+  episodes: [0, 1, 2, 3, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
 
 # 2. DADOS DE VALIDAÇÃO: Os episódios da "Prova Surpresa"
 val_dataset:
   repo_id: Mrwlker/get_the_kettle
   root: meu_dataset/get_the_kettle
   # ALERTA: Coloque aqui 2 ou 3 episódios que NÃO estão na lista acima!
-  episodes: [16]
+  episodes: [16, 4]
 
 # 3. IA: Qual é o modelo neural que vai aprender
 policy:
@@ -24,7 +24,7 @@ output_dir: "train_output/get_the_kettle"
 steps: 50000
 batch_size: 4
 log_freq: 200
-save_freq: 500 # Aumentei para 10k para economizar HD (só salvar os importantes)
+save_freq: 10000 # Aumentei para 10k para economizar HD (só salvar os importantes)
 save_checkpoint: true
 
 # --- EVAL ---
