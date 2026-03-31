@@ -22,7 +22,7 @@ policy:
 # --- TREINO ---
 output_dir: "train_output/get_the_kettle"
 steps: 50000
-batch_size: 4
+batch_size: 16
 log_freq: 200
 save_freq: 10000 # Aumentei para 10k para economizar HD (só salvar os importantes)
 save_checkpoint: true

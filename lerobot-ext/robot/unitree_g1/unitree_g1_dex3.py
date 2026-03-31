@@ -125,9 +125,6 @@ class UnitreeG1Dex3(UnitreeG1):
         self._left_hand_state: HandState | None = None
         self._right_hand_state: HandState | None = None
 
-        # NOVO: Memória de Auto-Tara (Calibração para Zero dos sensores)
-        self._left_pressure_baseline = None
-        self._right_pressure_baseline = None
         
         # Threading control
         self._hand_shutdown_event = threading.Event()
@@ -379,6 +376,8 @@ class UnitreeG1Dex3(UnitreeG1):
         for i in range(33):
             features[f"left_hand_pressure_{i}"] = float
             features[f"right_hand_pressure_{i}"] = float
+            features[f"left_hand_temperature_{i}"] = float
+            features[f"right_hand_temperature_{i}"] = float
 
         return features
 
@@ -417,51 +416,42 @@ class UnitreeG1Dex3(UnitreeG1):
         #    obs["right_hand_temperature"] = np.zeros(33, dtype=np.float32)
 
         # ==========================================================
-        # PROCESSAMENTO DE PRESSÃO E TEMPERATURA COM AUTO-TARA
+        # 2. Grandezas Físicas Absolutas Brutas (Sem Tara)
         # ==========================================================
-        left_pressure_raw = self._left_hand_state.pressure if self._left_hand_state is not None else np.zeros(33)
-        right_pressure_raw = self._right_hand_state.pressure if self._right_hand_state is not None else np.zeros(33)
-        
-        # Puxa os dados de temperatura das mãos
-        left_temp = self._left_hand_state.temperature if self._left_hand_state is not None else np.zeros(33)
-        right_temp = self._right_hand_state.temperature if self._right_hand_state is not None else np.zeros(33)
-
-        # 1. Cria a Tara no primeiro frame que recebe dados reais
-        if self._left_pressure_baseline is None and np.max(left_pressure_raw) > 0:
-            self._left_pressure_baseline = left_pressure_raw.copy()
-        if self._right_pressure_baseline is None and np.max(right_pressure_raw) > 0:
-            self._right_pressure_baseline = right_pressure_raw.copy()
-
-        # 2. Subtrai a Tara para a força começar exatamente em Zero! 
-        # (O np.clip corta ruídos negativos caso o sensor puxe um pouco pra baixo solto)
-        if self._left_pressure_baseline is not None:
-            left_pressure = np.clip(left_pressure_raw - self._left_pressure_baseline, 0, None)
+        if self._left_hand_state is not None:
+            left_p = self._left_hand_state.pressure
+            left_t = self._left_hand_state.temperature
         else:
-            left_pressure = np.zeros(33)
-
-        if self._right_pressure_baseline is not None:
-            right_pressure = np.clip(right_pressure_raw - self._right_pressure_baseline, 0, None)
+            left_p = np.zeros(33, dtype=np.float32)
+            left_t = np.zeros(33, dtype=np.float32)
+            
+        if self._right_hand_state is not None:
+            right_p = self._right_hand_state.pressure
+            right_t = self._right_hand_state.temperature
         else:
-            right_pressure = np.zeros(33)
+            right_p = np.zeros(33, dtype=np.float32)
+            right_t = np.zeros(33, dtype=np.float32)
 
-        # 3. Injeta a pressão calibrada para a IA (agora os números serão pequenos e limpos)
+        # Injeta os 132 valores brutos no formato que o LeRobot consegue ler e gravar no Parquet
         for i in range(33):
-            obs[f"left_hand_pressure_{i}"] = float(left_pressure[i])
-            obs[f"right_hand_pressure_{i}"] = float(right_pressure[i])
-        
-        # ==========================================================
-        # DEBUG TEMPORÁRIO: Print Limpo com Força e Temperatura
-        # ==========================================================
-        max_l = np.max(left_pressure)
-        max_r = np.max(right_pressure)
-        max_lt = np.max(left_temp)
-        max_rt = np.max(right_temp)
+            obs[f"left_hand_pressure_{i}"] = float(left_p[i])
+            obs[f"right_hand_pressure_{i}"] = float(right_p[i])
+            obs[f"left_hand_temperature_{i}"] = float(left_t[i])
+            obs[f"right_hand_temperature_{i}"] = float(right_t[i])
 
+        # ==========================================================
+        # DEBUG TEMPORÁRIO
+        # ==========================================================
         tato_log = False
         
-        # Como calibramos para zero, podemos usar um limite baixo (ex: 200 de diferença no ADC) para registrar o toque real
-        if tato_log and (max_l > 200 or max_r > 200):
-            print(f"👉 TATO! Esq: Força {max_l:.0f} | {max_lt:.1f}°C  ---  Dir: Força {max_r:.0f} | {max_rt:.1f}°C")
+        if tato_log:
+            max_l = np.max(left_p)
+            max_r = np.max(right_p)
+            max_lt = np.max(left_t)
+            max_rt = np.max(right_t)
+            
+            if max_l > 200 or max_r > 200:
+                print(f"👉 TATO BRUTO! Esq: Força {max_l:.0f} | {max_lt:.1f}°C  ---  Dir: Força {max_r:.0f} | {max_rt:.1f}°C")
         # ==========================================================
         
         return obs
