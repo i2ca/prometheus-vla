@@ -63,7 +63,7 @@ class HandState:
 @dataclass
 class UnitreeG1Dex3Config(UnitreeG1Config):
     """Configuration for Unitree G1 with Dex3-1 hands."""
-    hand_kp: float = 1.5  # Position gain for hand motors
+    hand_kp: float = 0.8  # Position gain for hand motors
     hand_kd: float = 0.2  # Damping gain for hand motors
     hand_control_dt: float = 0.01  # 100 Hz control loop
     
@@ -94,9 +94,9 @@ class UnitreeG1Dex3Config(UnitreeG1Config):
                 ),
                 
                 # AS 3 LENTES TÉCNICAS (Baixa Resolução para o processamento ser imediato)
-                "head_camera_depth": ZMQCameraConfig(
-                    server_address=self.robot_ip, port=5555, camera_name="head_camera_depth", width=cam_width, height=cam_height
-                )
+                #"head_camera_depth": ZMQCameraConfig(
+                #    server_address=self.robot_ip, port=5555, camera_name="head_camera_depth", width=cam_width, height=cam_height
+                #)
                 #,
                 #"d435i_ir_left": ZMQCameraConfig(
                 #    server_address=self.robot_ip, port=5555, camera_name="d435i_ir_left", width=cam_width, height=cam_height
@@ -334,6 +334,35 @@ class UnitreeG1Dex3(UnitreeG1):
 
     def disconnect(self):
         """Disconnect from robot body and hands."""
+        
+        # 🛑 1. LÓGICA DE SOLTURA (LIMP MODE) PARA AS MÃOS
+        logger.info("Desligando motores das mãos (Limp Mode)...")
+        if self._left_hand_cmd_pub is not None and self._right_hand_cmd_pub is not None:
+            # Cria mensagens vazias
+            relax_left = self._left_hand_msg
+            relax_right = self._right_hand_msg
+            
+            # Força o Status 0 (Desligado) e Kp/Kd = 0 para todos os dedos
+            for joint_id in Dex3_1_Left_JointIndex:
+                relax_left.motor_cmd[joint_id].mode = (joint_id & 0x0F) | (0x00 << 4)
+                relax_left.motor_cmd[joint_id].kp = 0.0
+                relax_left.motor_cmd[joint_id].kd = 0.0
+                relax_left.motor_cmd[joint_id].tau = 0.0
+                
+            for joint_id in Dex3_1_Right_JointIndex:
+                relax_right.motor_cmd[joint_id].mode = (joint_id & 0x0F) | (0x00 << 4)
+                relax_right.motor_cmd[joint_id].kp = 0.0
+                relax_right.motor_cmd[joint_id].kd = 0.0
+                relax_right.motor_cmd[joint_id].tau = 0.0
+
+            # Dispara a mensagem 5 vezes seguidas para garantir que a placa Dex3 ouviu
+            # antes de cortarmos a rede ZMQ
+            for _ in range(5):
+                self._left_hand_cmd_pub.Write(relax_left)
+                self._right_hand_cmd_pub.Write(relax_right)
+                time.sleep(0.01)
+
+        # 🛑 2. ENCERRA AS THREADS NORMALMENTE
         # Signal hand thread to stop
         self._hand_shutdown_event.set()
         
@@ -343,7 +372,7 @@ class UnitreeG1Dex3(UnitreeG1):
             if self._hand_subscribe_thread.is_alive():
                 logger.warning("Hand subscribe thread did not stop cleanly")
         
-        # Disconnect body
+        # Disconnect body (O LeRobot cuida do resto)
         super().disconnect()
 
     @cached_property
@@ -376,8 +405,8 @@ class UnitreeG1Dex3(UnitreeG1):
         for i in range(33):
             features[f"left_hand_pressure_{i}"] = float
             features[f"right_hand_pressure_{i}"] = float
-            features[f"left_hand_temperature_{i}"] = float
-            features[f"right_hand_temperature_{i}"] = float
+            #features[f"left_hand_temperature_{i}"] = float
+            #features[f"right_hand_temperature_{i}"] = float
 
         return features
 
@@ -436,8 +465,8 @@ class UnitreeG1Dex3(UnitreeG1):
         for i in range(33):
             obs[f"left_hand_pressure_{i}"] = float(left_p[i])
             obs[f"right_hand_pressure_{i}"] = float(right_p[i])
-            obs[f"left_hand_temperature_{i}"] = float(left_t[i])
-            obs[f"right_hand_temperature_{i}"] = float(right_t[i])
+            #obs[f"left_hand_temperature_{i}"] = float(left_t[i])
+            #obs[f"right_hand_temperature_{i}"] = float(right_t[i])
 
         # ==========================================================
         # DEBUG TEMPORÁRIO

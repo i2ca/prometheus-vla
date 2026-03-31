@@ -4,7 +4,7 @@ import numpy as np
 from matplotlib.widgets import Button
 
 # Caminho exato apontando para o seu NOVO dataset da chaleira
-caminho_parquet = "meu_dataset/get_the_kettle/data/chunk-000/file-000.parquet"
+caminho_parquet = "meu_dataset/get_the_kettle2/data/chunk-000/file-000.parquet"
 
 print(f"Carregando o dataset na memória (isso pode levar alguns segundos)...")
 df = pd.read_parquet(caminho_parquet)

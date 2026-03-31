@@ -312,7 +312,7 @@ class XRG1Arm(Teleoperator):
                 punho_dir = np.clip((0.15 - dist_medio_dir) / 0.09, 0.0, 1.0)
                 
                 # Força extra em radianos aplicada aos dedos quando faz o punho
-                FORCA_PUNHO = 1.6 
+                FORCA_PUNHO = 0.8 
                 
                 # Mão Esquerda: Fecha o Dedo Médio (3, 4) e reforça o Indicador (5, 6)
                 left_hand_q[3] -= (FORCA_PUNHO * punho_esq)
