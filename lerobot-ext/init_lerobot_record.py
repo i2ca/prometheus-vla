@@ -52,46 +52,36 @@ def display_help():
     print("="*70 + "\n")
 
 if __name__ == "__main__":
-    # Capturamos os argumentos originais
     cli_args = sys.argv[:]
     
-    # 1. Help Check (supports -h, --help, and -help)
     help_flags = ["-h", "--help", "-help"]
     if any(flag in cli_args for flag in help_flags):
         display_help()
         sys.exit(0)
 
-    # 2. Resilient check for --config_path
     has_config_path = any("--config_path" in arg for arg in cli_args)
     if not has_config_path:
         print("\n[CRITICAL ERROR]: Mandatory '--config_path' argument is missing.")
         print("Use '-h' or '--help' for usage instructions.")
         sys.exit(1)
 
-    # 3. LÓGICA DE INTERCEPTAÇÃO E MODIFICAÇÃO
     force_sim = False
-    # Verificamos se o usuário pediu simulação
     for arg in cli_args:
         if arg in ["--sim", "--simulation=true"]:
             force_sim = True
-            # Removemos a flag customizada para não dar erro no parser do LeRobot
             if arg in sys.argv:
                 sys.argv.remove(arg)
 
     if force_sim:
-        # Injetamos a flag correta para sobrescrever o YAML
         sys.argv.append("--robot.is_simulation=true")
-        sys.argv.append("--teleop.is_simulation=true") # <-- AVISANDO O VR!
+        sys.argv.append("--teleop.is_simulation=true") 
         print("[INFO]: Overriding YAML config: robot and teleop is_simulation set to TRUE")
     else:
-        # Por padrão, assumimos robô real
         sys.argv.append("--robot.is_simulation=false")
-        sys.argv.append("--teleop.is_simulation=false") # <-- AVISANDO O VR!
+        sys.argv.append("--teleop.is_simulation=false") 
         print("[INFO]: Using Real Robot mode (robot and teleop is_simulation=false)")
 
-    # 4. Launch the recording process
     try:
-        # O main() do LeRobot agora recebe o sys.argv modificado
         sys.exit(main())
     except KeyboardInterrupt:
         print("\n[SYSTEM]: Data collection session terminated by user.")

@@ -220,6 +220,9 @@ class UnitreeG1(Robot):
             from env import make_env as make_local_env
             
             lista_de_cameras = list(self.config.cameras.keys())
+
+            if "head_camera_depth" not in lista_de_cameras:
+                lista_de_cameras.append("head_camera_depth")
             
             # Chamamos a sua função passando a lista de câmeras exigida!
             self.sim_env = make_local_env(cameras=lista_de_cameras)

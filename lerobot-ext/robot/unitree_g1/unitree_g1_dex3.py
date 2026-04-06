@@ -14,6 +14,7 @@ import numpy as np
 from functools import cached_property
 import os
 import sys
+import zmq
 import subprocess
 
 from .unitree_g1 import UnitreeG1, UnitreeG1Config
@@ -72,14 +73,10 @@ class UnitreeG1Dex3Config(UnitreeG1Config):
         if self.is_simulation:
             self.robot_ip = "127.0.0.1"
             # Simulação: Leve e rápida para não gargalar a GPU/CPU
-            cam_width = 640
-            cam_height = 480
             cam2_width = 640
             cam2_height = 480
         else:
             # Hardware Real: Resolução máxima da Intel RealSense
-            cam_width = 640
-            cam_height = 480
             cam2_width = 640
             cam2_height = 480
             
@@ -94,10 +91,10 @@ class UnitreeG1Dex3Config(UnitreeG1Config):
                 ),
                 
                 # AS 3 LENTES TÉCNICAS (Baixa Resolução para o processamento ser imediato)
-                #"head_camera_depth": ZMQCameraConfig(
-                #    server_address=self.robot_ip, port=5555, camera_name="head_camera_depth", width=cam_width, height=cam_height
-                #)
-                #,
+                "head_camera_depth": ZMQCameraConfig(
+                    server_address=self.robot_ip, port=5556, camera_name="head_camera_depth", width=cam2_width, height=cam2_height
+                )
+                ,
                 #"d435i_ir_left": ZMQCameraConfig(
                 #    server_address=self.robot_ip, port=5555, camera_name="d435i_ir_left", width=cam_width, height=cam_height
                 #),
@@ -141,6 +138,9 @@ class UnitreeG1Dex3(UnitreeG1):
         self._right_hand_msg = None
 
         self._last_action_time = time.time()
+
+        # Buffer da profundidade
+        self.latest_depth = np.zeros(768, dtype=np.float32)
         
         # Use joint name constants from g1_utils
         self.left_hand_joint_names = LEFT_HAND_JOINT_NAMES
@@ -209,8 +209,7 @@ class UnitreeG1Dex3(UnitreeG1):
     def connect(self, calibrate: bool = True) -> None:
         """Connect to robot body and hands."""
         # Connect body first
-        super().connect(calibrate=calibrate)
-    
+        super().connect(calibrate=calibrate)   
         
         # Skip hand connection in simulation mode
         if self.config.is_simulation:
@@ -289,6 +288,9 @@ class UnitreeG1Dex3(UnitreeG1):
             name="Dex3HandStateSubscriber"
         )
         self._hand_subscribe_thread.start()
+
+
+        self._last_obs = {}
         
         # Wait for first hand state
         timeout = 3.0
@@ -307,6 +309,7 @@ class UnitreeG1Dex3(UnitreeG1):
         logger.info("Iniciando Heartbeat Anti-Queda...")
         self._heartbeat_thread = threading.Thread(target=self._heartbeat_worker, daemon=True)
         self._heartbeat_thread.start()
+        
 
     def _heartbeat_worker(self):
         """Mantém os motores rígidos quando o PC trava para salvar o episódio"""
@@ -371,6 +374,11 @@ class UnitreeG1Dex3(UnitreeG1):
             self._hand_subscribe_thread.join(timeout=2.0)
             if self._hand_subscribe_thread.is_alive():
                 logger.warning("Hand subscribe thread did not stop cleanly")
+
+        if hasattr(self, 'depth_sub') and self.depth_sub:
+            self.depth_sub.close()
+        if hasattr(self, 'zmq_ctx') and self.zmq_ctx:
+            self.zmq_ctx.term()
         
         # Disconnect body (O LeRobot cuida do resto)
         super().disconnect()
@@ -391,98 +399,54 @@ class UnitreeG1Dex3(UnitreeG1):
 
     @cached_property
     def observation_features(self) -> dict[str, type | tuple]:
-        """Define observation space: body joints (based on control_mode) + hand joints.
-        
-        - full_body mode: 29 body + 14 hand = 43 joints
-        - upper_body mode: 14 arm + 14 hand = 28 joints
-        """
+        """Define observation space: body joints + hand joints + pressure sensors."""
         features = super().observation_features
         for name in self.left_hand_joint_names:
             features[f"{name}.q"] = float
         for name in self.right_hand_joint_names:
             features[f"{name}.q"] = float
 
+        # O LeRobot exige que os dados 1D sejam floats soltos para agrupá-los 
+        # automaticamente dentro da grande array "observation.state"
         for i in range(33):
             features[f"left_hand_pressure_{i}"] = float
             features[f"right_hand_pressure_{i}"] = float
-            #features[f"left_hand_temperature_{i}"] = float
-            #features[f"right_hand_temperature_{i}"] = float
 
         return features
 
     def get_observation(self) -> RobotObservation:
-        """Get observation including hand joint positions."""
-        obs = super().get_observation()
+        """Get observation including hand joint positions and pressure."""
+        obs = super().get_observation() or {}
         
-        # Add left hand state (default to 0.0 if hands not connected)
+        # Add left hand state 
         for i, name in enumerate(self.left_hand_joint_names):
             if self._left_hand_state is not None:
                 obs[f"{name}.q"] = float(self._left_hand_state.motor_state[i].q)
             else:
-                obs[f"{name}.q"] = 0.0  # Default when hands not available
+                obs[f"{name}.q"] = 0.0  
         
-        # Add right hand state (default to 0.0 if hands not connected)
+        # Add right hand state
         for i, name in enumerate(self.right_hand_joint_names):
             if self._right_hand_state is not None:
                 obs[f"{name}.q"] = float(self._right_hand_state.motor_state[i].q)
             else:
-                obs[f"{name}.q"] = 0.0  # Default when hands not available
-
-        # Add left hand sensors
-        #if self._left_hand_state is not None:
-        #    obs["left_hand_pressure"] = self._left_hand_state.pressure
-        #    obs["left_hand_temperature"] = self._left_hand_state.temperature
-        #else:
-        #    obs["left_hand_pressure"] = np.zeros(33, dtype=np.float32)
-        #    obs["left_hand_temperature"] = np.zeros(33, dtype=np.float32)
-        #    
-        # Add right hand sensors
-        #if self._right_hand_state is not None:
-        #    obs["right_hand_pressure"] = self._right_hand_state.pressure
-        #    obs["right_hand_temperature"] = self._right_hand_state.temperature
-        #else:
-        #    obs["right_hand_pressure"] = np.zeros(33, dtype=np.float32)
-        #    obs["right_hand_temperature"] = np.zeros(33, dtype=np.float32)
+                obs[f"{name}.q"] = 0.0  
 
         # ==========================================================
-        # 2. Grandezas Físicas Absolutas Brutas (Sem Tara)
+        # Grandezas Físicas Absolutas Brutas
         # ==========================================================
-        if self._left_hand_state is not None:
-            left_p = self._left_hand_state.pressure
-            left_t = self._left_hand_state.temperature
-        else:
+        if self.config.is_simulation:
             left_p = np.zeros(33, dtype=np.float32)
-            left_t = np.zeros(33, dtype=np.float32)
-            
-        if self._right_hand_state is not None:
-            right_p = self._right_hand_state.pressure
-            right_t = self._right_hand_state.temperature
-        else:
             right_p = np.zeros(33, dtype=np.float32)
-            right_t = np.zeros(33, dtype=np.float32)
+        else:
+            left_p = self._left_hand_state.pressure if self._left_hand_state else np.zeros(33, dtype=np.float32)
+            right_p = self._right_hand_state.pressure if self._right_hand_state else np.zeros(33, dtype=np.float32)
 
-        # Injeta os 132 valores brutos no formato que o LeRobot consegue ler e gravar no Parquet
+        # Injeta as pressões no dicionário como floats soltos para o LeRobot não dar erro de tupla
         for i in range(33):
             obs[f"left_hand_pressure_{i}"] = float(left_p[i])
             obs[f"right_hand_pressure_{i}"] = float(right_p[i])
-            #obs[f"left_hand_temperature_{i}"] = float(left_t[i])
-            #obs[f"right_hand_temperature_{i}"] = float(right_t[i])
-
-        # ==========================================================
-        # DEBUG TEMPORÁRIO
-        # ==========================================================
-        tato_log = False
-        
-        if tato_log:
-            max_l = np.max(left_p)
-            max_r = np.max(right_p)
-            max_lt = np.max(left_t)
-            max_rt = np.max(right_t)
-            
-            if max_l > 200 or max_r > 200:
-                print(f"👉 TATO BRUTO! Esq: Força {max_l:.0f} | {max_lt:.1f}°C  ---  Dir: Força {max_r:.0f} | {max_rt:.1f}°C")
-        # ==========================================================
-        
+                
         return obs
 
     def send_action(self, action: RobotAction) -> RobotAction:

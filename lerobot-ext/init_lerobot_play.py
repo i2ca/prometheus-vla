@@ -7,6 +7,8 @@ import time
 import argparse
 import torch
 import numpy as np
+import matplotlib.pyplot as plt
+import collections
 
 # Registra os módulos do G1
 try:
@@ -79,6 +81,8 @@ def main():
 
     print("\n[3] IA Pronta! A Rede Neural assumiu o controle. (Pressione Ctrl+C para parada de emergência)\n")
     
+    historico_chunks = []
+
     try:
         while True:
             start_time = time.time()
@@ -89,18 +93,31 @@ def main():
             # B. Prepara os dados para o formato PyTorch (Tradução para o LeRobot)
             torch_obs = {}
             
-            for cam_name in ["head_camera", "head_camera_depth"]:
+            # 1. CÂMERAS DINÂMICAS: Lê apenas as câmeras que estão descomentadas no unitree_g1_dex3.py
+            for cam_name in robot.cameras.keys(): 
                 if cam_name in obs:
+                    # O LeRobot espera formato (C, H, W) e valores entre 0.0 e 1.0
                     img = torch.from_numpy(obs[cam_name]).permute(2, 0, 1).float() / 255.0
+                    # Adiciona o prefixo exato que a rede neural espera
                     torch_obs[f"observation.images.{cam_name}"] = img.unsqueeze(0).to(device)
 
+            # 2. ESTADO DINÂMICO: Pega exatamente a lista de sensores ativos (pressão, temperatura, motores)
+            # Como você varre observation_features.keys(), ele se adapta sozinho se você esconder o braço direito!
             state_keys = [k for k in robot.observation_features.keys() if "camera" not in k]
+            
+            # Puxa os valores do dicionário de observação na mesma ordem
             state_values = [float(obs[k]) for k in state_keys]
+            
+            # Converte para o tensor 1D que a Inteligência Artificial consome
             torch_obs["observation.state"] = torch.tensor(state_values, dtype=torch.float32).unsqueeze(0).to(device)
 
             # C. A IA analisa a imagem e decide os ângulos
             with torch.inference_mode():
                 action = policy.select_action(torch_obs)
+
+                # 👈 NOVA LINHA: Roubamos os 100 passos do futuro que a IA previu!
+                raw_chunk = policy.predict_action_chunk(torch_obs)[0].cpu().numpy()
+                historico_chunks.append(raw_chunk)
                 
                 if isinstance(action, dict):
                     action = action["action"]
@@ -127,6 +144,30 @@ def main():
         print("\n[INFO] Parada solicitada pelo usuário. Desligando...")
     finally:
         robot.disconnect()
+        print("\n📊 Robô seguro! Gerando Gráfico de Incerteza do ACT...")
+        
+        if len(historico_chunks) > 0:
+            plt.figure(figsize=(12, 6))
+            
+            # Escolha qual motor você quer investigar. 
+            # 0 = Pitch do Ombro Esquerdo (Geralmente o que mais flutua no braço)
+            junta_alvo = 0 
+            
+            # Plota todas as sobreposições de futuro
+            for t, chunk in enumerate(historico_chunks):
+                # chunk tem shape [100, 28] (100 passos no futuro, 28 juntas)
+                eixo_tempo = range(t, t + len(chunk))
+                # Usamos alpha=0.05 para deixar as linhas transparentes. 
+                # Onde elas concordam, a cor fica forte. Onde discordam, fica uma nuvem borrada.
+                plt.plot(eixo_tempo, chunk[:, junta_alvo], color='blue', alpha=0.05)
+                
+            plt.title("Visão Interna da IA: Incerteza do Braço Esquerdo")
+            plt.xlabel("Passos de Tempo (Eixo X = Tempo contínuo)")
+            plt.ylabel("Ângulo Desejado do Motor (Radianos)")
+            plt.grid(True)
+            
+            print("Pressione X na janela do gráfico para encerrar o programa totalmente.")
+            plt.show()
 
 if __name__ == "__main__":
     main()
