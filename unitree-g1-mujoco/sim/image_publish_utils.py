@@ -13,7 +13,7 @@ class ImagePublishProcess:
     def __init__(self, camera_configs: Dict[str, Any], image_dt: float, zmq_port: int = 5555, start_method: str = "spawn", verbose: bool = False):
         self.camera_configs = camera_configs
         self.image_dt = image_dt
-        self.zmq_port = zmq_port
+        self.zmq_port = zmq_port # Porta 5555 configurada
         self.verbose = verbose
         self.shared_memory_blocks = {}
         self.shared_memory_info = {}
@@ -61,15 +61,21 @@ class ImagePublishProcess:
                 image = render_caches[image_key]
 
                 if 'depth' in camera_name.lower():
-                    # MATEMÁTICA CORRIGIDA: O simulador manda em METROS!
-                    # Limitamos até 3.0 metros para ter resolução de detalhes próximos
-                    depth_clipped = np.clip(image, 0.0, 3.0)
+                    # =========================================================
+                    # 🌟 MÁGICA DA COR (IDÊNTICA À REALSENSE D435i)
+                    # =========================================================
+                    # O simulador (MuJoCo) manda a distância em metros.
+                    # Limitamos até 2.0 metros (2000mm) para bater com a escala real.
+                    depth_clipped = np.clip(image, 0.0, 2.0)
                     
-                    # Converte de 3.0m para a escala de 8-bits (0 a 255)
-                    depth_8u = (depth_clipped * (255.0 / 3.0)).astype(np.uint8)
+                    # Converte de 2.0m para a escala de 8-bits (0 a 255)
+                    depth_8bit = (depth_clipped * (255.0 / 2.0)).astype(np.uint8)
                     
-                    # Clona para 3 canais pro LeRobot achar que é uma imagem normal
-                    processed_img = cv2.cvtColor(depth_8u, cv2.COLOR_GRAY2BGR)
+                    # Aplica o mapa de calor (Vermelho = perto, Azul = longe)
+                    depth_colormap = cv2.applyColorMap(depth_8bit, cv2.COLORMAP_JET)
+                    
+                    # Converte BGR (gerado pelo OpenCV) para RGB para manter o padrão LeRobot
+                    processed_img = cv2.cvtColor(depth_colormap, cv2.COLOR_BGR2RGB)
                         
                 elif 'ir_' in camera_name.lower():
                     if len(image.shape) == 3 and image.shape[2] == 3:
@@ -80,6 +86,7 @@ class ImagePublishProcess:
                         
                 else:
                     if len(image.shape) == 3 and image.shape[2] == 3:
+                        # Convertendo a imagem normal RGB para BGR para o OpenCV empacotar certo
                         processed_img = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
                     else:
                         processed_img = image

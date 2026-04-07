@@ -28,8 +28,7 @@ class CameraViewer:
         """Decode and process image based on camera type"""
         if isinstance(img_data, str):
             try:
-                # Como padronizamos tudo para o formato do LeRobot (JPG 8-bits 3-canais),
-                # usamos decode_image para TODAS as lentes, incluindo Depth!
+                # O simulador e a câmera real agora mandam TUDO em JPG 8-bits 3-canais (RGB)
                 img = ImageUtils.decode_image(img_data)
             except Exception:
                 return None
@@ -41,12 +40,13 @@ class CameraViewer:
         if img is None or not isinstance(img, np.ndarray):
             return None
 
+        # ==========================================================
         # RENDERIZAÇÃO ULTRA-RÁPIDA (OpenCV)
-        if 'depth' in cam_name.lower():
-            # A imagem já chega padronizada (0-255). 
-            # Isolamos apenas 1 canal (Grayscale) para o mapa de calor não dar erro.
-            gray = img[:, :, 0]
-            img_out = cv2.applyColorMap(gray, cv2.COLORMAP_JET)
+        # ==========================================================
+        # Como a imagem (tanto RGB quanto Depth) já vem colorida e pronta da fonte, 
+        # nós só precisamos inverter de RGB (Padrão IA) para BGR (Padrão Monitor/OpenCV).
+        if len(img.shape) == 3 and img.shape[2] == 3:
+            img_out = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
         else:
             img_out = img
             
@@ -86,7 +86,7 @@ class CameraViewer:
                     if img_bgr is None:
                         continue
 
-                    # Se for a câmera HD do VR, encolhe pela metade só para caber no monitor
+                    # Se for a câmera HD, encolhe pela metade só para caber melhor na tela do PC
                     if cam_name == "head_camera":
                         img_bgr = cv2.resize(img_bgr, (640, 360))
                     
