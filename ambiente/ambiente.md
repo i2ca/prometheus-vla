@@ -132,7 +132,6 @@ Ambiente restaurado com sucesso, pronto para uso em:
 
 * 🤖 Prometheus-VLA
 * 🧪 Simulação com Unitree G1
-* 🧠 Desenvolvimento em ROS / Python
 
 ---
 
