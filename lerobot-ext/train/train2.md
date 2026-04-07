@@ -1,54 +1,5 @@
 <html>
 <head>
-<style>
-    body {
-        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        line-height: 1.6;
-        color: #333;
-        max-width: 1000px;
-        margin: 0 auto;
-        padding: 20px;
-        background-color: #fcfcfc;
-    }
-    h1 {
-        color: #2c3e50;
-        border-bottom: 2px solid #3498db;
-        padding-bottom: 10px;
-    }
-    h2 {
-        color: #2980b9;
-        margin-top: 30px;
-    }
-    h3 {
-        color: #16a085;
-    }
-    .code-block {
-        background-color: #2b2b2b;
-        color: #f8f8f2;
-        padding: 15px;
-        border-radius: 8px;
-        font-family: 'Courier New', Courier, monospace;
-        overflow-x: auto;
-    }
-    .highlight {
-        background-color: #e8f4f8;
-        border-left: 4px solid #3498db;
-        padding: 10px 15px;
-        margin: 20px 0;
-    }
-    .important {
-        background-color: #fff3f3;
-        border-left: 4px solid #e74c3c;
-        padding: 10px 15px;
-        margin: 20px 0;
-    }
-    ul {
-        margin-bottom: 20px;
-    }
-    li {
-        margin-bottom: 8px;
-    }
-</style>
 </head>
 <body>
 
