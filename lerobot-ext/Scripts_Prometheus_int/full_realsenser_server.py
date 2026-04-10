@@ -24,26 +24,29 @@ def start_real_robot_cameras():
     pipeline = rs.pipeline()
     config = rs.config()
 
+    config.enable_device('327122071538') # Serial do Prometheus
+
     config.enable_stream(rs.stream.color, HEAD_WIDTH, HEAD_HEIGHT, rs.format.bgr8, FPS)
     config.enable_stream(rs.stream.depth, DEPTH_WIDTH, DEPTH_HEIGHT, rs.format.z16, FPS)
 
     try:
         profile = pipeline.start(config)
-        depth_sensor = profile.get_device().first_depth_sensor()
-        depth_scale = depth_sensor.get_depth_scale()
         
-        print(f"[RealSense D435i] Iniciada com sucesso!")
-        print(f" -> RGB (head_camera): {HEAD_WIDTH}x{HEAD_HEIGHT} (Visão do VR)")
-        print(f" -> Depth (head_camera_depth): {DEPTH_WIDTH}x{DEPTH_HEIGHT} (Visão em Cores da IA)")
+        # ==========================================================
+        # 🚀 O PULO DO GATO: FORÇAR 30 FPS (DESATIVAR PRIORIDADE DE EXPOSIÇÃO)
+        # ==========================================================
+        # Pegamos o sensor de cor (geralmente índice 1)
+        color_sensor = profile.get_device().query_sensors()[1]
+        if color_sensor.supports(rs.option.auto_exposure_priority):
+            # 0 desativa a prioridade, forçando a câmera a manter os 30 FPS constantes
+            color_sensor.set_option(rs.option.auto_exposure_priority, 0)
+        
+        print(f"[RealSense D435i] Iniciada com sucesso a {FPS} FPS fixos!")
     except Exception as e:
         print(f"[Erro RealSense] {e}")
         return
 
-    # ==========================================================
-    # 2. INICIALIZA O SERVIDOR ZMQ
-    # ==========================================================
     server = SensorServer()
-    # Enviamos TUDO pela mesma porta agora
     server.start_server(port=5555)
 
     align_to = rs.stream.color
@@ -52,13 +55,12 @@ def start_real_robot_cameras():
     print("[ZMQ] Servidor de Visão ativo na porta 5555. Aguardando LeRobot...")
 
     try:
-        time.sleep(2.0)
-        
+        # Loop otimizado
         while True:
+            # Reduzimos o timeout para 1000ms para o script não ficar "preso"
             try:
-                frames = pipeline.wait_for_frames(timeout_ms=2000)
+                frames = pipeline.wait_for_frames(timeout_ms=1000)
             except RuntimeError:
-                print("[Aviso] Câmera engasgou (Timeout). Tentando novamente...")
                 continue
 
             aligned_frames = align.process(frames)
@@ -72,34 +74,31 @@ def start_real_robot_cameras():
             img_bgr = np.asanyarray(color_frame.get_data())
             img_rgb = cv2.cvtColor(img_bgr, cv2.COLOR_BGR2RGB)
 
-            # --- TRATAMENTO DEPTH (A MÁGICA DA COR) ---
+            # --- TRATAMENTO DEPTH (CORRIGIDO PARA IA) ---
             depth_raw = np.asanyarray(depth_frame.get_data())
-            # Convertemos a profundidade crua (16-bit) para uma escala de 8-bit (0-255).
-            # O alpha=255.0/2000.0 significa que o alcance ideal é até 2 metros (2000mm).
-            # Tudo além de 2m ficará com a mesma cor "de fundo".
-            depth_8bit = cv2.convertScaleAbs(depth_raw, alpha=255.0 / 2000.0)
             
-            # Aplica o mapa de calor (Vermelho = perto, Azul = longe)
-            depth_colormap = cv2.applyColorMap(depth_8bit, cv2.COLORMAP_JET)
-            # Converte BGR para RGB para o LeRobot receber as cores corretas
-            depth_rgb = cv2.cvtColor(depth_colormap, cv2.COLOR_BGR2RGB)
+            # 1. Corta tudo acima de 2 metros (foca na manipulação)
+            depth_clipped = np.clip(depth_raw, 0, 2000)
+            
+            # 2. Converte metricamente para 8-bits (escala de cinza linear)
+            depth_8bit = (depth_clipped * (255.0 / 2000.0)).astype(np.uint8)
+            
+            # 3. Replica o canal cinza 3 vezes (R=Depth, G=Depth, B=Depth)
+            # Sem Colormap! Apenas cinza triplicado para o codec MP4 aceitar.
+            depth_3c = cv2.cvtColor(depth_8bit, cv2.COLOR_GRAY2RGB)
 
-            # ==========================================================
-            # EMPACOTAMENTO E ENVIO
-            # ==========================================================
+            # --- ENVIO ---
             current_time = time.time()
-            
             message = {
                 "images": {
                     "head_camera": ImageUtils.encode_image(img_rgb),
-                    "head_camera_depth": ImageUtils.encode_image(depth_rgb), # O LeRobot entende isso nativamente!
+                    "head_camera_depth": ImageUtils.encode_image(depth_3c), # Envia a imagem cinza corrigida
                 },
                 "timestamps": {
                     "head_camera": current_time,
                     "head_camera_depth": current_time,
                 }
             }
-
             server.send_message(message)
 
     except KeyboardInterrupt:

@@ -295,6 +295,12 @@ class UnitreeG1(Robot):
         #    self.msg.motor_cmd[id].kd = self.kd[id.value]
         #    self.msg.motor_cmd[id].q = lowstate.motor_state[id.value].q
 
+    def reset(self, default_positions: list[float] | None = None, **kwargs):
+        # Reseta o corpo (braços) – isso já existe na classe pai
+        super().reset(default_positions=default_positions, **kwargs)
+        # Reseta as mãos
+        self.reset_hands(default_positions)
+
     def disconnect(self):
         # Signal thread to stop and unblock any waits
         self._shutdown_event.set()
@@ -386,9 +392,6 @@ class UnitreeG1(Robot):
         for cam_name, cam in self._cameras.items():
             obs[cam_name] = cam.async_read()
 
-        # Cameras - read images from ZMQ cameras
-        #for cam_name, cam in self._cameras.items():
-        #    obs[f"observation.images.{cam_name}"] = cam.async_read()
         
         return obs
 

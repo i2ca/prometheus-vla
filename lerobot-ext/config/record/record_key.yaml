@@ -1,5 +1,6 @@
 robot:
   type: unitree_g1_dex3
+  control_mode: "upper_body"
 
 teleop:
   type: keyboard_g1_arm
@@ -7,7 +8,7 @@ teleop:
 dataset:
   repo_id: Mrwlker/teste3
   root: "meu_dataset/teste3"
-  push_to_hub: false
+  push_to_hub: true
   single_task: "teste3"
   vcodec: "h264"
 

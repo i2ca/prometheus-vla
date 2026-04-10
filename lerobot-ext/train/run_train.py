@@ -231,6 +231,15 @@ def train(cfg: CustomTrainPipelineConfig, accelerator: Accelerator | None = None
         rename_map=cfg.rename_map,
     )
 
+    # =========================================================
+    # --- MONKEY PATCH DO ACT-D (INJEÇÃO GEOMÉTRICA 3D) ---
+    # =========================================================
+    from act_d_injector import inject_act_d
+    import torch
+    _device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    inject_act_d(policy, device=_device)
+    # =========================================================
+
     if cfg.peft is not None:
         logging.info("Using PEFT! Wrapping model.")
         peft_cli_overrides = dataclasses.asdict(cfg.peft)

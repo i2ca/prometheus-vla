@@ -5,6 +5,7 @@ Uses the provided YAML configuration to initialize the recording session.
 
 import sys
 import os
+import logging
 
 # 1. Register custom G1 modules into the global registry
 try:
@@ -17,6 +18,16 @@ except ImportError as e:
 # Import the core recording logic from the LeRobot library
 from lerobot.scripts.lerobot_record import main
 
+# ==========================================================
+# FILTRO DE LOG: Ignora o aviso de FPS lento
+# ==========================================================
+class IgnoreFPSWarningFilter(logging.Filter):
+    def filter(self, record):
+        # Verifica se a mensagem contém o aviso de lentidão do loop
+        if record.getMessage() and "Record loop is running slower" in record.getMessage():
+            return False # False = Bloqueia a mensagem de ir para o terminal
+        return True      # True = Permite qualquer outra mensagem
+
 def display_help():
     """Prints a professional usage guide for data collection."""
     print("\n" + "="*70)
@@ -28,6 +39,7 @@ def display_help():
     print("  --config_path     Path to the recording YAML configuration file.")
     print("  --sim             Short flag to force simulation mode.")
     print("  --simulation=true Force simulation mode.")
+    print("  --debug           Mostra os avisos de queda de FPS (Record loop is running slower).")
     print("  -h, --help        Show this help message and exit.")
     
     # --- LISTAGEM DINÂMICA DOS ARQUIVOS YAML ---
@@ -65,13 +77,21 @@ if __name__ == "__main__":
         print("Use '-h' or '--help' for usage instructions.")
         sys.exit(1)
 
+    # Verifica os argumentos customizados
     force_sim = False
+    is_debug = False
+
     for arg in cli_args:
         if arg in ["--sim", "--simulation=true"]:
             force_sim = True
             if arg in sys.argv:
                 sys.argv.remove(arg)
+        elif arg == "--debug":
+            is_debug = True
+            if arg in sys.argv:
+                sys.argv.remove(arg)
 
+    # Aplica o modo de simulação
     if force_sim:
         sys.argv.append("--robot.is_simulation=true")
         sys.argv.append("--teleop.is_simulation=true") 
@@ -80,6 +100,15 @@ if __name__ == "__main__":
         sys.argv.append("--robot.is_simulation=false")
         sys.argv.append("--teleop.is_simulation=false") 
         print("[INFO]: Using Real Robot mode (robot and teleop is_simulation=false)")
+
+    # Aplica o filtro de FPS se não estiver em modo debug
+    if not is_debug:
+        # Adiciona o filtro nos loggers principais e no específico do LeRobot
+        logging.getLogger().addFilter(IgnoreFPSWarningFilter())
+        logging.getLogger("lerobot").addFilter(IgnoreFPSWarningFilter())
+        print("[INFO]: FPS drop warnings are SUPPRESSED. Use --debug to view them.")
+    else:
+        print("[DEBUG]: FPS drop warnings are ENABLED.")
 
     try:
         sys.exit(main())

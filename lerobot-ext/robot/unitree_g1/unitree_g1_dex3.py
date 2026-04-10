@@ -14,8 +14,8 @@ import numpy as np
 from functools import cached_property
 import os
 import sys
-import zmq
 import subprocess
+
 
 from .unitree_g1 import UnitreeG1, UnitreeG1Config
 from lerobot.robots.config import RobotConfig
@@ -43,6 +43,7 @@ from lerobot.processor import RobotAction, RobotObservation
 logger = logging.getLogger(__name__)
 
 
+
 @dataclass
 class HandMotorState:
     """State of a single hand motor."""
@@ -66,7 +67,7 @@ class UnitreeG1Dex3Config(UnitreeG1Config):
     """Configuration for Unitree G1 with Dex3-1 hands."""
     hand_kp: float = 0.8  # Position gain for hand motors
     hand_kd: float = 0.2  # Damping gain for hand motors
-    hand_control_dt: float = 0.01  # 100 Hz control loop
+    hand_control_dt: float = 0.005  # 100 Hz control loop
     
     def __post_init__(self):
         # LÓGICA DE RESOLUÇÃO DINÂMICA
@@ -79,6 +80,7 @@ class UnitreeG1Dex3Config(UnitreeG1Config):
             # Hardware Real: Resolução máxima da Intel RealSense
             cam2_width = 640
             cam2_height = 480
+
             
         # Adiciona as câmeras ZMQ ao LeRobot usando as variáveis dinâmicas
         if not self.cameras:
@@ -146,7 +148,52 @@ class UnitreeG1Dex3(UnitreeG1):
         self.left_hand_joint_names = LEFT_HAND_JOINT_NAMES
         self.right_hand_joint_names = RIGHT_HAND_JOINT_NAMES
 
+    def reset_hands(self, default_positions: list[float] | None = None):
+        """Move as mãos para a posição inicial (padrão: totalmente abertas)."""
+        if default_positions is None:
+            # Define posição aberta para cada junta da mão (valores típicos para Dex3-1)
+            # Ajuste conforme a pose usada na coleta de dados
+            default_left = np.zeros(Dex3_Num_Motors)
+            default_right = np.zeros(Dex3_Num_Motors)
+            # Exemplo: abrir completamente (cada junta tem limites diferentes, use 0.0 como referência)
+            # Se seu dataset usa valores específicos, carregue de config.default_hand_positions
+        else:
+            default_left = default_positions[:Dex3_Num_Motors]
+            default_right = default_positions[Dex3_Num_Motors:]
+
+        # Aplica suavemente (interpolação linear) para evitar saltos
+        total_time = 2.0
+        dt = self.config.hand_control_dt
+        steps = int(total_time / dt)
+
+        # Obtém posições atuais
+        left_current = np.zeros(Dex3_Num_Motors)
+        right_current = np.zeros(Dex3_Num_Motors)
+        if self._left_hand_state:
+            left_current = [s.q for s in self._left_hand_state.motor_state]
+        if self._right_hand_state:
+            right_current = [s.q for s in self._right_hand_state.motor_state]
+
+        for step in range(steps):
+            alpha = step / steps
+            left_q = left_current * (1 - alpha) + default_left * alpha
+            right_q = right_current * (1 - alpha) + default_right * alpha
+
+            # Prepara ação das mãos
+            action = {}
+            for i, name in enumerate(self.left_hand_joint_names):
+                action[f"{name}.q"] = float(left_q[i])
+            for i, name in enumerate(self.right_hand_joint_names):
+                action[f"{name}.q"] = float(right_q[i])
+
+            self.send_action(action)  # envia apenas as mãos (as pernas já estão em limp)
+            time.sleep(dt)
+
+        logger.info("Mãos resetadas para a posição inicial.")
+
     def _subscribe_hand_state(self):
+        import json
+        import zmq
         """
         Background thread that polls hand state via DDS at ~100Hz.
         Similar to _subscribe_motor_state() in UnitreeG1.
@@ -154,52 +201,56 @@ class UnitreeG1Dex3(UnitreeG1):
         while not self._hand_shutdown_event.is_set():
             start_time = time.time()
             
-            # Read left hand state
+            # --- 1. LÊ OS MOTORES (VIA SDK NORMAL) ---
             left_msg = self._left_hand_state_sub.Read()
             if left_msg is not None:
+                # SALVA a pressão antiga para o HandState() novo não zerar tudo!
+                old_p = self._left_hand_state.pressure if self._left_hand_state else np.zeros(33, dtype=np.float32)
+                
                 left_state = HandState()
                 for idx, joint_id in enumerate(Dex3_1_Left_JointIndex):
                     left_state.motor_state[idx].q = left_msg.motor_state[joint_id].q
-                #self._left_hand_state = left_state
-
-                # --- LÓGICA DE SENSORES EXTRAÍDA DO robot_hand_unitree.py ---
-                idx = 0
-                has_sensors = len(left_msg.press_sensor_state) > 0
-                for area_idx, id in enumerate(Dex3_1_Left_PressureTemperatureSensors):
-                    for sensor_idx in sensor_index[id]:
-                        # Proteção: verifica se o simulador/robô mandou os sensores
-                        if has_sensors and area_idx < len(left_msg.press_sensor_state):
-                            try:
-                                left_state.pressure[idx] = left_msg.press_sensor_state[area_idx].pressure[sensor_idx]
-                                left_state.temperature[idx] = left_msg.press_sensor_state[area_idx].temperature[sensor_idx]
-                            except IndexError:
-                                pass # Ignora se o array interno do sensor for menor que o esperado
-                        idx += 1
                 
+                left_state.pressure = old_p # Restaura a pressão
                 self._left_hand_state = left_state
             
-            # Read right hand state
             right_msg = self._right_hand_state_sub.Read()
             if right_msg is not None:
+                old_p = self._right_hand_state.pressure if self._right_hand_state else np.zeros(33, dtype=np.float32)
+                
                 right_state = HandState()
                 for idx, joint_id in enumerate(Dex3_1_Right_JointIndex):
                     right_state.motor_state[idx].q = right_msg.motor_state[joint_id].q
-                #self._right_hand_state = right_state
-
-                # --- LÓGICA DE SENSORES EXTRAÍDA DO robot_hand_unitree.py ---
-                idx = 0
-                has_sensors = len(right_msg.press_sensor_state) > 0
-                for area_idx, id in enumerate(Dex3_1_Right_PressureTemperatureSensors):
-                    for sensor_idx in sensor_index[id]:
-                        if has_sensors and area_idx < len(right_msg.press_sensor_state):
-                            try:
-                                right_state.pressure[idx] = right_msg.press_sensor_state[area_idx].pressure[sensor_idx]
-                                right_state.temperature[idx] = right_msg.press_sensor_state[area_idx].temperature[sensor_idx]
-                            except IndexError:
-                                pass
-                        idx += 1
                 
+                right_state.pressure = old_p # Restaura a pressão
                 self._right_hand_state = right_state
+
+            # --- 2. LÊ A PRESSÃO (VIA ZMQ PURO - O QUE FUNCIONOU NO TESTE) ---
+            if hasattr(self, '_pressure_socket') and self._pressure_socket:
+                try:
+                    while True: # Drena todas as mensagens acumuladas
+                        payload = self._pressure_socket.recv(zmq.NOBLOCK)
+                        msg_json = json.loads(payload.decode("utf-8"))
+                        
+                        data = msg_json.get("data", {})
+                        side = data.get("side", "")
+                        sensors = data.get("press_sensor_state", [])
+                        
+                        if sensors:
+                            # Achata a lista como o LeRobot exige
+                            flat_p = []
+                            for area in sensors:
+                                flat_p.extend([float(x) for x in area.get("pressure", [])])
+                            while len(flat_p) < 33:
+                                flat_p.append(0.0)
+                            
+                            # Atualiza direto no estado atual
+                            if side == "left" and self._left_hand_state:
+                                self._left_hand_state.pressure = np.array(flat_p[:33], dtype=np.float32)
+                            elif side == "right" and self._right_hand_state:
+                                self._right_hand_state.pressure = np.array(flat_p[:33], dtype=np.float32)
+                except zmq.Again:
+                    pass # Fila de pressão lida completamente
             
             # Maintain control rate
             elapsed = time.time() - start_time
@@ -280,8 +331,19 @@ class UnitreeG1Dex3(UnitreeG1):
             self._right_hand_msg.motor_cmd[joint_id].mode = mode
             self._right_hand_msg.motor_cmd[joint_id].kp = kp
             self._right_hand_msg.motor_cmd[joint_id].kd = kd
+
+        # ==========================================================
+        # 💉 INJEÇÃO ZMQ PURA: AQUI É O LUGAR CORRETO!
+        # ==========================================================
+        import zmq
+        self._pure_zmq_ctx = zmq.Context.instance()
+        self._pressure_socket = self._pure_zmq_ctx.socket(zmq.SUB)
+        self._pressure_socket.connect(f"tcp://{self.config.robot_ip}:6002")
+        self._pressure_socket.setsockopt_string(zmq.SUBSCRIBE, "")
+        logger.info("📡 [ZMQ Puro] Pescador de Pressão conectado na porta 6002!")
+        # ==========================================================
         
-        # Start hand state subscription thread
+        # Start hand state subscription thread (Isto já está aí)
         self._hand_subscribe_thread = threading.Thread(
             target=self._subscribe_hand_state, 
             daemon=True,
@@ -406,11 +468,6 @@ class UnitreeG1Dex3(UnitreeG1):
         for name in self.right_hand_joint_names:
             features[f"{name}.q"] = float
 
-        # O LeRobot exige que os dados 1D sejam floats soltos para agrupá-los 
-        # automaticamente dentro da grande array "observation.state"
-        for i in range(33):
-            features[f"left_hand_pressure_{i}"] = float
-            features[f"right_hand_pressure_{i}"] = float
 
         return features
 
@@ -430,22 +487,18 @@ class UnitreeG1Dex3(UnitreeG1):
             if self._right_hand_state is not None:
                 obs[f"{name}.q"] = float(self._right_hand_state.motor_state[i].q)
             else:
-                obs[f"{name}.q"] = 0.0  
+                obs[f"{name}.q"] = 0.0
 
-        # ==========================================================
-        # Grandezas Físicas Absolutas Brutas
-        # ==========================================================
-        if self.config.is_simulation:
+        if self._left_hand_state is not None:
+            left_p = self._left_hand_state.pressure
+            right_p = self._right_hand_state.pressure
+        else:
             left_p = np.zeros(33, dtype=np.float32)
             right_p = np.zeros(33, dtype=np.float32)
-        else:
-            left_p = self._left_hand_state.pressure if self._left_hand_state else np.zeros(33, dtype=np.float32)
-            right_p = self._right_hand_state.pressure if self._right_hand_state else np.zeros(33, dtype=np.float32)
 
-        # Injeta as pressões no dicionário como floats soltos para o LeRobot não dar erro de tupla
-        for i in range(33):
-            obs[f"left_hand_pressure_{i}"] = float(left_p[i])
-            obs[f"right_hand_pressure_{i}"] = float(right_p[i])
+        # Injeta no dicionário 'obs' para o init_record pescar
+        obs["left_hand_pressure"] = left_p.astype(np.float32)
+        obs["right_hand_pressure"] = right_p.astype(np.float32)
                 
         return obs
 
