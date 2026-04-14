@@ -1,70 +1,86 @@
 import types
 import torch
 import torch.nn as nn
-from depth_encoder import PointNetEncoder, depth_to_pointcloud
+from train.depth_encoder import PointNetEncoder, depth_to_pointcloud
+
+class FusedProjector(nn.Module):
+    def __init__(self, original_proj):
+        super().__init__()
+        self.original_proj = original_proj
+        self.features_3d = 0
+        self.features_pressure = 0
+
+    def forward(self, robot_state):
+        state_token = self.original_proj(robot_state)
+        return state_token + self.features_3d + self.features_pressure
 
 def inject_act_d(policy, device):
     print("\n💉 [INJEÇÃO ACT-D]: Ativando Bypass Geométrico 3D e Fusão Tátil (Pressão Dex3)...")
 
-    # 1. Descobrimos o tamanho do "Cérebro" do Transformer dinamicamente (geralmente 512)
-    hidden_dim = policy.input_proj_env_state.out_features
+    # 1. Pega o projetor original dos motores do LeRobot
+    original_proj = policy.model.encoder_robot_state_input_proj
+    hidden_dim = original_proj.out_features
 
-    # 2. Acopla a PointNet (Visão 3D) na Memória da Política
+    # 2. Cria as nossas novas redes (Visão 3D e Pressão)
     policy.pointnet = PointNetEncoder(output_dim=hidden_dim).to(device)
     policy.camera_intrinsics = {'fx': 600.0, 'fy': 600.0, 'cx': 320.0, 'cy': 240.0}
-
-    # 3. Acopla a Camada Tátil (Pressão) na Memória da Política
-    # 33 sensores na esquerda + 33 na direita = 66 entradas.
+    
     policy.pressure_proj = nn.Sequential(
         nn.Linear(66, 256),
         nn.ReLU(),
         nn.Linear(256, hidden_dim)
     ).to(device)
 
-    # Guarda o método forward original
+    # 3. Cria a nossa "Camada Mutante" e substitui a original DE VEZ
+    fused_layer = FusedProjector(original_proj)
+    policy.model.encoder_robot_state_input_proj = fused_layer
+
+    # Guarda o método forward original da política inteira
     policy.original_forward = policy.forward
 
-    # 4. A Função Intercetadora Suprema
-    # 4. A Função Intercetadora Suprema (AGORA DINÂMICA)
+    # 4. A Função Interceptadora Suprema
     def patched_forward(self, batch: dict[str, torch.Tensor]) -> dict[str, torch.Tensor]:
         
-        # --- A. EXTRAÇÃO SEGURA (Prevenção de KeyError) ---
-        # Usa None como valor padrão caso as chaves estejam comentadas no YAML
+        # --- A. ROUBO DE DADOS ---
         depth_tensor = batch.pop("observation.images.head_camera_depth", None)
         left_pressure = batch.pop("observation.left_hand_pressure", None)
         right_pressure = batch.pop("observation.right_hand_pressure", None)
         
-        # Inicia as features extras como 0 (neutras)
-        features_3d = 0
-        features_pressure = 0
+        # --- B. PROCESSAMENTO MUTAÇÃO ---
+        f3d = 0
+        fpress = 0
 
-        # --- B. PROCESSAMENTO 3D (Só roda se o depth existir) ---
         if depth_tensor is not None:
             pc = depth_to_pointcloud(depth_tensor, self.camera_intrinsics)
-            features_3d = self.pointnet(pc) # Saída: [Batch, hidden_dim]
+            f3d = self.pointnet(pc)
 
-        # --- C. PROCESSAMENTO TÁTIL (Só roda se a pressão existir) ---
         if left_pressure is not None and right_pressure is not None:
             full_pressure = torch.cat([left_pressure, right_pressure], dim=1) 
-            features_pressure = self.pressure_proj(full_pressure) # Saída: [Batch, hidden_dim]
+            fpress = self.pressure_proj(full_pressure)
 
-        # --- D. HACK DA FUSÃO MULTIMODAL ---
-        original_proj = self.input_proj_env_state
+        # --- C. FUSÃO ---
+        self.model.encoder_robot_state_input_proj.features_3d = f3d
+        self.model.encoder_robot_state_input_proj.features_pressure = fpress
         
-        def patched_proj(env_state):
-            state_token = original_proj(env_state) # Token original (Motores)
-            
-            # Se a IA for cega pro 3D e Tato (comentados no YAML), features serão 0
-            # state_token + 0 + 0 = state_token normal!
-            fused_token = state_token + features_3d + features_pressure 
-            return fused_token
-            
-        self.input_proj_env_state = patched_proj
+        # =================================================================
+        # O SEGREDO MÁGICO: Esconde o Depth do LeRobot por 1 milissegundo
+        # Isso ataca a raiz do problema (input_features) temporariamente
+        # =================================================================
+        hidden_depth_config = None
+        if "observation.images.head_camera_depth" in self.config.input_features:
+            hidden_depth_config = self.config.input_features.pop("observation.images.head_camera_depth")
         
-        # --- E. EXECUÇÃO DO FORWARD ORIGINAL ---
+        # --- D. EXECUÇÃO ORIGINAL ---
+        # Agora o LeRobot processa o RGB sem procurar pelo Depth no batch!
         output = self.original_forward(batch)
         
-        # Devolvemos as chaves ao batch apenas se elas existirem
+        # =================================================================
+        # RESTAURA A CONFIGURAÇÃO ANTES QUE OS LOGS PERCEBAM
+        # =================================================================
+        if hidden_depth_config is not None:
+            self.config.input_features["observation.images.head_camera_depth"] = hidden_depth_config
+        
+        # --- E. DEVOLVE OS DADOS PARA O BATCH ---
         if depth_tensor is not None:
             batch["observation.images.head_camera_depth"] = depth_tensor
         if left_pressure is not None:
@@ -72,11 +88,12 @@ def inject_act_d(policy, device):
         if right_pressure is not None:
             batch["observation.right_hand_pressure"] = right_pressure
         
-        # Restauramos o projetor original
-        self.input_proj_env_state = original_proj
+        # Reseta as features na camada falsa para a próxima iteração
+        self.model.encoder_robot_state_input_proj.features_3d = 0
+        self.model.encoder_robot_state_input_proj.features_pressure = 0
         
         return output
 
-    # Aplica o Monkey Patch final no objeto
+    # Aplica o Monkey Patch final no método forward
     policy.forward = types.MethodType(patched_forward, policy)
     print("✅ [INJEÇÃO ACT-D]: Concluída com Sucesso! Visão 3D e Tato operacionais.\n")
