@@ -25,33 +25,37 @@ def inject_act_d(policy, device):
     policy.original_forward = policy.forward
 
     # 4. A Função Intercetadora Suprema
+    # 4. A Função Intercetadora Suprema (AGORA DINÂMICA)
     def patched_forward(self, batch: dict[str, torch.Tensor]) -> dict[str, torch.Tensor]:
         
-        # --- A. EXTRAÇÃO DA PROFUNDIDADE E DA PRESSÃO ---
-        # Fazemos '.pop()' para esconder estes dados da rede ResNet original
-        depth_tensor = batch.pop("observation.images.head_camera_depth")
-        left_pressure = batch.pop("observation.left_hand_pressure")
-        right_pressure = batch.pop("observation.right_hand_pressure")
+        # --- A. EXTRAÇÃO SEGURA (Prevenção de KeyError) ---
+        # Usa None como valor padrão caso as chaves estejam comentadas no YAML
+        depth_tensor = batch.pop("observation.images.head_camera_depth", None)
+        left_pressure = batch.pop("observation.left_hand_pressure", None)
+        right_pressure = batch.pop("observation.right_hand_pressure", None)
         
-        # --- B. PROCESSAMENTO 3D (PointNet) ---
-        pc = depth_to_pointcloud(depth_tensor, self.camera_intrinsics)
-        features_3d = self.pointnet(pc) # Saída: [Batch, hidden_dim]
+        # Inicia as features extras como 0 (neutras)
+        features_3d = 0
+        features_pressure = 0
 
-        # --- C. PROCESSAMENTO TÁTIL (Pressão) ---
-        # Junta as duas mãos num único vetor de 66 posições
-        full_pressure = torch.cat([left_pressure, right_pressure], dim=1) 
-        features_pressure = self.pressure_proj(full_pressure) # Saída: [Batch, hidden_dim]
+        # --- B. PROCESSAMENTO 3D (Só roda se o depth existir) ---
+        if depth_tensor is not None:
+            pc = depth_to_pointcloud(depth_tensor, self.camera_intrinsics)
+            features_3d = self.pointnet(pc) # Saída: [Batch, hidden_dim]
+
+        # --- C. PROCESSAMENTO TÁTIL (Só roda se a pressão existir) ---
+        if left_pressure is not None and right_pressure is not None:
+            full_pressure = torch.cat([left_pressure, right_pressure], dim=1) 
+            features_pressure = self.pressure_proj(full_pressure) # Saída: [Batch, hidden_dim]
 
         # --- D. HACK DA FUSÃO MULTIMODAL ---
         original_proj = self.input_proj_env_state
         
-        # Temporariamente sobrescrevemos o projetor linear do estado dos motores
         def patched_proj(env_state):
             state_token = original_proj(env_state) # Token original (Motores)
             
-            # 🧠 FUSÃO SUPREMA: 
-            # Somamos a perceção geométrica (3D) e a perceção tátil (Pressão)
-            # à propriocepção do robô (Motores).
+            # Se a IA for cega pro 3D e Tato (comentados no YAML), features serão 0
+            # state_token + 0 + 0 = state_token normal!
             fused_token = state_token + features_3d + features_pressure 
             return fused_token
             
@@ -60,12 +64,15 @@ def inject_act_d(policy, device):
         # --- E. EXECUÇÃO DO FORWARD ORIGINAL ---
         output = self.original_forward(batch)
         
-        # Devolvemos as chaves ao batch para não quebrar o cálculo de logs e estatísticas
-        batch["observation.images.head_camera_depth"] = depth_tensor
-        batch["observation.left_hand_pressure"] = left_pressure
-        batch["observation.right_hand_pressure"] = right_pressure
+        # Devolvemos as chaves ao batch apenas se elas existirem
+        if depth_tensor is not None:
+            batch["observation.images.head_camera_depth"] = depth_tensor
+        if left_pressure is not None:
+            batch["observation.left_hand_pressure"] = left_pressure
+        if right_pressure is not None:
+            batch["observation.right_hand_pressure"] = right_pressure
         
-        # Restauramos o projetor original para a próxima iteração
+        # Restauramos o projetor original
         self.input_proj_env_state = original_proj
         
         return output

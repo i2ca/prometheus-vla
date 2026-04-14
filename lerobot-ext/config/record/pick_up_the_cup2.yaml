@@ -5,13 +5,13 @@ robot:
 teleop:
   type: xr_g1_arm
   zmq: true
-  input_mode: "hand"
+  input_mode: "controller"
   display_mode: "ego"
   ee_type: "dex3"
 
 dataset:
-  repo_id: Mrwlker/pick_up_the_cup2
-  root: "meu_dataset/pick_up_the_cup2"
+  repo_id: Mrwlker/pick_up_the_cup3
+  root: "meu_dataset/pick_up_the_cup3"
   push_to_hub: true
   single_task: "pick up the cup"
   vcodec: "h264"

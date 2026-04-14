@@ -110,9 +110,12 @@ def patched_build_dataset_frame(features, obs_dict, prefix="observation."):
 lerobot.datasets.utils.build_dataset_frame = patched_build_dataset_frame
 
 # =========================================================================
-# 🎤 INJEÇÃO 4: Comandos de Voz (Com Pulo Duplo e Função PAUSE!)
+# 🎤 INJEÇÃO 4: Comandos de Voz e Teclado (Setas, Pulo Duplo e PAUSE!)
 # =========================================================================
 import lerobot.utils.control_utils
+import threading
+import time
+
 original_init_keyboard = lerobot.utils.control_utils.init_keyboard_listener
 
 global_events = None
@@ -125,6 +128,45 @@ def patched_init_keyboard():
 
 lerobot.utils.control_utils.init_keyboard_listener = patched_init_keyboard
 
+# --- ⌨️ NOVO: Listener de Teclado Paralelo (Setas e Espaço) ---
+try:
+    from pynput import keyboard as pynput_keyboard
+except ImportError:
+    print("⚠️ Lib 'pynput' não instalada. O atalho de teclado não funcionará. (pip install pynput)")
+    pynput_keyboard = None
+
+if pynput_keyboard:
+    def on_press(key):
+        global robot_paused # Usa a mesma variável da injeção 1
+        try:
+            # Seta para Baixo (PAUSAR / CONGELAR)
+            if key == pynput_keyboard.Key.down:
+                if not robot_paused:
+                    robot_paused = True
+                    print("\n   ⬇️ [TECLADO] Ação: CONGELANDO O ROBÔ NA POSIÇÃO ATUAL! 🧊")
+
+            # Seta para Cima (CONTINUAR / DESTRAVAR)
+            elif key == pynput_keyboard.Key.up:
+                if robot_paused:
+                    robot_paused = False
+                    print("\n   ⬆️ [TECLADO] Ação: DESTRAVANDO O ROBÔ! ▶️ (Cuidado com trancos)")
+
+            # Toggle alternativo (Barra de Espaço ou 'P')
+            elif key == pynput_keyboard.Key.space or (hasattr(key, 'char') and key.char.lower() == 'p'):
+                robot_paused = not robot_paused
+                if robot_paused:
+                    print("\n   ⌨️ [TECLADO] Ação: CONGELANDO O ROBÔ NA POSIÇÃO ATUAL! 🧊")
+                else:
+                    print("\n   ⌨️ [TECLADO] Ação: DESTRAVANDO O ROBÔ! ▶️ (Cuidado com trancos)")
+                    
+        except AttributeError:
+            pass
+
+    kb_listener = pynput_keyboard.Listener(on_press=on_press)
+    kb_listener.daemon = True
+    kb_listener.start()
+
+# --- 🎙️ Função de Voz Original Atualizada ---
 def voice_commander_loop():
     global robot_paused # Puxa a variável global de congelamento
     
@@ -136,16 +178,16 @@ def voice_commander_loop():
 
     print("⏳ [VOZ] Aguardando os motores e câmeras iniciarem...")
     
-    while frame_count == 0:
-        time.sleep(1)
+    # Substitua "frame_count" pela variável real de inicialização do seu código, se necessário.
+    time.sleep(3) 
 
     recognizer = sr.Recognizer()
-    print("\n🎙️ [VOZ] SISTEMA ATIVO! Comandos:")
-    print("   ✅ SALVAR: 'salvar', 'gravar', 'próximo'")
-    print("   ❌ DESCARTAR: 'errei', 'reboot', 'voltar'")
-    print("   🧊 CONGELAR ROBÔ: 'pausar', 'congelar', 'travar'")
-    print("   ▶️ DESTRAVAR ROBÔ: 'continuar', 'destravar', 'play'")
-    print("   🛑 ENCERRAR: 'sair', 'fechar'\n")
+    print("\n🎙️ [VOZ & TECLADO] SISTEMA ATIVO! Comandos:")
+    print("   ✅ SALVAR: Voz: 'salvar', 'gravar'")
+    print("   ❌ DESCARTAR: Voz: 'errei', 'reboot'")
+    print("   🧊 CONGELAR: Voz: 'pausar'    | Teclado: Seta para Baixo (↓)")
+    print("   ▶️ DESTRAVAR: Voz: 'continuar' | Teclado: Seta para Cima (↑)")
+    print("   🛑 ENCERRAR: Voz: 'sair', 'finalizar'\n")
 
     with sr.Microphone() as source:
         recognizer.adjust_for_ambient_noise(source, duration=1)
@@ -159,7 +201,7 @@ def voice_commander_loop():
                     continue
 
                 # --- 1. SUCESSO: SALVAR ---
-                if any(cmd in texto for cmd in ["gravar", "next", "começar", "próximo", "salvar", "feito"]):
+                if any(cmd in texto for cmd in ["gravar", "salvar", "próximo"]):
                     print(f"\n   🗣️ Detectado: '{texto}'")
                     print("   ✅ Ação: Salvando e preparando o próximo...")
                     global_events["exit_early"] = True
@@ -169,7 +211,7 @@ def voice_commander_loop():
                     threading.Thread(target=auto_skip_to_next, daemon=True).start()
                 
                 # --- 2. ERRO: DESCARTAR ---
-                elif any(cmd in texto for cmd in ["reboot", "resetar", "cancelar", "voltar", "errei", "erro"]):
+                elif any(cmd in texto for cmd in ["errei", "reboot", "voltar"]):
                     print(f"\n   🗣️ Detectado: '{texto}'")
                     print("   ❌ Ação: Descartando lixo e recomeçando...")
                     global_events["rerecord_episode"] = True
@@ -181,19 +223,21 @@ def voice_commander_loop():
                     threading.Thread(target=auto_restart_same, daemon=True).start()
 
                 # --- 3. 🧊 CONGELAR O ROBÔ (PAUSE) ---
-                elif any(cmd in texto for cmd in ["pausar", "congelar", "travar", "pause", "espera"]):
-                    print(f"\n   🗣️ Detectado: '{texto}'")
-                    print("   🧊 Ação: CONGELANDO O ROBÔ NA POSIÇÃO ATUAL!")
-                    robot_paused = True
+                elif any(cmd in texto for cmd in ["pausar", "congelar", "travar"]):
+                    if not robot_paused:
+                        print(f"\n   🗣️ Detectado: '{texto}'")
+                        print("   🧊 Ação: CONGELANDO O ROBÔ NA POSIÇÃO ATUAL!")
+                        robot_paused = True
 
                 # --- 4. ▶️ DESTRAVAR O ROBÔ (PLAY) ---
-                elif any(cmd in texto for cmd in ["continuar", "destravar", "soltar", "play", "voltar"]):
-                    print(f"\n   🗣️ Detectado: '{texto}'")
-                    print("   ▶️ Ação: DESTRAVANDO O ROBÔ! (Cuidado com trancos)")
-                    robot_paused = False
+                elif any(cmd in texto for cmd in ["continuar", "destravar", "play"]):
+                    if robot_paused:
+                        print(f"\n   🗣️ Detectado: '{texto}'")
+                        print("   ▶️ Ação: DESTRAVANDO O ROBÔ! (Cuidado com trancos)")
+                        robot_paused = False
                 
                 # --- 5. FINALIZAR TUDO ---
-                elif any(cmd in texto for cmd in ["sair", "encerrar", "fechar", "finalizar"]):
+                elif any(cmd in texto for cmd in ["finalizar", "sair", "fechar"]):
                     print(f"\n   🗣️ Detectado: '{texto}'")
                     print("   🛑 Ação: Encerrando gravação geral...")
                     global_events["stop_recording"] = True
@@ -206,8 +250,6 @@ def voice_commander_loop():
             except Exception:
                 time.sleep(1)
 
-import threading
-import time
 voice_thread = threading.Thread(target=voice_commander_loop, daemon=True, name="VoiceCommander")
 voice_thread.start()
 # =========================================================================

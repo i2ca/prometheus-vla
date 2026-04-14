@@ -64,6 +64,10 @@ class XRG1Arm(Teleoperator):
         self.vr_started = False
         self.start_time = None
         self.countdown_done = False
+        
+        self.controller_enabled = False
+        self.last_x_state = False
+        self.last_y_state = False
 
     def connect(self, calibrate: bool = True) -> None:
         if self._is_connected:
@@ -196,23 +200,124 @@ class XRG1Arm(Teleoperator):
         if "q" in feedback:
             self.current_arm_q = feedback["q"][:14] 
 
+    def _trigger_record_event(self, action_type):
+        """Injeta comandos diretamente no script de gravação (se ele estiver rodando)"""
+        import sys
+        import threading
+        import time
+        import os
+        
+        # Verifica se estamos rodando dentro do script principal (gravador)
+        if "__main__" in sys.modules:
+            main_mod = sys.modules["__main__"]
+            events = getattr(main_mod, "global_events", None)
+            
+            if action_type == "save" and events is not None:
+                print("\n   🎮 [CONTROLE VR] Ação: SALVANDO e preparando o próximo... ✅")
+                events["exit_early"] = True
+                def auto_skip():
+                    time.sleep(1.0)
+                    if events: events["exit_early"] = True
+                threading.Thread(target=auto_skip, daemon=True).start()
+                
+            elif action_type == "discard" and events is not None:
+                print("\n   🎮 [CONTROLE VR] Ação: DESCARTANDO lixo e recomeçando... ❌")
+                events["rerecord_episode"] = True
+                def auto_restart():
+                    time.sleep(0.5)
+                    if events: events["exit_early"] = True
+                    time.sleep(0.5)
+                    if events: events["exit_early"] = True
+                threading.Thread(target=auto_restart, daemon=True).start()
+
+            elif action_type == "toggle_pause":
+                # Inverte o estado local da teleoperação
+                self.controller_enabled = not self.controller_enabled
+                
+                # Se estiver rodando no gravador, sincroniza a variável global dele também
+                if hasattr(main_mod, "robot_paused"):
+                    main_mod.robot_paused = not self.controller_enabled
+                
+                estado = "DESTRAVADO ▶️" if self.controller_enabled else "CONGELADO 🧊"
+                print(f"\n   🎮 [CONTROLE VR] Ação: Robô {estado}")
+
+            elif action_type == "exit":
+                print("\n   🎮 [CONTROLE VR] Ação: ENCERRANDO o sistema... 🛑")
+                # Se estiver no gravador, manda o sinal de parada global
+                if events is not None:
+                    events["stop_recording"] = True
+                    events["exit_early"] = True
+                else:
+                    # Se estiver só testando a teleoperação isolada, força o fechamento
+                    self.disconnect()
+                    os._exit(0)
+        else:
+            # Modo teleoperação normal - ignora silenciosamente
+            pass
+
     def get_action(self) -> RobotAction:
         if not self._is_connected:
              raise ConnectionError("XR Teleoperator não está conectado.")
+        
 
         # 1. Pega os dados do Headset VR
         tele_data = self.tv_wrapper.get_tele_data()
+
+        # =========================
+        # CONTROLE ESQUERDO (X = Pause/Play | Y = Encerrar)
+        # =========================
+        x_pressed = getattr(tele_data, "left_ctrl_aButton", False) # Botão X físico
+        y_pressed = getattr(tele_data, "left_ctrl_bButton", False) # Botão Y físico
+
+        # Detecta clique no X (Pause/Play)
+        if x_pressed and not self.last_x_state:
+            self._trigger_record_event("toggle_pause")
+
+        # Detecta clique no Y (Sair / Encerrar)
+        if y_pressed and not self.last_y_state:
+            self._trigger_record_event("exit")
+
+        self.last_x_state = x_pressed
+        self.last_y_state = y_pressed
+
+        # =========================
+        # CONTROLE DE GRAVAÇÃO (A = Salvar / B = Descartar)
+        # =========================
+        a_pressed_right = getattr(tele_data, "right_ctrl_aButton", False)
+        b_pressed_right = getattr(tele_data, "right_ctrl_bButton", False)
+
+        # Inicializa as variáveis de estado de borda se não existirem
+        if not hasattr(self, "last_a_right_state"): self.last_a_right_state = False
+        if not hasattr(self, "last_b_right_state"): self.last_b_right_state = False
+
+        # Verifica clique no A (Salvar)
+        if a_pressed_right and not self.last_a_right_state:
+            self._trigger_record_event("save")
+
+        # Verifica clique no B (Descartar)
+        if b_pressed_right and not self.last_b_right_state:
+            self._trigger_record_event("discard")
+
+        self.last_a_right_state = a_pressed_right
+        self.last_b_right_state = b_pressed_right
+
+        # =========================
+        # 🚨 BLOQUEIO TOTAL AQUI
+        # =========================
+        if not self.controller_enabled:
+            return {**self.body_joints, **self.hand_joints}
 
         # --- LÓGICA DE SEGURANÇA CORRIGIDA ---
         
         # Ignoramos a cabeça (head_pose) pois a biblioteca cria uma "falsa" ao carregar a página.
         # A forma 100% garantida é verificar se as mãos/controles estão sendo rastreados,
         # o que só acontece APÓS você clicar em "Enter VR" no óculos.
-        has_right_hand = np.any(tele_data.right_hand_pos != 0.0)
-        has_left_hand = np.any(tele_data.left_hand_pos != 0.0)
-
-        # Considera que o VR iniciou se qualquer uma das mãos apareceu
-        active_session = has_right_hand or has_left_hand
+        if self.config.input_mode == "hand":
+            has_right_hand = np.any(tele_data.right_hand_pos != 0.0)
+            has_left_hand = np.any(tele_data.left_hand_pos != 0.0)
+            active_session = has_right_hand or has_left_hand
+        else:
+            active_session = self.controller_enabled
 
         if not active_session:
             if self.vr_started:
@@ -225,13 +330,13 @@ class XRG1Arm(Teleoperator):
 
         # Inicia contagem se detectou as mãos no VR
         if active_session and not self.vr_started:
-            logger.info(">>> MÃOS DETECTADAS NO VR! AGUARDANDO 5 SEGUNDOS PARA INICIAR...")
+            logger.info(">>> MÃOS DETECTADAS NO VR! AGUARDANDO 3 SEGUNDOS PARA INICIAR...")
             self.vr_started = True
             self.start_time = time.time()
 
         if self.vr_started and not self.countdown_done:
             elapsed = time.time() - self.start_time
-            if elapsed < 5.0:
+            if elapsed < 3.0:
                 if int(elapsed * 10) % 10 == 0: 
                     print(f"--- ESTABILIZANDO ROBÔ: {5 - int(elapsed)}s ---", end='\r')
                 return {**self.body_joints, **self.hand_joints}
@@ -270,65 +375,146 @@ class XRG1Arm(Teleoperator):
         self.body_joints["kRightWristYaw.q"]      = sol_q[13]
 
         # 3. Calcula o Retargeting das Mãos (Dedos)
-        if self.config.ee_type == "dex3" and self.config.input_mode == "hand":
+        # 3. Calcula o Retargeting das Mãos (Dedos)
+        if self.config.ee_type == "dex3":
             
-            # CORREÇÃO 2: Formatação e cálculo correto dos vetores das mãos (Conforme Dex3_1_Controller)
-            left_hand_data = tele_data.left_hand_pos.reshape(25, 3)
-            right_hand_data = tele_data.right_hand_pos.reshape(25, 3)
-            
-            # Só calcula se a mão foi detectada no frame atual (evita crash na primeira iteração)
-            if not np.all(right_hand_data == 0.0) and not np.all(left_hand_data[4] == np.array([-1.13, 0.3, 0.15])):
+            # =========================================================
+            # MODO 1: RASTREAMENTO PELAS MÃOS (HAND TRACKING)
+            # =========================================================
+            if self.config.input_mode == "hand":
+                # CORREÇÃO 2: Formatação e cálculo correto dos vetores das mãos (Conforme Dex3_1_Controller)
+                left_hand_data = tele_data.left_hand_pos.reshape(25, 3)
+                right_hand_data = tele_data.right_hand_pos.reshape(25, 3)
                 
-                # Subtrai as posições 3D usando a tabela de índices da Unitree
-                ref_left_value = left_hand_data[self.hand_retargeter.left_indices[1,:]] - left_hand_data[self.hand_retargeter.left_indices[0,:]]
-                ref_right_value = right_hand_data[self.hand_retargeter.right_indices[1,:]] - right_hand_data[self.hand_retargeter.right_indices[0,:]]
+                # Só calcula se a mão foi detectada no frame atual
+                if not np.all(right_hand_data == 0.0) and not np.all(left_hand_data[4] == np.array([-1.13, 0.3, 0.15])):
+                    
+                    ref_left_value = left_hand_data[self.hand_retargeter.left_indices[1,:]] - left_hand_data[self.hand_retargeter.left_indices[0,:]]
+                    ref_right_value = right_hand_data[self.hand_retargeter.right_indices[1,:]] - right_hand_data[self.hand_retargeter.right_indices[0,:]]
 
-                # Executa o retargeting e remapeia para a ordem certa dos motores da mão
-                left_hand_q = self.hand_retargeter.left_retargeting.retarget(ref_left_value)[self.hand_retargeter.left_dex_retargeting_to_hardware]
-                right_hand_q = self.hand_retargeter.right_retargeting.retarget(ref_right_value)[self.hand_retargeter.right_dex_retargeting_to_hardware]
+                    left_hand_q = self.hand_retargeter.left_retargeting.retarget(ref_left_value)[self.hand_retargeter.left_dex_retargeting_to_hardware]
+                    right_hand_q = self.hand_retargeter.right_retargeting.retarget(ref_right_value)[self.hand_retargeter.right_dex_retargeting_to_hardware]
 
-                # --- AJUSTE DE PINÇA (OFFSET FIXO PARA TOQUE LEVE) ---
-                OFFSET_ESQUEDA = 0.17 
-                OFFSET_DIREITA = 0.0
+                    # --- AJUSTE DE PINÇA (OFFSET FIXO PARA TOQUE LEVE) ---
+                    OFFSET_ESQUEDA = 0.17 
+                    OFFSET_DIREITA = 0.0
 
-                # Mão Esquerda (Ordem: Thumb 0,1,2, Middle 3,4, Index 5,6)
-                left_hand_q[5] -= OFFSET_ESQUEDA # Base do indicador esquerdo
-                left_hand_q[6] -= OFFSET_ESQUEDA # Ponta do indicador esquerdo
+                    left_hand_q[5] -= OFFSET_ESQUEDA
+                    left_hand_q[6] -= OFFSET_ESQUEDA
+                    right_hand_q[3] += OFFSET_DIREITA
+                    right_hand_q[4] += OFFSET_DIREITA
+                    
+                    # NOVO: DETECÇÃO REAL DE PUNHO
+                    dist_medio_esq = np.linalg.norm(left_hand_data[14] - left_hand_data[0])
+                    dist_medio_dir = np.linalg.norm(right_hand_data[14] - right_hand_data[0])
+                    
+                    punho_esq = np.clip((0.15 - dist_medio_esq) / 0.09, 0.0, 1.0)
+                    punho_dir = np.clip((0.15 - dist_medio_dir) / 0.09, 0.0, 1.0)
+                    
+                    FORCA_PUNHO = 0.8 
+                    
+                    left_hand_q[3] -= (FORCA_PUNHO * punho_esq)
+                    left_hand_q[4] -= (FORCA_PUNHO * punho_esq)
+                    left_hand_q[5] -= (FORCA_PUNHO * punho_esq) 
+                    left_hand_q[6] -= (FORCA_PUNHO * punho_esq)
+                    
+                    right_hand_q[5] += (FORCA_PUNHO * punho_dir)
+                    right_hand_q[6] += (FORCA_PUNHO * punho_dir)
+                    right_hand_q[3] += (FORCA_PUNHO * punho_dir) 
+                    right_hand_q[4] += (FORCA_PUNHO * punho_dir)
 
-                # Mão Direita (Ordem diferente! Thumb 0,1,2, Index 3,4, Middle 5,6)
-                right_hand_q[3] += OFFSET_DIREITA # Base do indicador direito
-                right_hand_q[4] += OFFSET_DIREITA # Ponta do indicador direito
-                
-                # =========================================================
-                # NOVO: DETECÇÃO REAL DE PUNHO (Pelo Esqueleto 3D)
-                # =========================================================
-                # Calcula a distância (em metros) entre o Pulso (0) e a Ponta do Dedo Médio (14)
-                dist_medio_esq = np.linalg.norm(left_hand_data[14] - left_hand_data[0])
-                dist_medio_dir = np.linalg.norm(right_hand_data[14] - right_hand_data[0])
-                
-                # Mapeia a distância: ~0.15m (mão aberta) para ~0.06m (punho fechado)
-                # Gera um valor progressivo de 0.0 (aberto) a 1.0 (fechado)
-                punho_esq = np.clip((0.15 - dist_medio_esq) / 0.09, 0.0, 1.0)
-                punho_dir = np.clip((0.15 - dist_medio_dir) / 0.09, 0.0, 1.0)
-                
-                # Força extra em radianos aplicada aos dedos quando faz o punho
-                FORCA_PUNHO = 0.8 
-                
-                # Mão Esquerda: Fecha o Dedo Médio (3, 4) e reforça o Indicador (5, 6)
-                left_hand_q[3] -= (FORCA_PUNHO * punho_esq)
-                left_hand_q[4] -= (FORCA_PUNHO * punho_esq)
-                left_hand_q[5] -= (FORCA_PUNHO * punho_esq) 
-                left_hand_q[6] -= (FORCA_PUNHO * punho_esq)
-                
-                # Mão Direita: Fecha o Dedo Médio (5, 6) e reforça o Indicador (3, 4)
-                right_hand_q[5] += (FORCA_PUNHO * punho_dir)
-                right_hand_q[6] += (FORCA_PUNHO * punho_dir)
-                right_hand_q[3] += (FORCA_PUNHO * punho_dir) 
-                right_hand_q[4] += (FORCA_PUNHO * punho_dir)
-                # =========================================================
-                # --------------------------------
+                    for i, name in enumerate(self._left_hand_names):
+                        self.hand_joints[f"{name}.q"] = left_hand_q[i]
 
-                # Aplica as juntas calculadas no dicionário do LeRobot
+                    for i, name in enumerate(self._right_hand_names):
+                        self.hand_joints[f"{name}.q"] = right_hand_q[i]
+
+            # =========================================================
+            # MODO 2: RASTREAMENTO POR CONTROLES (VR CONTROLLERS)
+            # =========================================================
+            elif self.config.input_mode == "controller":
+                
+                # --- HACK DE MEMÓRIA: INJEÇÃO DE IMPEDÂNCIA (KP/KD) ---
+                # Procura a instância do robô na memória RAM e amacia os motores
+                if not hasattr(self, "kp_hacked"):
+                    import gc
+                    for obj in gc.get_objects():
+                        if type(obj).__name__ == "UnitreeG1Dex3":
+                            
+                            NOVO_KP = 0.3  # Padrão era 0.8 (Trator). 0.3 deixa como Mola.
+                            NOVO_KD = 0.1  # Amortecimento suave
+                            
+                            if hasattr(obj, "_left_hand_msg") and obj._left_hand_msg is not None:
+                                for i in range(7):
+                                    obj._left_hand_msg.motor_cmd[i].kp = NOVO_KP
+                                    obj._left_hand_msg.motor_cmd[i].kd = NOVO_KD
+                                    
+                            if hasattr(obj, "_right_hand_msg") and obj._right_hand_msg is not None:
+                                for i in range(7):
+                                    obj._right_hand_msg.motor_cmd[i].kp = NOVO_KP
+                                    obj._right_hand_msg.motor_cmd[i].kd = NOVO_KD
+                                    
+                            self.kp_hacked = True
+                            print(f"\n   🪽 [HACK] Kp das mãos Dex3 reduzido para {NOVO_KP}! (Modo Mola Ativado)")
+                            break
+
+                # --- LEITURA DOS GATILHOS (0.0 a 1.0) ---
+                left_trigger = np.clip((10.0 - tele_data.left_ctrl_triggerValue) / 10.0, 0.0, 1.0)
+                right_trigger = np.clip((10.0 - tele_data.right_ctrl_triggerValue) / 10.0, 0.0, 1.0)
+
+                left_squeeze = np.clip(tele_data.left_ctrl_squeezeValue, 0.0, 1.0)
+                right_squeeze = np.clip(tele_data.right_ctrl_squeezeValue, 0.0, 1.0)
+
+                # =========================
+                # LÓGICA DE MOVIMENTO
+                # =========================
+                left_hand_q = np.zeros(7)
+                right_hand_q = np.zeros(7)
+
+                # Como o Kp agora é uma mola suave (0.3), podemos voltar o limite para 1.5.
+                # O dedo vai mirar em 1.5, mas parar docemente no objeto.
+                LEFT_TARGET = np.array([0.0,  1.5,  1.5, -1.5, -1.5, -1.5, -1.5])
+                RIGHT_TARGET = np.array([0.0, -1.5, -1.5,  1.5,  1.5,  1.5,  1.5])
+
+                # Grip completo
+                left_hand_q  = left_squeeze  * LEFT_TARGET
+                right_hand_q = right_squeeze * RIGHT_TARGET
+
+                # =========================
+                # PINÇA (AJUSTE FINO)
+                # =========================
+                PINCH_FORCE = 2.0
+                PINCH_OFFSET = 0.2
+
+                LEFT_INDEX_ID  = 5   
+                RIGHT_INDEX_ID = 5   
+
+                # Aplica movimento do indicador
+                left_hand_q[LEFT_INDEX_ID]   += -PINCH_FORCE * left_trigger
+                right_hand_q[RIGHT_INDEX_ID] +=  PINCH_FORCE * right_trigger
+
+                # Offset fixo
+                left_hand_q[LEFT_INDEX_ID]   += -PINCH_OFFSET * left_trigger
+                right_hand_q[RIGHT_INDEX_ID] +=  PINCH_OFFSET * right_trigger  
+
+                # ROTAÇÃO DO POLEGAR
+                left_hand_q[0]  += -0.5 * left_trigger
+                right_hand_q[0] +=  0.5 * right_trigger 
+
+                # CURVATURA EXTRA
+                left_hand_q[LEFT_INDEX_ID]   += -0.5 * left_trigger
+                right_hand_q[RIGHT_INDEX_ID] +=  0.5 * right_trigger 
+
+                # Polegar acompanha pinça
+                left_hand_q[1] += 0.8 * left_trigger
+                left_hand_q[2] += 0.8 * left_trigger
+
+                right_hand_q[1] -= 0.8 * right_trigger 
+                right_hand_q[2] -= 0.8 * right_trigger
+
+                # =========================
+                # APLICAÇÃO FINAL
+                # =========================
                 for i, name in enumerate(self._left_hand_names):
                     self.hand_joints[f"{name}.q"] = left_hand_q[i]
 

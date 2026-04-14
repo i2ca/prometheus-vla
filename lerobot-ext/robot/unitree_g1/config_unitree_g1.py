@@ -58,7 +58,7 @@ class UnitreeG1Config(RobotConfig):
     control_dt: float = 1.0 / 250.0  # 250Hz
 
     # Control mode: "full_body" (all 29 joints) or "upper_body" (14 arm joints only)
-    control_mode: str = "full_body"
+    control_mode: str = "upper_body"
 
     # Launch mujoco simulation
     is_simulation: bool = False

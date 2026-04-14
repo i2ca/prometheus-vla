@@ -5,20 +5,20 @@
 
 # --- DATASET DE TREINAMENTO ---
 dataset:
-  repo_id: Mrwlker/push_cup
-  root: meu_dataset/push_cup
+  repo_id: Mrwlker/pick_up_the_cup3
+  root: meu_dataset/pick_up_the_cup3
   episodes: [0, 1, 2, 3, 4, 5, 6, 7] # 80% do dataset para treino
 
 # --- DATASET DE VALIDAÇÃO (PROVA SURPRESA) ---
 val_dataset:
-  repo_id: Mrwlker/push_cup
-  root: meu_dataset/push_cup
+  repo_id: Mrwlker/pick_up_the_cup3
+  root: meu_dataset/pick_up_the_cup3
   episodes: [8, 9] # 20% do dataset para teste/validação
 
 # --- POLÍTICA NEURAL (ACT-D) ---
 policy:
   type: act
-  repo_id: Mrwlker/act_d_push_cup
+  repo_id: Mrwlker/pick_up_the_cup3
   push_to_hub: false
   use_amp: true # Ativa mixed-precision para acelerar a GPU
   
@@ -44,7 +44,7 @@ policy:
       shape: [33]
 
 # --- PARÂMETROS DE TREINO ---
-output_dir: "train_output/act_d_push_cup"
+output_dir: "train_output/pick_up_the_cup3"
 steps: 10000
 batch_size: 16
 log_freq: 200
@@ -56,5 +56,5 @@ eval_freq: 500 # A cada 500 passos ele testa a "Prova Surpresa"
 
 # --- LOG ---
 wandb:
-  enable: false
+  enable: true
   project: prometheus_g1

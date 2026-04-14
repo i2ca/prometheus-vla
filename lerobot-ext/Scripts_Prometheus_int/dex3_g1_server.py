@@ -16,16 +16,9 @@
 
 """
 DDS-to-ZMQ bridge server for Unitree G1 robot with Dex3 hands.
-
-This server runs on the robot and forwards:
-- Robot state (LowState) from DDS to ZMQ (for remote clients)
-- Robot commands (LowCmd) from ZMQ to DDS (from remote clients)
-- Dex3 hand state from DDS to ZMQ
-- Dex3 hand commands from ZMQ to DDS
-
-Uses JSON for secure serialization instead of pickle.
 """
 
+import argparse
 import base64
 import contextlib
 import json
@@ -34,25 +27,47 @@ import time
 from typing import Any
 
 import zmq
-from unitree_sdk2py.comm.motion_switcher.motion_switcher_client import MotionSwitcherClient
 from unitree_sdk2py.core.channel import ChannelFactoryInitialize, ChannelPublisher, ChannelSubscriber
 from unitree_sdk2py.idl.default import unitree_hg_msg_dds__LowCmd_, unitree_hg_msg_dds__HandCmd_
 from unitree_sdk2py.idl.unitree_hg.msg.dds_ import LowCmd_ as hg_LowCmd, LowState_ as hg_LowState
 from unitree_sdk2py.idl.unitree_hg.msg.dds_ import HandCmd_, HandState_
 from unitree_sdk2py.utils.crc import CRC
 
-# DDS topic names follow Unitree SDK naming conventions
-# ruff: noqa: N816
-kTopicLowCommand_Debug = "rt/lowcmd"  # action to robot
-kTopicLowState = "rt/lowstate"  # observation from robot
+from unitree_sdk2py.comm.motion_switcher.motion_switcher_client import MotionSwitcherClient
+from unitree_sdk2py.g1.loco.g1_loco_client import LocoClient
 
-# Dex3 hand topics
+class MotionSwitcher:
+    def __init__(self):
+        self.msc = MotionSwitcherClient()
+        self.msc.SetTimeout(1.0)
+        self.msc.Init()
+
+    def Enter_Debug_Mode(self):
+        try:
+            status, result = self.msc.CheckMode()
+            while result['name']:
+                self.msc.ReleaseMode()
+                status, result = self.msc.CheckMode()
+                time.sleep(1)
+            return status, result
+        except Exception as e:
+            return None, None
+    
+    def Exit_Debug_Mode(self):
+        try:
+            status, result = self.msc.SelectMode(nameOrAlias='ai')
+            return status, result
+        except Exception as e:
+            return None, None
+
+
+kTopicLowCommand_Debug = "rt/lowcmd"
+kTopicLowState = "rt/lowstate"
 kTopicDex3LeftCommand = "rt/dex3/left/cmd"
 kTopicDex3RightCommand = "rt/dex3/right/cmd"
 kTopicDex3LeftState = "rt/dex3/left/state"
 kTopicDex3RightState = "rt/dex3/right/state"
 
-# ZMQ ports
 LOWCMD_PORT = 6000
 LOWSTATE_PORT = 6001
 HANDSTATE_PORT = 6002
@@ -63,20 +78,16 @@ NUM_HAND_MOTORS = 7
 
 
 def lowstate_to_dict(msg: hg_LowState) -> dict[str, Any]:
-    """Convert LowState SDK message to a JSON-serializable dictionary."""
     motor_states = []
     for i in range(NUM_MOTORS):
         temp = msg.motor_state[i].temperature
         avg_temp = float(sum(temp) / len(temp)) if isinstance(temp, list) else float(temp)
-        motor_states.append(
-            {
-                "q": float(msg.motor_state[i].q),
-                "dq": float(msg.motor_state[i].dq),
-                "tau_est": float(msg.motor_state[i].tau_est),
-                "temperature": avg_temp,
-            }
-        )
-
+        motor_states.append({
+            "q": float(msg.motor_state[i].q),
+            "dq": float(msg.motor_state[i].dq),
+            "tau_est": float(msg.motor_state[i].tau_est),
+            "temperature": avg_temp,
+        })
     return {
         "motor_state": motor_states,
         "imu_state": {
@@ -86,27 +97,19 @@ def lowstate_to_dict(msg: hg_LowState) -> dict[str, Any]:
             "rpy": [float(x) for x in msg.imu_state.rpy],
             "temperature": float(msg.imu_state.temperature),
         },
-        # Encode bytes as base64 for JSON compatibility
         "wireless_remote": base64.b64encode(bytes(msg.wireless_remote)).decode("ascii"),
         "mode_machine": int(msg.mode_machine),
     }
 
-
 def handstate_to_dict(msg: HandState_, side: str) -> dict[str, Any]:
-    """Convert HandState SDK message to a JSON-serializable dictionary."""
     motor_states = []
     for i in range(NUM_HAND_MOTORS):
-        motor_states.append(
-            {
-                "q": float(msg.motor_state[i].q),
-                "dq": float(msg.motor_state[i].dq),
-                "tau_est": float(msg.motor_state[i].tau_est),
-            }
-        )
+        motor_states.append({
+            "q": float(msg.motor_state[i].q),
+            "dq": float(msg.motor_state[i].dq),
+            "tau_est": float(msg.motor_state[i].tau_est),
+        })
 
-    # ==========================================================
-    # EXTRAÇÃO DOS SENSORES DE TATO E TEMPERATURA DA DEX3
-    # ==========================================================
     press_sensors = []
     if hasattr(msg, 'press_sensor_state'):
         for p in msg.press_sensor_state:
@@ -118,29 +121,46 @@ def handstate_to_dict(msg: HandState_, side: str) -> dict[str, Any]:
     return {
         "side": side,
         "motor_state": motor_states,
-        "press_sensor_state": press_sensors, # <- Injetando no pacote ZMQ!
+        "press_sensor_state": press_sensors,
     }
 
 
-def dict_to_lowcmd(data: dict[str, Any]) -> hg_LowCmd:
-    """Convert dictionary back to LowCmd SDK message."""
+def dict_to_lowcmd(data: dict[str, Any], enable_legs: bool) -> hg_LowCmd:
     cmd = unitree_hg_msg_dds__LowCmd_()
     cmd.mode_pr = data.get("mode_pr", 0)
     cmd.mode_machine = data.get("mode_machine", 0)
 
+    # ==========================================================
+    # A MÁGICA DO CONTROLE HÍBRIDO (PRIORIDADE OVERRIDE)
+    # ==========================================================
+    if enable_legs:
+        # Se a IA está rodando, precisamos forçar que o LowCmd do LeRobot 
+        # tenha prioridade absoluta (1) em cima dos braços para não "travar".
+        cmd.mode_pr = 1 
+
     for i, motor_data in enumerate(data.get("motor_cmd", [])):
-        cmd.motor_cmd[i].mode = motor_data.get("mode", 0)
-        cmd.motor_cmd[i].q = motor_data.get("q", 0.0)
-        cmd.motor_cmd[i].dq = motor_data.get("dq", 0.0)
-        cmd.motor_cmd[i].kp = motor_data.get("kp", 0.0)
-        cmd.motor_cmd[i].kd = motor_data.get("kd", 0.0)
-        cmd.motor_cmd[i].tau = motor_data.get("tau", 0.0)
+        if enable_legs and i < 15:
+            # MODO HÍBRIDO: Zera completamente pernas/cintura. A IA (que está viva) assume 100%.
+            cmd.motor_cmd[i].mode = 0
+            cmd.motor_cmd[i].q = 0.0
+            cmd.motor_cmd[i].dq = 0.0
+            cmd.motor_cmd[i].kp = 0.0
+            cmd.motor_cmd[i].kd = 0.0
+            cmd.motor_cmd[i].tau = 0.0
+        else:
+            # MODO HÍBRIDO E BRUTO: Passa os comandos do LeRobot. 
+            # (Com mode_pr = 1, a IA será silenciada apenas nos braços).
+            cmd.motor_cmd[i].mode = motor_data.get("mode", 0)
+            cmd.motor_cmd[i].q = motor_data.get("q", 0.0)
+            cmd.motor_cmd[i].dq = motor_data.get("dq", 0.0)
+            cmd.motor_cmd[i].kp = motor_data.get("kp", 0.0)
+            cmd.motor_cmd[i].kd = motor_data.get("kd", 0.0)
+            cmd.motor_cmd[i].tau = motor_data.get("tau", 0.0)
 
     return cmd
 
 
 def dict_to_handcmd(data: dict[str, Any]) -> HandCmd_:
-    """Convert dictionary back to HandCmd SDK message."""
     cmd = unitree_hg_msg_dds__HandCmd_()
     for i, motor_data in enumerate(data.get("motor_cmd", [])):
         cmd.motor_cmd[i].mode = motor_data.get("mode", 0)
@@ -152,153 +172,90 @@ def dict_to_handcmd(data: dict[str, Any]) -> HandCmd_:
     return cmd
 
 
-def state_forward_loop(
-    lowstate_sub: ChannelSubscriber,
-    lowstate_sock: zmq.Socket,
-    state_period: float,
-    shutdown_event: threading.Event,
-) -> None:
-    """Read observation from DDS and forward to ZMQ clients."""
+def state_forward_loop(lowstate_sub, lowstate_sock, state_period, shutdown_event):
     last_state_time = 0.0
-
     while not shutdown_event.is_set():
-        # read from DDS
         msg = lowstate_sub.Read()
-        if msg is None:
-            continue
-
+        if msg is None: continue
         now = time.time()
-        # optional downsampling (if robot dds rate > state_period)
         if now - last_state_time >= state_period:
-            # Convert to dict and serialize with JSON
             state_dict = lowstate_to_dict(msg)
             payload = json.dumps({"topic": kTopicLowState, "data": state_dict}).encode("utf-8")
-            # if no subscribers / tx buffer full, just drop
-            with contextlib.suppress(zmq.Again):
-                lowstate_sock.send(payload, zmq.NOBLOCK)
+            try: lowstate_sock.send(payload, zmq.NOBLOCK)
+            except (zmq.Again, zmq.error.ContextTerminated): pass
             last_state_time = now
 
-
-def handstate_forward_loop(
-    left_sub: ChannelSubscriber,
-    right_sub: ChannelSubscriber,
-    handstate_sock: zmq.Socket,
-    state_period: float,
-    shutdown_event: threading.Event,
-) -> None:
-    """Read hand state from DDS and forward to ZMQ clients."""
+def handstate_forward_loop(left_sub, right_sub, handstate_sock, state_period, shutdown_event):
     last_left_time = 0.0
     last_right_time = 0.0
-
     while not shutdown_event.is_set():
         now = time.time()
-        
-        # Read left hand state
         msg_left = left_sub.Read()
         if msg_left is not None and (now - last_left_time >= state_period):
             state_dict = handstate_to_dict(msg_left, "left")
             payload = json.dumps({"topic": kTopicDex3LeftState, "data": state_dict}).encode("utf-8")
-            with contextlib.suppress(zmq.Again):
-                handstate_sock.send(payload, zmq.NOBLOCK)
+            try: handstate_sock.send(payload, zmq.NOBLOCK)
+            except (zmq.Again, zmq.error.ContextTerminated): pass
             last_left_time = now
         
-        # Read right hand state
         msg_right = right_sub.Read()
         if msg_right is not None and (now - last_right_time >= state_period):
             state_dict = handstate_to_dict(msg_right, "right")
             payload = json.dumps({"topic": kTopicDex3RightState, "data": state_dict}).encode("utf-8")
-            with contextlib.suppress(zmq.Again):
-                handstate_sock.send(payload, zmq.NOBLOCK)
+            try: handstate_sock.send(payload, zmq.NOBLOCK)
+            except (zmq.Again, zmq.error.ContextTerminated): pass
             last_right_time = now
-        
-        time.sleep(0.001)  # Small sleep to avoid busy loop
+        time.sleep(0.001)
 
-
-def cmd_forward_loop(
-    lowcmd_sock: zmq.Socket,
-    lowcmd_pub_debug: ChannelPublisher,
-    crc: CRC,
-) -> None:
-    """Receive commands from ZMQ and forward to DDS."""
+def cmd_forward_loop(lowcmd_sock, lowcmd_pub_debug, crc, enable_legs):
     while True:
-        try:
-            payload = lowcmd_sock.recv()
-        except zmq.ContextTerminated:
-            break
+        try: payload = lowcmd_sock.recv()
+        except zmq.ContextTerminated: break
         msg_dict = json.loads(payload.decode("utf-8"))
-
-        topic = msg_dict.get("topic", "")
-        cmd_data = msg_dict.get("data", {})
-
-        # Reconstruct LowCmd object from dict
-        cmd = dict_to_lowcmd(cmd_data)
-
-        # recompute crc
+        cmd = dict_to_lowcmd(msg_dict.get("data", {}), enable_legs)
         cmd.crc = crc.Crc(cmd)
-
-        if topic == kTopicLowCommand_Debug:
+        if msg_dict.get("topic", "") == kTopicLowCommand_Debug:
             lowcmd_pub_debug.Write(cmd)
 
-
-def handcmd_forward_loop(
-    handcmd_sock: zmq.Socket,
-    left_pub: ChannelPublisher,
-    right_pub: ChannelPublisher,
-    shutdown_event: threading.Event,
-) -> None:
-    """Receive hand commands from ZMQ and forward to DDS."""
+def handcmd_forward_loop(handcmd_sock, left_pub, right_pub, shutdown_event):
     while not shutdown_event.is_set():
-        try:
-            payload = handcmd_sock.recv(zmq.NOBLOCK)
+        try: payload = handcmd_sock.recv(zmq.NOBLOCK)
         except zmq.Again:
             time.sleep(0.001)
             continue
-        except zmq.ContextTerminated:
-            break
+        except zmq.ContextTerminated: break
         
         msg_dict = json.loads(payload.decode("utf-8"))
+        cmd = dict_to_handcmd(msg_dict.get("data", {}))
         topic = msg_dict.get("topic", "")
-        cmd_data = msg_dict.get("data", {})
-
-        # Reconstruct HandCmd object from dict
-        cmd = dict_to_handcmd(cmd_data)
-
-        if topic == kTopicDex3LeftCommand:
-            left_pub.Write(cmd)
-        elif topic == kTopicDex3RightCommand:
-            right_pub.Write(cmd)
+        if topic == kTopicDex3LeftCommand: left_pub.Write(cmd)
+        elif topic == kTopicDex3RightCommand: right_pub.Write(cmd)
 
 
-def main() -> None:
-    """Main entry point for the robot server bridge."""
-    # initialize DDS
+def main():
+    parser = argparse.ArgumentParser(description="ZMQ Bridge para Unitree G1")
+    parser.add_argument('--enable-legs', action='store_true', help='Ativa o auto-equilíbrio (locomoção) com controle de braços via Override.')
+    args = parser.parse_args()
+
     ChannelFactoryInitialize(0)
+    ms = MotionSwitcher()
 
-    # stop all active publishers on the robot
-    msc = MotionSwitcherClient()
-    msc.SetTimeout(5.0)
-    msc.Init()
-
-    status, result = msc.CheckMode()
-    while result is not None and "name" in result and result["name"]:
-        msc.ReleaseMode()
-        status, result = msc.CheckMode()
-        time.sleep(1.0)
+    if not args.enable_legs:
+        print("[AVISO] DEFAULT MODO BRUTO: Desligando locomoção interna (O robô vai cair se não estiver pendurado).")
+        ms.Enter_Debug_Mode()
+        print("[SUCESSO] IA desligada. Robô 100% dependente do LeRobot.")
+    else:
+        print("[INFO] '--enable-legs' ATIVADO: O robô continuará se equilibrando nas pernas (IA Ligada).")
+        print("[INFO] ZMQ rodará com Prioridade de Sobrescrita (mode_pr = 1) para dominar os braços.")
+        # NÃO CHAMAMOS O DEBUG MODE AQUI. A IA CONTINUA CUIDANDO DAS PERNAS!
 
     crc = CRC()
 
-    # =========================================================================
-    # Body DDS channels
-    # =========================================================================
     lowcmd_pub_debug = ChannelPublisher(kTopicLowCommand_Debug, hg_LowCmd)
     lowcmd_pub_debug.Init()
-
     lowstate_sub = ChannelSubscriber(kTopicLowState, hg_LowState)
     lowstate_sub.Init()
 
-    # =========================================================================
-    # Dex3 Hand DDS channels
-    # =========================================================================
     left_hand_cmd_pub = ChannelPublisher(kTopicDex3LeftCommand, HandCmd_)
     left_hand_cmd_pub.Init()
     right_hand_cmd_pub = ChannelPublisher(kTopicDex3RightCommand, HandCmd_)
@@ -309,73 +266,38 @@ def main() -> None:
     right_hand_state_sub = ChannelSubscriber(kTopicDex3RightState, HandState_)
     right_hand_state_sub.Init()
 
-    # =========================================================================
-    # ZMQ sockets
-    # =========================================================================
     ctx = zmq.Context.instance()
-
-    # Body command: receive from remote client
     lowcmd_sock = ctx.socket(zmq.PULL)
     lowcmd_sock.bind(f"tcp://0.0.0.0:{LOWCMD_PORT}")
-
-    # Body state: publish to remote clients
     lowstate_sock = ctx.socket(zmq.PUB)
     lowstate_sock.bind(f"tcp://0.0.0.0:{LOWSTATE_PORT}")
-
-    # Hand state: publish to remote clients
     handstate_sock = ctx.socket(zmq.PUB)
     handstate_sock.bind(f"tcp://0.0.0.0:{HANDSTATE_PORT}")
-
-    # Hand command: receive from remote client
     handcmd_sock = ctx.socket(zmq.PULL)
     handcmd_sock.bind(f"tcp://0.0.0.0:{HANDCMD_PORT}")
 
-    state_period = 0.002  # ~500 hz
     shutdown_event = threading.Event()
 
-    # =========================================================================
-    # Start forwarding threads
-    # =========================================================================
-    
-    # Body state forwarding
-    t_state = threading.Thread(
-        target=state_forward_loop,
-        args=(lowstate_sub, lowstate_sock, state_period, shutdown_event),
-        name="BodyStateForward",
-    )
+    t_state = threading.Thread(target=state_forward_loop, args=(lowstate_sub, lowstate_sock, 0.002, shutdown_event))
     t_state.start()
-
-    # Hand state forwarding
-    t_handstate = threading.Thread(
-        target=handstate_forward_loop,
-        args=(left_hand_state_sub, right_hand_state_sub, handstate_sock, state_period, shutdown_event),
-        name="HandStateForward",
-    )
+    t_handstate = threading.Thread(target=handstate_forward_loop, args=(left_hand_state_sub, right_hand_state_sub, handstate_sock, 0.002, shutdown_event))
     t_handstate.start()
-
-    # Hand command forwarding
-    t_handcmd = threading.Thread(
-        target=handcmd_forward_loop,
-        args=(handcmd_sock, left_hand_cmd_pub, right_hand_cmd_pub, shutdown_event),
-        name="HandCmdForward",
-    )
+    t_handcmd = threading.Thread(target=handcmd_forward_loop, args=(handcmd_sock, left_hand_cmd_pub, right_hand_cmd_pub, shutdown_event))
     t_handcmd.start()
 
-    print("bridge running (body + hands: lowstate/handstate -> zmq, lowcmd/handcmd -> dds)")
+    print("\nBridge rodando e aguardando comandos do ZMQ...")
 
-    # Body command forwarding in main thread
     try:
-        cmd_forward_loop(lowcmd_sock, lowcmd_pub_debug, crc)
+        cmd_forward_loop(lowcmd_sock, lowcmd_pub_debug, crc, args.enable_legs)
     except KeyboardInterrupt:
-        print("shutting down bridge...")
+        print("\nDesligando a bridge...")
     finally:
         shutdown_event.set()
-        ctx.term()  # terminates blocking zmq.recv() calls
+        ctx.term()
         t_state.join(timeout=2.0)
         t_handstate.join(timeout=2.0)
         t_handcmd.join(timeout=2.0)
-
+        print("Finalizado.")
 
 if __name__ == "__main__":
     main()
-
