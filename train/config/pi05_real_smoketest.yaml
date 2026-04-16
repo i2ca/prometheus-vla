@@ -1,0 +1,27 @@
+dataset:
+  repo_id: "Breno-de-Angelo/unitree-g1-dex3-1-pick-kettle-v3"
+  episodes: [0]
+
+output_dir: "/home/hercules/prometheus-vla/train/output/pi05_real_smoketest"
+job_name: "pi05_real_smoketest"
+
+depth_fusion: true
+
+policy:
+  type: pi05
+  pretrained_path: lerobot/pi05_base
+  compile_model: false
+  gradient_checkpointing: false
+  dtype: bfloat16
+  freeze_vision_encoder: false
+  train_expert_only: false
+  push_to_hub: false
+
+log_freq: 1
+eval_freq: 0
+save_freq: 0
+batch_size: 1
+steps: 2
+
+wandb:
+  enable: false

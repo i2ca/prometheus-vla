@@ -1,21 +1,17 @@
 dataset:
   repo_id: "Mrwlker/pick_up_the_cup3"
   episodes: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 11, 12, 13, 14, 15, 17, 18, 19, 20, 21]
-  image_transforms:
-    enable: true
-    max_num_transforms: 3
-    random_order: false
 
 val_dataset:
   repo_id: "Mrwlker/pick_up_the_cup3"
   episodes: [10, 16, 22, 23, 24]
 
-output_dir: "/home/hercules/prometheus-vla/train/output/pi05"
-job_name: "pi05"
+output_dir: "/home/hercules/prometheus-vla/train/output/pi05_libero"
+job_name: "pi05_libero"
 
 policy:
   type: pi05
-  pretrained_path: lerobot/pi05_base
+  pretrained_path: lerobot/pi05-libero
   compile_model: false
   gradient_checkpointing: true
   dtype: bfloat16
@@ -23,11 +19,11 @@ policy:
   train_expert_only: true
   push_to_hub: false
 
-log_freq: 10
-eval_freq: 500
-save_freq: 500
+log_freq: 5
+eval_freq: 171
+save_freq: 171
 batch_size: 16
-steps: 5000
+steps: 852
 
 wandb:
   enable: true

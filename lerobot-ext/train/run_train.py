@@ -40,6 +40,26 @@ def patched_getitem(self, idx):
 # aplica o patch
 LeRobotDataset.__getitem__ = patched_getitem
 
+# Image-transform patch: aplica image_transforms APENAS em RGB, nunca em depth.
+# Color jitter / affine em mapas de profundidade destrói a geometria, então
+# removemos os transforms antes de chamar o original e re-aplicamos só nos RGB.
+def patched_getitem_rgb_only_transforms(self, idx):
+    orig_transforms = self.image_transforms
+    self.image_transforms = None
+    try:
+        item = patched_getitem(self, idx)
+    finally:
+        self.image_transforms = orig_transforms
+
+    if orig_transforms is not None:
+        for key in list(item.keys()):
+            if key.startswith("observation.images.") and "depth" not in key and torch.is_tensor(item[key]):
+                item[key] = orig_transforms(item[key])
+
+    return item
+
+LeRobotDataset.__getitem__ = patched_getitem_rgb_only_transforms
+
 # --- MONKEY PATCHES END ---
 
 
@@ -47,6 +67,7 @@ from lerobot.configs.train import TrainPipelineConfig, DatasetConfig
 @dataclasses.dataclass
 class CustomTrainPipelineConfig(TrainPipelineConfig):
     val_dataset: DatasetConfig | None = None
+    depth_fusion: bool = True
 
 from lerobot.configs import parser
 from lerobot.datasets.factory import make_dataset
@@ -77,6 +98,7 @@ from lerobot.utils.utils import (
     has_method,
     init_logging,
 )
+from lerobot.utils.constants import ACTION
 
 def update_policy(
     train_metrics: MetricsTracker,
@@ -232,11 +254,23 @@ def train(cfg: CustomTrainPipelineConfig, accelerator: Accelerator | None = None
     )
 
     # =========================================================
-    # --- MONKEY PATCH DO ACT-D (INJEÇÃO GEOMÉTRICA 3D) ---
+    # --- MONKEY PATCH DE FUSÃO GEOMÉTRICA 3D + TÁTIL ---
     # =========================================================
-    from .act_d_injector import inject_act_d
     _device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    inject_act_d(policy, device=_device)
+    if cfg.depth_fusion and cfg.policy.type == "act":
+        from .act_d_injector import inject_act_d
+
+        inject_act_d(policy, device=_device)
+    elif cfg.depth_fusion and cfg.policy.type == "pi05":
+        from .pi05_d_injector import inject_pi05_d
+
+        inject_pi05_d(policy, device=_device)
+    else:
+        logging.info(
+            "Skipping depth-fusion injection (policy type='%s', depth_fusion=%s).",
+            cfg.policy.type,
+            cfg.depth_fusion,
+        )
     # =========================================================
 
     if cfg.peft is not None:
@@ -266,6 +300,10 @@ def train(cfg: CustomTrainPipelineConfig, accelerator: Accelerator | None = None
         processor_kwargs["preprocessor_overrides"]["rename_observations_processor"] = {
             "rename_map": cfg.rename_map
         }
+        if cfg.policy.type == "pi05" and hasattr(cfg.policy, "tokenizer_name"):
+            processor_kwargs["preprocessor_overrides"]["tokenizer_processor"] = {
+                "tokenizer_name": cfg.policy.tokenizer_name,
+            }
         postprocessor_kwargs["postprocessor_overrides"] = {
             "unnormalizer_processor": {
                 "stats": dataset.meta.stats,
@@ -412,6 +450,9 @@ def train(cfg: CustomTrainPipelineConfig, accelerator: Accelerator | None = None
             f"Start offline training on a fixed dataset, with effective batch size: {effective_batch_size}"
         )
 
+    best_val_metric = float("inf")
+    best_checkpoint_step = None
+
     for _ in range(step, cfg.steps):
         start_time = time.perf_counter()
         batch = next(dl_iter)
@@ -432,7 +473,7 @@ def train(cfg: CustomTrainPipelineConfig, accelerator: Accelerator | None = None
         step += 1
         train_tracker.step()
         is_log_step = cfg.log_freq > 0 and step % cfg.log_freq == 0 and is_main_process
-        is_saving_step = step % cfg.save_freq == 0 or step == cfg.steps
+        is_saving_step = (cfg.save_freq > 0 and step % cfg.save_freq == 0) or step == cfg.steps
         is_eval_step = cfg.eval_freq > 0 and step % cfg.eval_freq == 0
 
         if is_log_step:
@@ -467,13 +508,35 @@ def train(cfg: CustomTrainPipelineConfig, accelerator: Accelerator | None = None
             # policy.train()
 
             val_loss_meter = VarianceMeter("val_loss", ":.3f")
-            val_metrics = {} 
-            
+            val_action_mse_meter = VarianceMeter("val_action_mse", ":.4f")
+            val_metrics = {}
+
+            # action_mse é caro (num_inference_steps forwards por batch), limite em
+            # até N batches por eval pra não dominar o wall-clock.
+            max_action_mse_batches = getattr(cfg, "val_action_mse_batches", 4)
+            action_mse_batches_done = 0
+            policy_for_predict = accelerator.unwrap_model(policy)
+
             with torch.no_grad():
                 for val_batch in val_dataloader:
                     val_batch = preprocessor(val_batch)
                     with accelerator.autocast():
                         val_loss, val_output_dict = policy.forward(val_batch)
+
+                    if action_mse_batches_done < max_action_mse_batches:
+                        try:
+                            with accelerator.autocast():
+                                pred_actions = policy_for_predict.predict_action_chunk(val_batch)
+                            gt_actions = val_batch[ACTION].to(pred_actions.device)
+                            # gt pode vir com shape [B, chunk, dim] ou [B, dim]
+                            if gt_actions.dim() == pred_actions.dim():
+                                dim = min(pred_actions.shape[-1], gt_actions.shape[-1])
+                                mse = ((pred_actions[..., :dim] - gt_actions[..., :dim]) ** 2).mean()
+                                val_action_mse_meter.update(mse.item())
+                            action_mse_batches_done += 1
+                        except Exception as e:
+                            logging.warning("action_mse eval falhou: %s", e)
+                            max_action_mse_batches = 0
                     
                     val_loss_gathered = accelerator.gather(val_loss)
 
@@ -507,14 +570,28 @@ def train(cfg: CustomTrainPipelineConfig, accelerator: Accelerator | None = None
                 logging.info(f"Validation Results: {val_loss_meter}")
                 val_log_dict = {
                     "val_loss": val_loss_meter.avg,
-                    "val_loss_std": val_loss_meter.std
+                    "val_loss_std": val_loss_meter.std,
                 }
+                if val_action_mse_meter.count > 0:
+                    logging.info(f"  {val_action_mse_meter}")
+                    val_log_dict["val_action_mse"] = val_action_mse_meter.avg
+                    val_log_dict["val_action_mse_std"] = val_action_mse_meter.std
                 for k, meter in val_metrics.items():
                     val_log_dict[f"val_{k}"] = meter.avg
                     logging.info(f"  {k}: {meter.avg:.3f}")
 
                 if wandb_logger:
                     wandb_logger.log_dict(val_log_dict, step, mode="eval")
+
+                # Tracker do melhor checkpoint pelo val_action_mse (métrica objetiva).
+                # Cai no val_loss quando action_mse falha.
+                current_metric = val_action_mse_meter.avg if val_action_mse_meter.count > 0 else val_loss_meter.avg
+                if current_metric < best_val_metric:
+                    best_val_metric = current_metric
+                    best_checkpoint_step = step
+                    logging.info(
+                        f"  ↑ NEW BEST val_metric={current_metric:.4f} at step {step}"
+                    )
 
         if cfg.save_checkpoint and is_saving_step:
             if is_main_process:
@@ -531,6 +608,12 @@ def train(cfg: CustomTrainPipelineConfig, accelerator: Accelerator | None = None
                     postprocessor=postprocessor,
                 )
                 update_last_checkpoint(checkpoint_dir)
+                if best_checkpoint_step == step:
+                    best_link = checkpoint_dir.parent / "best"
+                    if best_link.exists() or best_link.is_symlink():
+                        best_link.unlink()
+                    best_link.symlink_to(checkpoint_dir.name)
+                    logging.info(f"  symlinked best -> {checkpoint_dir.name}")
                 if wandb_logger:
                     wandb_logger.log_policy(checkpoint_dir)
 
