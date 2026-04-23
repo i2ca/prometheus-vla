@@ -30,10 +30,16 @@ class ImagePublishProcess:
             width = camera_config["width"]
             target_name = f"g1_{camera_name}_shm" 
 
-            # SOLUÇÃO PARA O LEROBOT (.mp4): 
-            # Todas as memórias forçadas para 3 Canais (RGB) e 8-bits!
-            size = height * width * 3
-            shape = (height, width, 3)
+            # =========================================================
+            # CORREÇÃO: 1 Canal para Depth, 3 Canais para RGB
+            # =========================================================
+            if 'depth' in camera_name.lower():
+                size = height * width * 1
+                shape = (height, width, 1)
+            else:
+                size = height * width * 3
+                shape = (height, width, 3)
+                
             dtype = np.uint8
 
             try:
@@ -62,20 +68,16 @@ class ImagePublishProcess:
 
                 if 'depth' in camera_name.lower():
                     # =========================================================
-                    # 🌟 MÁGICA DA COR (IDÊNTICA À REALSENSE D435i)
+                    # PROFUNDIDADE REAL (1 Canal)
                     # =========================================================
                     # O simulador (MuJoCo) manda a distância em metros.
-                    # Limitamos até 2.0 metros (2000mm) para bater com a escala real.
                     depth_clipped = np.clip(image, 0.0, 2.0)
                     
                     # Converte de 2.0m para a escala de 8-bits (0 a 255)
                     depth_8bit = (depth_clipped * (255.0 / 2.0)).astype(np.uint8)
                     
-                    # Aplica o mapa de calor (Vermelho = perto, Azul = longe)
-                    depth_colormap = cv2.applyColorMap(depth_8bit, cv2.COLORMAP_JET)
-                    
-                    # Converte BGR (gerado pelo OpenCV) para RGB para manter o padrão LeRobot
-                    processed_img = cv2.cvtColor(depth_colormap, cv2.COLOR_BGR2RGB)
+                    # Adiciona a dimensão do canal para ficar (Height, Width, 1)
+                    processed_img = np.expand_dims(depth_8bit, axis=-1)
                         
                 elif 'ir_' in camera_name.lower():
                     if len(image.shape) == 3 and image.shape[2] == 3:
@@ -125,21 +127,16 @@ class ImagePublishProcess:
 
     @staticmethod
     def _image_publish_worker(shared_memory_info, image_dt, zmq_port, stop_event, data_ready_event, verbose):
-        # =========================================================
-        # CORREÇÃO DE PACOTE NO MULTIPROCESSING 
-        # =========================================================
         import sys
         import os
         import time
         import numpy as np
 
-        # 1. Força a pasta raiz do simulador a entrar no path do novo processo
         current_dir = os.path.dirname(os.path.abspath(__file__))
         root_dir = os.path.dirname(current_dir)
         if root_dir not in sys.path:
             sys.path.insert(0, root_dir)
 
-        # 2. Faz o import absoluto do utils (agora o Python acha com certeza!)
         from sim.sensor_utils import ImageUtils, SensorServer
         
         try:
@@ -159,7 +156,6 @@ class ImagePublishProcess:
                         image_copies = {name: arr.copy() for name, arr in shared_arrays.items()}
                         timestamps = {name: time.time() for name in image_copies.keys()}
                         
-                        # Codifica as imagens dinamicamente baseando-se no nome que o MuJoCo enviar
                         encoded_images = {}
                         for camera_name, image_copy in image_copies.items():
                             encoded_images[camera_name] = ImageUtils.encode_image(image_copy)

@@ -125,34 +125,6 @@ Agora você tem o ambiente funcionando exatamente como no PC original:
 * ✅ Ambiente pronto para uso imediato
 
 ---
-## 🔨 8. Teste a simulação
-
-Entre no diretório correto para rodar a simulação:
-
-```bash
-cd ~/prometheus-vla/lerobot-ext
-```
-
-Em seguida, rode a simulação utilizando:
-
-```bash
-python init_lerobot_teleoparate.py --config_path=config/teleoperate_key.yaml --sim
-```
-
----
-
-## ❌ Possível erro (Simulação com travamentos)
-
-Caso você esteja utilizando um computador com placa dedicada NVIDIA e também tenha uma placa integrada, o conflito entre as placas pode gerar travamentos na simulação. Para corrigir, utilize:
-
-```bash
-sudo prime-select nvidia
-sudo reboot
-```
-
-Isso irá forçar seu computador a utilizar sempre a placa dedicada. Lembrando que o sudo reboot irá reiniciar o computador. Então cuidado para não perder nenhum arquivo não salvo no computador.
-
----
 
 ## 🎯 Resultado Final
 

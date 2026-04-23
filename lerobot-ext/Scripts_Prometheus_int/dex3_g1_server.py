@@ -16,9 +16,9 @@
 
 """
 DDS-to-ZMQ bridge server for Unitree G1 robot with Dex3 hands.
+(Smart Auto-Switching between Low-Level and High-Level/Loco Modes)
 """
 
-import argparse
 import base64
 import contextlib
 import json
@@ -48,7 +48,7 @@ class MotionSwitcher:
             while result['name']:
                 self.msc.ReleaseMode()
                 status, result = self.msc.CheckMode()
-                time.sleep(1)
+                time.sleep(0.5) # Aguarda a IA desligar
             return status, result
         except Exception as e:
             return None, None
@@ -56,12 +56,14 @@ class MotionSwitcher:
     def Exit_Debug_Mode(self):
         try:
             status, result = self.msc.SelectMode(nameOrAlias='ai')
+            time.sleep(0.5) # Aguarda a IA ligar
             return status, result
         except Exception as e:
             return None, None
 
 
 kTopicLowCommand_Debug = "rt/lowcmd"
+kTopicLowCommand_Motion = "rt/arm_sdk"  # Tópico oficial para High Level
 kTopicLowState = "rt/lowstate"
 kTopicDex3LeftCommand = "rt/dex3/left/cmd"
 kTopicDex3RightCommand = "rt/dex3/right/cmd"
@@ -76,6 +78,8 @@ HANDCMD_PORT = 6003
 NUM_MOTORS = 35
 NUM_HAND_MOTORS = 7
 
+# Variável Global para rastrear o estado atual e não tentar trocar a cada frame
+current_robot_mode = None 
 
 def lowstate_to_dict(msg: hg_LowState) -> dict[str, Any]:
     motor_states = []
@@ -125,37 +129,19 @@ def handstate_to_dict(msg: HandState_, side: str) -> dict[str, Any]:
     }
 
 
-def dict_to_lowcmd(data: dict[str, Any], enable_legs: bool) -> hg_LowCmd:
+def dict_to_lowcmd(data: dict[str, Any]) -> hg_LowCmd:
     cmd = unitree_hg_msg_dds__LowCmd_()
     cmd.mode_pr = data.get("mode_pr", 0)
     cmd.mode_machine = data.get("mode_machine", 0)
 
-    # ==========================================================
-    # A MÁGICA DO CONTROLE HÍBRIDO (PRIORIDADE OVERRIDE)
-    # ==========================================================
-    if enable_legs:
-        # Se a IA está rodando, precisamos forçar que o LowCmd do LeRobot 
-        # tenha prioridade absoluta (1) em cima dos braços para não "travar".
-        cmd.mode_pr = 1 
-
+    # Conversão Pura: Sem hacks de perna, sem mode_pr forçado.
     for i, motor_data in enumerate(data.get("motor_cmd", [])):
-        if enable_legs and i < 15:
-            # MODO HÍBRIDO: Zera completamente pernas/cintura. A IA (que está viva) assume 100%.
-            cmd.motor_cmd[i].mode = 0
-            cmd.motor_cmd[i].q = 0.0
-            cmd.motor_cmd[i].dq = 0.0
-            cmd.motor_cmd[i].kp = 0.0
-            cmd.motor_cmd[i].kd = 0.0
-            cmd.motor_cmd[i].tau = 0.0
-        else:
-            # MODO HÍBRIDO E BRUTO: Passa os comandos do LeRobot. 
-            # (Com mode_pr = 1, a IA será silenciada apenas nos braços).
-            cmd.motor_cmd[i].mode = motor_data.get("mode", 0)
-            cmd.motor_cmd[i].q = motor_data.get("q", 0.0)
-            cmd.motor_cmd[i].dq = motor_data.get("dq", 0.0)
-            cmd.motor_cmd[i].kp = motor_data.get("kp", 0.0)
-            cmd.motor_cmd[i].kd = motor_data.get("kd", 0.0)
-            cmd.motor_cmd[i].tau = motor_data.get("tau", 0.0)
+        cmd.motor_cmd[i].mode = motor_data.get("mode", 0)
+        cmd.motor_cmd[i].q = motor_data.get("q", 0.0)
+        cmd.motor_cmd[i].dq = motor_data.get("dq", 0.0)
+        cmd.motor_cmd[i].kp = motor_data.get("kp", 0.0)
+        cmd.motor_cmd[i].kd = motor_data.get("kd", 0.0)
+        cmd.motor_cmd[i].tau = motor_data.get("tau", 0.0)
 
     return cmd
 
@@ -207,15 +193,38 @@ def handstate_forward_loop(left_sub, right_sub, handstate_sock, state_period, sh
             last_right_time = now
         time.sleep(0.001)
 
-def cmd_forward_loop(lowcmd_sock, lowcmd_pub_debug, crc, enable_legs):
+def cmd_forward_loop(lowcmd_sock, lowcmd_pub_debug, lowcmd_pub_motion, crc, ms):
+    global current_robot_mode
     while True:
         try: payload = lowcmd_sock.recv()
         except zmq.ContextTerminated: break
+        
         msg_dict = json.loads(payload.decode("utf-8"))
-        cmd = dict_to_lowcmd(msg_dict.get("data", {}), enable_legs)
+        topic = msg_dict.get("topic", "")
+        
+        cmd = dict_to_lowcmd(msg_dict.get("data", {}))
         cmd.crc = crc.Crc(cmd)
-        if msg_dict.get("topic", "") == kTopicLowCommand_Debug:
+        
+        # -------------------------------------------------------------
+        # A MÁGICA ACONTECE AQUI: Troca de Estado Baseado no Tópico ZMQ
+        # -------------------------------------------------------------
+        if topic == kTopicLowCommand_Debug:
+            if current_robot_mode != "debug":
+                print("\n[ZMQ] 🛑 Comando LOW LEVEL recebido via ZMQ.")
+                print("[ZMQ] Matando a IA e assumindo controle bruto (Debug Mode)...")
+                ms.Enter_Debug_Mode()
+                current_robot_mode = "debug"
+                
             lowcmd_pub_debug.Write(cmd)
+            
+        elif topic == kTopicLowCommand_Motion:
+            if current_robot_mode != "ai":
+                print("\n[ZMQ] 🏃 Comando HIGH LEVEL (Loco) recebido via ZMQ.")
+                print("[ZMQ] Ativando a IA (WBC) para manter o equilíbrio...")
+                ms.Exit_Debug_Mode()
+                current_robot_mode = "ai"
+                
+            lowcmd_pub_motion.Write(cmd)
 
 def handcmd_forward_loop(handcmd_sock, left_pub, right_pub, shutdown_event):
     while not shutdown_event.is_set():
@@ -233,26 +242,23 @@ def handcmd_forward_loop(handcmd_sock, left_pub, right_pub, shutdown_event):
 
 
 def main():
-    parser = argparse.ArgumentParser(description="ZMQ Bridge para Unitree G1")
-    parser.add_argument('--enable-legs', action='store_true', help='Ativa o auto-equilíbrio (locomoção) com controle de braços via Override.')
-    args = parser.parse_args()
+    # Removemos o argparse, o servidor agora descobre sozinho!
+    print("=========================================================")
+    print("🚀 G1 ZMQ Bridge - Smart Auto-Switching Inicializado")
+    print("=========================================================")
 
     ChannelFactoryInitialize(0)
     ms = MotionSwitcher()
-
-    if not args.enable_legs:
-        print("[AVISO] DEFAULT MODO BRUTO: Desligando locomoção interna (O robô vai cair se não estiver pendurado).")
-        ms.Enter_Debug_Mode()
-        print("[SUCESSO] IA desligada. Robô 100% dependente do LeRobot.")
-    else:
-        print("[INFO] '--enable-legs' ATIVADO: O robô continuará se equilibrando nas pernas (IA Ligada).")
-        print("[INFO] ZMQ rodará com Prioridade de Sobrescrita (mode_pr = 1) para dominar os braços.")
-        # NÃO CHAMAMOS O DEBUG MODE AQUI. A IA CONTINUA CUIDANDO DAS PERNAS!
-
     crc = CRC()
 
+    # Publicador para o modo BRUTO (Low Level)
     lowcmd_pub_debug = ChannelPublisher(kTopicLowCommand_Debug, hg_LowCmd)
     lowcmd_pub_debug.Init()
+    
+    # Publicador para o modo LOCO (High Level - Apenas Braços)
+    lowcmd_pub_motion = ChannelPublisher(kTopicLowCommand_Motion, hg_LowCmd)
+    lowcmd_pub_motion.Init()
+    
     lowstate_sub = ChannelSubscriber(kTopicLowState, hg_LowState)
     lowstate_sub.Init()
 
@@ -285,10 +291,11 @@ def main():
     t_handcmd = threading.Thread(target=handcmd_forward_loop, args=(handcmd_sock, left_hand_cmd_pub, right_hand_cmd_pub, shutdown_event))
     t_handcmd.start()
 
-    print("\nBridge rodando e aguardando comandos do ZMQ...")
+    print("\n[INFO] Servidor ZMQ escutando na porta 6000...")
+    print("[INFO] Aguardando LeRobot dizer qual modo ele quer...")
 
     try:
-        cmd_forward_loop(lowcmd_sock, lowcmd_pub_debug, crc, args.enable_legs)
+        cmd_forward_loop(lowcmd_sock, lowcmd_pub_debug, lowcmd_pub_motion, crc, ms)
     except KeyboardInterrupt:
         print("\nDesligando a bridge...")
     finally:

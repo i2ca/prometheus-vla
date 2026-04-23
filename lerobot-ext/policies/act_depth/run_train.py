@@ -42,6 +42,14 @@ LeRobotDataset.__getitem__ = patched_getitem
 
 # --- MONKEY PATCHES END ---
 
+# =========================================================
+# ATIVAÇÃO DO REGISTRO NATIVO (ACT-D)
+# =========================================================
+from .configuration_act import ACTConfig
+from .modeling_act import ACTPolicy
+from .processor_act import make_act_pre_post_processors
+# =========================================================
+
 
 from lerobot.configs.train import TrainPipelineConfig, DatasetConfig
 @dataclasses.dataclass
@@ -234,9 +242,9 @@ def train(cfg: CustomTrainPipelineConfig, accelerator: Accelerator | None = None
     # =========================================================
     # --- MONKEY PATCH DO ACT-D (INJEÇÃO GEOMÉTRICA 3D) ---
     # =========================================================
-    from .act_d_injector import inject_act_d
-    _device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    inject_act_d(policy, device=_device)
+    # from .act_d_injector import inject_act_d
+    # _device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    # inject_act_d(policy, device=_device)
     # =========================================================
 
     if cfg.peft is not None:

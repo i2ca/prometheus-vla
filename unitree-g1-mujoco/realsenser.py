@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Live camera viewer for MuJoCo simulator using Pure OpenCV
-Ultra-Fast - 30+ FPS with multiple windows
+Ultra-Fast - 30+ FPS with resizable windows
 """
 import argparse
 import sys
@@ -23,12 +23,12 @@ class CameraViewer:
         self.frame_count = 0
         self.last_time = time.time()
         self.fps = 0
+        self.initialized_windows = set() # Controle para criar janelas apenas uma vez
         
     def _process_image(self, cam_name, img_data):
         """Decode and process image based on camera type"""
         if isinstance(img_data, str):
             try:
-                # O simulador e a câmera real agora mandam TUDO em JPG 8-bits 3-canais (RGB)
                 img = ImageUtils.decode_image(img_data)
             except Exception:
                 return None
@@ -40,11 +40,7 @@ class CameraViewer:
         if img is None or not isinstance(img, np.ndarray):
             return None
 
-        # ==========================================================
-        # RENDERIZAÇÃO ULTRA-RÁPIDA (OpenCV)
-        # ==========================================================
-        # Como a imagem (tanto RGB quanto Depth) já vem colorida e pronta da fonte, 
-        # nós só precisamos inverter de RGB (Padrão IA) para BGR (Padrão Monitor/OpenCV).
+        # Inverte de RGB (Padrão IA/VR) para BGR (Padrão Monitor/OpenCV)
         if len(img.shape) == 3 and img.shape[2] == 3:
             img_out = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
         else:
@@ -56,22 +52,22 @@ class CameraViewer:
         """Start the live viewer with OpenCV"""
         print("⏳ Aguardando conexão com as lentes do simulador...")
         
-        # Espera o primeiro frame para ter certeza que conectou
         data = self.client.receive_message()
         if not data or "images" not in data:
             print("❌ Nenhuma câmera encontrada no stream!")
             return
 
         print(f"\n{'='*60}")
-        print("📹 Live Multi-Camera Viewer (OPENCV TURBO) started!")
-        print("Pressione a tecla 'Q' com qualquer janela focada para sair.")
+        print("📹 Live Resizable Viewer (OPENCV TURBO) started!")
+        print("-> ARRASTE as bordas das janelas para expandir.")
+        print("-> Pressione 'Q' para sair.")
         print(f"{'='*60}\n")
         
         try:
             while True:
                 data = self.client.receive_message()
                 
-                # Cálculo de FPS contínuo
+                # Cálculo de FPS
                 self.frame_count += 1
                 current_time = time.time()
                 if current_time - self.last_time >= 1.0:
@@ -86,21 +82,24 @@ class CameraViewer:
                     if img_bgr is None:
                         continue
 
-                    # Se for a câmera HD, encolhe pela metade só para caber melhor na tela do PC
-                    if cam_name == "head_camera":
-                        img_bgr = cv2.resize(img_bgr, (640, 360))
-                    
-                    # Desenha a tarja preta transparente e o texto verde do FPS
-                    cv2.rectangle(img_bgr, (5, 5), (150, 45), (0, 0, 0), -1)
+                    # --- MÁGICA DA EXPANSÃO ---
+                    # Se for a primeira vez que vemos esta câmera, configuramos a janela como redimensionável
+                    window_name = f"Sensor: {cam_name}"
+                    if window_name not in self.initialized_windows:
+                        cv2.namedWindow(window_name, cv2.WINDOW_NORMAL)
+                        # Mantém a proporção correta (não achata) enquanto você expande
+                        cv2.setWindowProperty(window_name, cv2.WND_PROP_ASPECT_RATIO, cv2.WINDOW_KEEPRATIO)
+                        self.initialized_windows.add(window_name)
+
+                    # Desenha a tarja do FPS (ajustada para ser visível mesmo em telas grandes)
+                    cv2.rectangle(img_bgr, (5, 5), (160, 45), (0, 0, 0), -1)
                     cv2.putText(img_bgr, f'FPS: {self.fps:.1f}', (15, 35), 
-                                cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 255, 0), 2)
+                                cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 0), 2)
                     
-                    # Renderiza a janela na hora!
-                    cv2.imshow(f"Sensor: {cam_name}", img_bgr)
+                    # Renderiza na janela redimensionável
+                    cv2.imshow(window_name, img_bgr)
                 
-                # Permite framerate ilimitado aguardando tecla de escape (Q)
                 if cv2.waitKey(1) & 0xFF == ord('q'):
-                    print("\n🛑 Tecla 'Q' pressionada. Encerrando...")
                     break
                 
         except KeyboardInterrupt:

@@ -16,8 +16,8 @@ import os
 import sys
 import subprocess
 
-
-from .unitree_g1 import UnitreeG1, UnitreeG1Config
+# Isso em baixo ele vai usar a class nova Loco para controla o robo com High ou Low Level.
+from .unitree_g1_loco import UnitreeG1, UnitreeG1Config
 from lerobot.robots.config import RobotConfig
 from .g1_utils import (
     Dex3_1_Left_JointIndex, 
@@ -68,8 +68,17 @@ class UnitreeG1Dex3Config(UnitreeG1Config):
     hand_kp: float = 0.8  # Position gain for hand motors
     hand_kd: float = 0.2  # Damping gain for hand motors
     hand_control_dt: float = 0.005  # 100 Hz control loop
+
+    use_loco: bool = False  # False = Low Level (Suporte), True = High Level (Andando)
     
     def __post_init__(self):
+
+        if self.use_loco:
+            self.control_mode = "high_level"
+        else:
+            self.control_mode = "upper_body"
+        
+
         # LÓGICA DE RESOLUÇÃO DINÂMICA
         if self.is_simulation:
             self.robot_ip = "127.0.0.1"

@@ -1,14 +1,10 @@
 dataset:
-  repo_id: "Mrwlker/pick_up_the_cup3"
-  episodes: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 11, 12, 13, 14, 15, 17, 18, 19, 20, 21]
-  image_transforms:
-    enable: true
-    max_num_transforms: 3
-    random_order: false
+  repo_id: "Breno-de-Angelo/unitree-g1-dex3-1-pick-kettle-v3"
+  episodes: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 11, 12, 14, 15, 17, 18, 19, 20, 21, 22, 24, 25, 27, 29]
 
 val_dataset:
-  repo_id: "Mrwlker/pick_up_the_cup3"
-  episodes: [10, 16, 22, 23, 24]
+  repo_id: "Breno-de-Angelo/unitree-g1-dex3-1-pick-kettle-v3"
+  episodes: [10, 16, 23, 13, 28, 26]
 
 output_dir: "/home/hercules/prometheus-vla/train/output/pi05"
 job_name: "pi05"
@@ -16,18 +12,19 @@ job_name: "pi05"
 policy:
   type: pi05
   pretrained_path: lerobot/pi05_base
-  compile_model: false
+  compile_model: true
   gradient_checkpointing: true
   dtype: bfloat16
   freeze_vision_encoder: false
-  train_expert_only: true
+  train_expert_only: false
   push_to_hub: false
 
-log_freq: 10
-eval_freq: 500
-save_freq: 500
-batch_size: 16
-steps: 5000
+log_freq: 5
+eval_freq: 171
+save_freq: 171
+batch_size: 32
+steps: 852
 
 wandb:
   enable: true
+
