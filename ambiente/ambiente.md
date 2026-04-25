@@ -51,7 +51,7 @@ Se aparecer uma lista de pacotes → tudo certo 👍
 
 Baixe o arquivo completo diretamente do Google Drive:
 
-👉 https://drive.google.com/file/d/1W2yDttDVfhc8dUxTo2qCIaBQWoHlhzTV/view?usp=drive_link
+👉 https://drive.google.com/file/d/15TMKjqT1RO5lHNWIMZyFjJbn6Y-08eR8/view?usp=sharing
 
 > ⚠️ O arquivo já está completo (`g1_env.tar.gz`), **não é necessário reconstruir partes**.
 
