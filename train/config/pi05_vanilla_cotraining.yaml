@@ -1,0 +1,49 @@
+# Ablation #5 (depends on build_cotraining_dataset.py): pi05 vanilla co-trained
+# on pick_up_the_cup3 + Unitree Dex3 picks mixed into a single merged dataset.
+#
+# PREREQUISITE: run `python train/build_cotraining_dataset.py ...` first to
+# build the merged corpus on disk (this lerobot fork disables MultiLeRobotDataset
+# so we can't combine datasets at training time — they must already be merged).
+#
+# STATUS: schema rename from cam_left_high -> head_camera in the Unitree shards
+# is a TODO in build_cotraining_dataset.py. Without it merge_datasets() will
+# reject inputs with mismatched schemas. Finish that before running this yaml.
+
+dataset:
+  # Update this once build_cotraining_dataset.py succeeds.
+  repo_id: "local/cotraining_pi05_cup3_plus_unitree"
+  root: "/home/hercules/datasets/cotraining_pi05_cup3_plus_unitree"
+  image_transforms:
+    enable: true
+    max_num_transforms: 3
+    random_order: false
+
+val_dataset:
+  # Hold out just the cup3 val episodes for fair comparison across ablations.
+  repo_id: "Mrwlker/pick_up_the_cup3"
+  episodes: [10, 16, 22, 23, 24]
+
+output_dir: "/home/hercules/prometheus-vla/train/output/pi05_vanilla_cotraining"
+job_name: "pi05_vanilla_cotraining"
+
+policy:
+  type: pi05
+  pretrained_path: lerobot/pi05_base
+  compile_model: false
+  gradient_checkpointing: true
+  dtype: bfloat16
+  freeze_vision_encoder: false
+  train_expert_only: true
+  push_to_hub: false
+
+depth_fusion: false
+
+log_freq: 20
+eval_freq: 1000
+save_freq: 1000
+batch_size: 16
+# Longer than other ablations because of the larger corpus; adjust to GPU budget.
+steps: 20000
+
+wandb:
+  enable: true

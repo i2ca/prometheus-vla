@@ -1,0 +1,47 @@
+# Ablation #4 (step 2 of 2): fine-tune the Unitree-pretrained pi05 vanilla on
+# your pick_up_the_cup3 dataset.
+#
+# Before running, make sure pi05_vanilla_unitree_pretrain.yaml has completed —
+# the `pretrained_path` below must point at that run's final checkpoint.
+# Replace `last` by a specific step (e.g. `003000`) if you want the best one.
+#
+# Typical pattern: LR scheduler warmup will be short since we're already
+# near-converged; 5k fine-tune steps is enough to specialize without catastrophic
+# forgetting of the Unitree priors.
+
+dataset:
+  repo_id: "Mrwlker/pick_up_the_cup3"
+  episodes: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 11, 12, 13, 14, 15, 17, 18, 19, 20, 21]
+  image_transforms:
+    enable: true
+    max_num_transforms: 3
+    random_order: false
+
+val_dataset:
+  repo_id: "Mrwlker/pick_up_the_cup3"
+  episodes: [10, 16, 22, 23, 24]
+
+output_dir: "/home/hercules/prometheus-vla/train/output/pi05_vanilla_unitree_toast_then_cup3"
+job_name: "pi05_vanilla_unitree_toast_then_cup3"
+
+policy:
+  type: pi05
+  # IMPORTANT: Update this path after pi05_vanilla_unitree_pretrain.yaml finishes.
+  pretrained_path: /home/hercules/prometheus-vla/train/output/pi05_vanilla_unitree_toast_pretrain/checkpoints/last/pretrained_model
+  compile_model: false
+  gradient_checkpointing: true
+  dtype: bfloat16
+  freeze_vision_encoder: false
+  train_expert_only: true
+  push_to_hub: false
+
+depth_fusion: false
+
+log_freq: 10
+eval_freq: 500
+save_freq: 500
+batch_size: 16
+steps: 5000
+
+wandb:
+  enable: true

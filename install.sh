@@ -37,8 +37,8 @@ pip install git+https://github.com/unitreerobotics/unitree_sdk2_python.git
 
 # Stage 5: LeRobot with extras
 echo ""
-echo "[5/6] Installing LeRobot with extras..."
-pip install -e ./lerobot[unitree_g1_dex3,televuer,intelrealsense]
+echo "[5/6] Installing LeRobot with extras (including PI05 dependencies)..."
+pip install -e ./lerobot[unitree_g1_dex3,televuer,intelrealsense,pi]
 
 # Stage 6: Verify installation
 echo ""

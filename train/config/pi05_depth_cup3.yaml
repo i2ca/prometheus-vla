@@ -1,0 +1,44 @@
+# Ablation #2: pi05 + depth (no pressure) on pick_up_the_cup3.
+#
+# Adds the PointNet depth token but drops the pressure token. Isolates the
+# marginal contribution of tactile sensing vs depth:
+#   pi05-D  (full) minus pi05-depth  ==  gain from pressure.
+#   pi05-depth minus pi05 vanilla    ==  gain from depth.
+
+dataset:
+  repo_id: "Mrwlker/pick_up_the_cup3"
+  episodes: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 11, 12, 13, 14, 15, 17, 18, 19, 20, 21]
+  image_transforms:
+    enable: true
+    max_num_transforms: 3
+    random_order: false
+
+val_dataset:
+  repo_id: "Mrwlker/pick_up_the_cup3"
+  episodes: [10, 16, 22, 23, 24]
+
+output_dir: "/home/hercules/prometheus-vla/train/output/pi05_depth_cup3"
+job_name: "pi05_depth_cup3"
+
+policy:
+  type: pi05
+  pretrained_path: lerobot/pi05_base
+  compile_model: false
+  gradient_checkpointing: true
+  dtype: bfloat16
+  freeze_vision_encoder: false
+  train_expert_only: true
+  push_to_hub: false
+
+# PointNet only, no pressure_proj.
+depth_fusion: true
+fusion_mode: depth_only
+
+log_freq: 10
+eval_freq: 500
+save_freq: 500
+batch_size: 16
+steps: 5000
+
+wandb:
+  enable: true

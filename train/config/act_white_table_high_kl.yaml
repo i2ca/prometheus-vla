@@ -10,7 +10,7 @@ val_dataset:
   repo_id: "Breno-de-Angelo/g1-white-table-only-rgb"
   episodes: [2, 12, 5, 3, 82, 51, 62, 66, 73, 76]
 
-output_dir: "/home/hercules/prometheus-vla/train/output/act_white_table_high_kl"
+output_dir: "/home/hercules/prometheus-vla/train/output/act_white_table_high_kl_more_epochs"
 job_name: "act_white_table_high_kl"
 
 policy:
@@ -26,8 +26,8 @@ batch_size: 128
 # steps = steps_per_epoch * epochs
 # For 50 epochs, we need:
 # steps_per_epoch = 6888 / 128 = 53.81 -> 54
-# steps = 54 * 100 = 5400
-steps: 5400
+# steps = 54 * 300 = 16200
+steps: 16200
 # Eval every epoch
 eval_freq: 54
 

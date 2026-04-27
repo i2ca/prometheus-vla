@@ -1,0 +1,55 @@
+# Ablation #4 (step 1 of 2): pretrain pi05 vanilla on a large Unitree Dex3 pick
+# dataset, then fine-tune separately with pi05_vanilla_finetune_cup3.yaml.
+#
+# Starts from lerobot/pi05_base (already pretrained on diverse robotics data) and
+# fine-tunes on ToastedBread (418 episodes, ~352k frames, same 28-dim state/action
+# convention as your cup3 dataset). Uses cam_left_high as the single head camera
+# view (matches the FOV of your head_camera). Other cameras (cam_right_high,
+# cam_left_wrist, cam_right_wrist) load into the dataset but are ignored by the
+# policy because input_features from pi05_base only keeps head_camera + state.
+#
+# Other Dex3 picks you could swap in (same schema):
+#   unitreerobotics/G1_Dex3_PickBottle_Dataset   (202 eps)
+#   unitreerobotics/G1_Dex3_GraspSquare_Dataset  (301 eps)
+#   unitreerobotics/G1_Dex3_ObjectPlacement_Dataset (210 eps)
+#   unitreerobotics/G1_Dex3_PickApple/Doll/Gum/Snack/Tissue/Charger_Dataset
+#
+# Next step: point pi05_vanilla_finetune_cup3.yaml at this output dir.
+
+dataset:
+  repo_id: "unitreerobotics/G1_Dex3_ToastedBread_Dataset"
+  image_transforms:
+    enable: true
+    max_num_transforms: 3
+    random_order: false
+
+# Rename Unitree's left-high view to the name pi05 expects; joint naming convention
+# matches cup3 so observation.state needs no remap.
+rename_map:
+  "observation.images.cam_left_high": "observation.images.head_camera"
+
+output_dir: "/home/hercules/prometheus-vla/train/output/pi05_vanilla_unitree_toast_pretrain"
+job_name: "pi05_vanilla_unitree_toast_pretrain"
+
+policy:
+  type: pi05
+  pretrained_path: lerobot/pi05_base
+  compile_model: false
+  gradient_checkpointing: true
+  dtype: bfloat16
+  freeze_vision_encoder: false
+  train_expert_only: true
+  push_to_hub: false
+
+depth_fusion: false
+
+log_freq: 20
+# Bigger dataset → can train longer without overfitting; 15k steps is a
+# reasonable pretrain budget. Adjust based on GPU time available.
+eval_freq: 1000
+save_freq: 1000
+batch_size: 16
+steps: 15000
+
+wandb:
+  enable: true

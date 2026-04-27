@@ -1,17 +1,20 @@
-"""Injeção de profundidade 3D (PointNet) + tato (pressão Dex3) na política PI05.
+"""Injeção de profundidade 3D (PointNet) na política PI05 — **sem tato**.
 
-Paralelo ao `act_d_injector`, mas adaptado à arquitetura PaliGemma + Gemma-Expert do PI05:
-em vez de somar features ao "state token" do ACT, acoplamos tokens extras ao final da
-sequência de prefixo (logo após os tokens de linguagem), antes do `torch.cat` em
-`PI05Pytorch.embed_prefix`. A largura dos tokens extras é ajustada ao `hidden_size` do VLM.
+Variante do `pi05_d_injector` para a ablação "pi05-depth": só adiciona o token de
+PointNet ao prefixo, sem o token de pressão do Dex3. Útil para medir, no mesmo
+dataset, o ganho isolado de depth (pi05-depth vs pi05 vanilla) e o ganho marginal
+de pressão (pi05-D vs pi05-depth).
+
+A arquitetura e o ponto de injeção são os mesmos do `pi05_d_injector`; só deixa
+de criar `pressure_proj` e de anexar o token de pressão.
 """
+
 import logging
 import types
 from pathlib import Path
 
 import safetensors.torch as st
 import torch
-import torch.nn as nn
 
 from train.depth_encoder import PointNetEncoder, depth_to_pointcloud
 
@@ -27,42 +30,24 @@ def _vlm_hidden_size(policy) -> int:
 
 
 def _load_injected_weights(policy, checkpoint_dir):
-    """Se um checkpoint com `pointnet.*` / `pressure_proj.*` for passado, carrega-os
-    na policy recém-injetada (caso contrário eles ficariam com init aleatório após
-    o make_policy silenciosamente descartar esses keys como 'unexpected')."""
     sd_path = Path(checkpoint_dir) / "model.safetensors"
     if not sd_path.exists():
         return 0
     sd = st.load_file(str(sd_path))
-    injected = {k: v for k, v in sd.items() if "pointnet" in k or "pressure_proj" in k}
+    injected = {k: v for k, v in sd.items() if "pointnet" in k}
     if not injected:
         return 0
-    missing, unexpected = policy.load_state_dict(injected, strict=False)
+    policy.load_state_dict(injected, strict=False)
     return len(injected)
 
 
-def inject_pi05_d(policy, device, camera_intrinsics=None, pressure_dim=66, load_injected_from=None):
-    """Acopla PointNet + encoder de pressão ao PI05 e injeta tokens extras no prefixo.
-
-    - Dois tokens são acrescentados ao final da sequência de prefixo:
-          [IMG_TOK..., LANG_TOK..., DEPTH_TOK, PRESSURE_TOK]
-      Com `att_masks=0` (mesmo bloco de prefixo dos demais) e `pad_masks=True`.
-    - `observation.images.head_camera_depth` é escondido de `config.input_features`
-      durante o forward, evitando que o pipeline SigLIP tente processá-lo como RGB.
-    - Depth / pressões são retirados do batch durante o forward e restaurados ao fim.
-    - Se o batch não trouxer depth/pressão, o injector degrada para uma passada pi05
-      nativa (nenhum token extra é adicionado naquele step).
-    """
-    print("\n[INJECAO PI05-D]: Ativando fusao 3D (PointNet) + tato (Dex3) para PI05...")
+def inject_pi05_depth(policy, device, camera_intrinsics=None, load_injected_from=None):
+    """Acopla PointNet ao PI05 e injeta um único token extra (depth) no prefixo."""
+    print("\n[INJECAO PI05-DEPTH]: Ativando fusao 3D (PointNet) sem tato para PI05...")
 
     hidden_size = _vlm_hidden_size(policy)
 
     policy.pointnet = PointNetEncoder(output_dim=hidden_size).to(device)
-    policy.pressure_proj = nn.Sequential(
-        nn.Linear(pressure_dim, 256),
-        nn.ReLU(),
-        nn.Linear(256, hidden_size),
-    ).to(device)
     policy.camera_intrinsics = camera_intrinsics or {
         "fx": 600.0,
         "fy": 600.0,
@@ -101,6 +86,8 @@ def inject_pi05_d(policy, device, camera_intrinsics=None, pressure_dim=66, load_
 
     def _compute_extra_tokens(self, batch):
         depth = batch.pop(DEPTH_KEY, None)
+        # Drop pressure keys silently if present; they are not used here but a
+        # co-loaded dataset may still carry them.
         left = batch.pop(LEFT_PRESSURE_KEY, None)
         right = batch.pop(RIGHT_PRESSURE_KEY, None)
 
@@ -109,10 +96,6 @@ def inject_pi05_d(policy, device, camera_intrinsics=None, pressure_dim=66, load_
             pc = depth_to_pointcloud(depth.float(), self.camera_intrinsics)
             depth_tok = self.pointnet(pc).unsqueeze(1)
             tokens.append(depth_tok)
-        if left is not None and right is not None:
-            full_pressure = torch.cat([left.float(), right.float()], dim=1)
-            press_tok = self.pressure_proj(full_pressure).unsqueeze(1)
-            tokens.append(press_tok)
 
         saved = (depth, left, right)
         if not tokens:
@@ -157,6 +140,6 @@ def inject_pi05_d(policy, device, camera_intrinsics=None, pressure_dim=66, load_
     if load_injected_from is not None:
         n = _load_injected_weights(policy, load_injected_from)
         if n > 0:
-            print(f"[INJECAO PI05-D]: carregados {n} pesos treinados de {load_injected_from}")
+            print(f"[INJECAO PI05-DEPTH]: carregados {n} pesos treinados de {load_injected_from}")
 
-    print("[INJECAO PI05-D]: Concluida. Profundidade e tato inseridos como tokens de prefixo.\n")
+    print("[INJECAO PI05-DEPTH]: Concluida. Profundidade inserida como token de prefixo (sem tato).\n")
