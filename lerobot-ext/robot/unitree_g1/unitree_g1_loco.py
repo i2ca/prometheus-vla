@@ -449,7 +449,7 @@ class UnitreeG1(Robot):
     def send_action(self, action: RobotAction) -> RobotAction:
         joint_index = G1_29_JointArmIndex if self.config.control_mode in ["upper_body", "high_level"] else G1_29_JointIndex
 
-        max_delta = 0.08  
+        max_delta = 0.015
         for motor in joint_index:
             key = f"{motor.name}.q"
             if key in action:

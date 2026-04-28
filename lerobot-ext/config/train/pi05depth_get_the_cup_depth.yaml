@@ -1,0 +1,97 @@
+# ==========================================================
+# 1. DATASET DE TREINAMENTO 
+# ==========================================================
+dataset:
+  repo_id: Mrwlker/pick_up_the_cup3
+  root: meu_dataset/pick_up_the_cup3
+  episodes: [1, 2, 4, 5, 6, 7, 9, 10, 11, 12, 13, 14, 16, 17, 18, 20, 21, 22, 23]
+
+# ==========================================================
+# 2. DATASET DE VALIDAÇÃO
+# ==========================================================
+val_dataset:
+  repo_id: Mrwlker/pick_up_the_cup3
+  root: meu_dataset/pick_up_the_cup3
+  episodes: [3, 8, 15, 19]
+
+# ==========================================================
+# 3. ARQUITETURA DA IA (Vision-Language-Action: PI05-Depth)
+# ==========================================================
+policy:
+  type: pi05depth  # Nova arquitetura registrada
+  repo_id: Mrwlker/pick_up_the_cup_pi05
+  push_to_hub: false
+  
+  # --------------------------------------------------------
+  # PARÂMETROS OBRIGATÓRIOS DO PI05
+  # --------------------------------------------------------
+  # Modelos base que compõem o cérebro
+  paligemma_variant: "gemma_2b"        # O cérebro VLM principal (Visão e Linguagem)
+  action_expert_variant: "gemma_300m"  # O especialista motor (AdaRMS)
+  
+  # Resolução exigida pelo SigLIP do PaliGemma (quadrada). 
+  # O código original redimensiona os 480x640 com preenchimento (pad) para não distorcer.
+  image_resolution: [224, 224]
+
+  # O PI05 padroniza tensores internamente, precisamos dizer o tamanho máximo real
+  max_state_dim: 28
+  max_action_dim: 28
+  
+  # Ativação dos Módulos ACT-D Customizados
+  use_depth_3d: true
+  use_pressure: false  # Deixei falso pois estão comentados nas features
+  # --------------------------------------------------------
+  
+  input_features:
+    observation.images.head_camera:
+      type: VISUAL
+      shape: [3, 480, 640]
+    observation.images.head_camera_depth:
+      type: VISUAL
+      shape: [3, 480, 640]
+      
+    # Mantido em 28 para bater com o Parquet!
+    observation.state:
+      type: STATE
+      shape: [28] 
+      
+  output_features:
+    action:
+      type: ACTION
+      shape: [28]
+
+  chunk_size: 100
+  n_action_steps: 100
+  n_obs_steps: 1
+  
+  # --------------------------------------------------------
+  # HIPERPARÂMETROS DE TREINO (Flow Matching + PaliGemma)
+  # --------------------------------------------------------
+  # Substitui o kl_weight e dropout do ACT antigo.
+  optimizer_lr: 2.5e-5               # Taxa de aprendizado padrão do PI05
+  optimizer_weight_decay: 0.01       # Regularização nativa do VLM
+  scheduler_warmup_steps: 1000       # Aquece a rede devagar para não destruir os pesos pré-treinados
+  scheduler_decay_steps: 30000       # Decaimento do cosseno
+
+# ==========================================================
+# 4. CONFIGURAÇÕES DE TREINAMENTO (Para 2x A100)
+# ==========================================================
+output_dir: "train_output/pick_up_the_cup_pi05_depth"
+steps: 5000          
+
+# Batch Size: Como o PI05 carrega LLMs (Gemma 2B + 300M), ele consome BEM mais VRAM que o ACT.
+# Um batch de 4 por GPU (8 no total) é um ótimo ponto de partida para as A100.
+batch_size: 4       
+num_workers: 0
+log_freq: 200         
+save_freq: 1000      
+save_checkpoint: true
+
+# ==========================================================
+# 5. AVALIAÇÃO E LOGS
+# ==========================================================
+eval_freq: 200       
+
+wandb:
+  enable: false       
+  project: prometheus_g1
