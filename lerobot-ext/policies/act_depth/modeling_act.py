@@ -161,9 +161,13 @@ class ACTPolicy(PreTrainedPolicy):
             # each dimension independently, we sum over the latent dimension to get the total
             # KL-divergence per batch element, then take the mean over the batch.
             # (See App. B of https://huggingface.co/papers/1312.6114 for more details).
-            mean_kld = (
-                (-0.5 * (1 + log_sigma_x2_hat - mu_hat.pow(2) - (log_sigma_x2_hat).exp())).sum(-1).mean()
-            )
+            if log_sigma_x2_hat is not None and mu_hat is not None:
+                mean_kld = (
+                    (-0.5 * (1 + log_sigma_x2_hat - mu_hat.pow(2) - (log_sigma_x2_hat).exp())).sum(-1).mean()
+                )
+            else:
+                mean_kld = torch.tensor(0.0, device=l1_loss.device)
+
             loss_dict["kld_loss"] = mean_kld.item()
             loss = l1_loss + mean_kld * self.config.kl_weight
         else:
