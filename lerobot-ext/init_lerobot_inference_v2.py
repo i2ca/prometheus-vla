@@ -53,7 +53,7 @@ def main():
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     
     # APONTANDO PARA O SEU MELHOR CHECKPOINT (Step 850 teve o melhor val_metric!)
-    checkpoint_dir = "train_output/pick_up_the_cup_depth-2026-04-30/checkpoints/best/pretrained_model" 
+    checkpoint_dir = "train_output/pick_up_the_cup_depth-2026-04-30/checkpoints/001000/pretrained_model" 
     
     policy = load_native_policy(checkpoint_dir, device)
     
@@ -94,7 +94,8 @@ def main():
             # 1. Agrupa as juntas (observation.state - 28 posições)
             state_vector = []
             for name in joint_names:
-                state_vector.append(obs.get(name, 0.0))
+                #state_vector.append(obs.get(name, 0.0))
+                state_vector.append(obs[name])
             batch["observation.state"] = torch.tensor(state_vector).float().to(device).unsqueeze(0)
 
             # 2. Processa as imagens (Normaliza para 0-1 e C,H,W)
