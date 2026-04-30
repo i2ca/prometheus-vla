@@ -10,52 +10,62 @@ from sim.sensor_utils import SensorServer, ImageUtils
 
 
 def start_realsense_zmq():
-
     pipeline = rs.pipeline()
-    config = rs.config()
+    cfg = rs.config()
 
-    # Stream RGB da D435i
-    config.enable_stream(rs.stream.color, 640, 480, rs.format.bgr8, 30)
+    # RGB + Depth streams da D435i
+    cfg.enable_stream(rs.stream.color, 640, 480, rs.format.bgr8, 30)
+    cfg.enable_stream(rs.stream.depth, 640, 480, rs.format.z16, 30)
 
     try:
-        pipeline.start(config)
-        print("[RealSense D435i] Câmera iniciada.")
+        profile = pipeline.start(cfg)
+        depth_sensor = profile.get_device().first_depth_sensor()
+        depth_scale = depth_sensor.get_depth_scale()  # m/unit (D435i: ~0.001)
+        print(f"[RealSense D435i] Camera iniciada. depth_scale={depth_scale}")
     except Exception as e:
         print(f"[Erro] {e}")
         return
 
+    align = rs.align(rs.stream.color)
     server = SensorServer()
     server.start_server(port=5555)
-
-    print("[ZMQ] Servidor ativo na porta 5555")
+    print("[ZMQ] Servidor ativo na porta 5555 (RGB + depth)")
 
     try:
         while True:
-
             frames = pipeline.wait_for_frames()
-
+            frames = align.process(frames)
             color_frame = frames.get_color_frame()
-            if not color_frame:
+            depth_frame = frames.get_depth_frame()
+            if not color_frame or not depth_frame:
                 continue
 
-            img = np.asanyarray(color_frame.get_data())
+            rgb = np.asanyarray(color_frame.get_data())
+            depth_raw = np.asanyarray(depth_frame.get_data())  # uint16, mm
 
-            encoded_image = ImageUtils.encode_image(img)
+            # Normaliza depth para [0, 1] = [0, 2 m] (convencao usada no ACT-D / pi05-D)
+            depth_m = depth_raw.astype(np.float32) * depth_scale  # metros
+            depth_norm = np.clip(depth_m / 2.0, 0.0, 1.0)         # [0, 1]
+            depth_u8 = (depth_norm * 255.0).astype(np.uint8)
+            depth_3ch = cv2.merge([depth_u8, depth_u8, depth_u8])  # 3 canais p/ encoder
 
-            message = {
+            encoded_rgb = ImageUtils.encode_image(rgb)
+            encoded_depth = ImageUtils.encode_image(depth_3ch)
+
+            t = time.time()
+            server.send_message({
                 "images": {
-                    "head_camera": encoded_image
+                    "head_camera": encoded_rgb,
+                    "head_camera_depth": encoded_depth,
                 },
                 "timestamps": {
-                    "head_camera": time.time()
-                }
-            }
-
-            server.send_message(message)
+                    "head_camera": t,
+                    "head_camera_depth": t,
+                },
+            })
 
     except KeyboardInterrupt:
         print("Encerrando...")
-
     finally:
         pipeline.stop()
         server.stop_server()
