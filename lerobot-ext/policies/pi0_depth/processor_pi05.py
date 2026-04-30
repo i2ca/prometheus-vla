@@ -97,7 +97,7 @@ class Pi05DEPTHPrepareStateTokenizerProcessorStep(ProcessorStep):
         return features
 
 
-def make_pi05_pre_post_processors(
+def make_pi05depth_pre_post_processors(
     config: PI05DEPTHConfig,
     dataset_stats: dict[str, dict[str, torch.Tensor]] | None = None,
 ) -> tuple[

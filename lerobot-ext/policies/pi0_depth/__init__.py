@@ -16,6 +16,6 @@
 
 from .configuration_pi05 import PI05DEPTHConfig
 from .modeling_pi05 import PI05DEPTHPolicy
-from .processor_pi05 import make_pi05_pre_post_processors
+from .processor_pi05 import make_pi05depth_pre_post_processors
 
-__all__ = ["PI05DEPTHConfig", "PI05DEPTHPolicy", "make_pi05_pre_post_processors"]
+__all__ = ["PI05DEPTHConfig", "PI05DEPTHPolicy", "make_pi05depth_pre_post_processors"]
