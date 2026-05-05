@@ -38,20 +38,11 @@ def make_actdepth_pre_post_processors(
     PolicyProcessorPipeline[dict[str, Any], dict[str, Any]],
     PolicyProcessorPipeline[PolicyAction, PolicyAction],
 ]:
-    """Creates the pre- and post-processing pipelines for the ACT policy.
-
-    The pre-processing pipeline handles normalization, batching, and device placement for the model inputs.
-    The post-processing pipeline handles unnormalization and moves the model outputs back to the CPU.
-
-    Args:
-        config (ACTConfig): The ACT policy configuration object.
-        dataset_stats (dict[str, dict[str, torch.Tensor]] | None): A dictionary containing dataset
-            statistics (e.g., mean and std) used for normalization. Defaults to None.
-
-    Returns:
-        tuple[PolicyProcessorPipeline[dict[str, Any], dict[str, Any]], PolicyProcessorPipeline[PolicyAction, PolicyAction]]: A tuple containing the
-        pre-processor pipeline and the post-processor pipeline.
-    """
+    # Cria uma cópia do mapeamento de normalização para podermos injetar uma exceção
+    custom_norm_map = config.normalization_mapping.copy()
+    
+    # FORÇA O LEROBOT A NÃO NORMALIZAR O MAPA DE PROFUNDIDADE
+    custom_norm_map["observation.images.head_camera_depth"] = NormalizationMode.IDENTITY
 
     input_steps = [
         RenameObservationsProcessorStep(rename_map={}),
@@ -59,7 +50,7 @@ def make_actdepth_pre_post_processors(
         DeviceProcessorStep(device=config.device),
         NormalizerProcessorStep(
             features={**config.input_features, **config.output_features},
-            norm_map=config.normalization_mapping,
+            norm_map=custom_norm_map, # Usa o mapa customizado aqui!
             stats=dataset_stats,
             device=config.device,
         ),

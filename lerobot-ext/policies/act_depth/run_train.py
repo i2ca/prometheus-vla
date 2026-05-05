@@ -20,25 +20,33 @@ sys.path.append(os.getcwd())
 
 # --- MONKEY PATCHES START ---
 from lerobot.datasets.lerobot_dataset import LeRobotDataset
-
-# guarda o original
 _original_getitem = LeRobotDataset.__getitem__
 
 def patched_getitem(self, idx):
-    # garante que o dataset está carregado (opcional, mas seguro)
     self._ensure_hf_dataset_loaded()
-
-    # --- SEU PATCH: mapear índice global → relativo ---
     if getattr(self, "_absolute_to_relative_idx", None) is not None:
         if idx in self._absolute_to_relative_idx:
             idx = self._absolute_to_relative_idx[idx]
-    # --------------------------------------------------
-
-    # delega TODO o resto para o método original
     return _original_getitem(self, idx)
 
-# aplica o patch
-LeRobotDataset.__getitem__ = patched_getitem
+# A PROTEÇÃO QUE FALTAVA: Impede que o ColorJitter distorça a geometria 3D
+def patched_getitem_rgb_only_transforms(self, idx):
+    orig_transforms = self.image_transforms
+    self.image_transforms = None
+    try:
+        item = patched_getitem(self, idx)
+    finally:
+        self.image_transforms = orig_transforms
+
+    if orig_transforms is not None:
+        for key in list(item.keys()):
+            # Aplica transformações apenas nas câmeras RGB, ignorando a 'depth'
+            if key.startswith("observation.images.") and "depth" not in key and torch.is_tensor(item[key]):
+                item[key] = orig_transforms(item[key])
+
+    return item
+
+LeRobotDataset.__getitem__ = patched_getitem_rgb_only_transforms
 
 # --- MONKEY PATCHES END ---
 
