@@ -39,26 +39,30 @@ def make_actdepth_pre_post_processors(
     PolicyProcessorPipeline[dict[str, Any], dict[str, Any]],
     PolicyProcessorPipeline[PolicyAction, PolicyAction],
 ]:
-    # Cria uma cópia do mapeamento de normalização para podermos injetar uma exceção
-    custom_norm_map = config.normalization_mapping.copy()
+    # 1. Cria a lista de features combinada
+    custom_features = {**config.input_features, **config.output_features}
     
-    # FORÇA O LEROBOT A NÃO NORMALIZAR O MAPA DE PROFUNDIDADE
-    custom_norm_map["observation.images.head_camera_depth"] = NormalizationMode.IDENTITY
+    # 2. Esconde o mapa de profundidade do Normalizador!
+    if "observation.images.head_camera_depth" in custom_features:
+        del custom_features["observation.images.head_camera_depth"]
 
     input_steps = [
         RenameObservationsProcessorStep(rename_map={}),
         AddBatchDimensionProcessorStep(),
         DeviceProcessorStep(device=config.device),
         NormalizerProcessorStep(
-            features={**config.input_features, **config.output_features},
-            norm_map=custom_norm_map, # Usa o mapa customizado aqui!
+            features=custom_features,  # <--- Usa a lista customizada (sem o depth)
+            norm_map=config.normalization_mapping, # <--- Mantém o original
             stats=dataset_stats,
             device=config.device,
         ),
     ]
+    
     output_steps = [
         UnnormalizerProcessorStep(
-            features=config.output_features, norm_map=config.normalization_mapping, stats=dataset_stats
+            features=config.output_features, 
+            norm_map=config.normalization_mapping, 
+            stats=dataset_stats
         ),
         DeviceProcessorStep(device="cpu"),
     ]
