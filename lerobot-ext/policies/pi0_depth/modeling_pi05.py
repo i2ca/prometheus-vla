@@ -429,7 +429,16 @@ class PaliGemmaWithExpertModel(
             self.paligemma.eval()
 
     def embed_image(self, image: torch.Tensor):
-        return self.paligemma.model.get_image_features(image)
+        # 1. Pega a saída bruta do encoder de visão
+        vision_outputs = self.paligemma.vision_tower(image)
+        
+        # 2. Extrai o tensor real contendo os hidden states
+        image_features = vision_outputs.last_hidden_state
+        
+        # 3. Passa pelo projetor multimodal para alinhar a dimensão (ex: de 1152 para 2048)
+        image_features = self.paligemma.multi_modal_projector(image_features)
+        
+        return image_features
 
     def embed_language_tokens(self, tokens: torch.Tensor):
         return self.paligemma.language_model.embed_tokens(tokens)
@@ -771,7 +780,7 @@ class PI05Pytorch(nn.Module):  # see openpi `PI0Pytorch`
 
         return embs, pad_masks, att_masks, adarms_cond
 
-    def forward(self, images, img_masks, tokens, masks, actions, noise=None, time=None, depth_images=None) -> Tensor:
+    def forward(self, images, img_masks, tokens, masks, actions, noise=None, time=None, depth_images=None, pressure_tensor=None) -> Tensor:
         """Do a full training forward pass and compute the loss."""
         if noise is None:
             noise = self.sample_noise(actions.shape, actions.device)
@@ -784,7 +793,7 @@ class PI05Pytorch(nn.Module):  # see openpi `PI0Pytorch`
         u_t = noise - actions
 
         prefix_embs, prefix_pad_masks, prefix_att_masks = self.embed_prefix(
-            images, img_masks, tokens, masks, depth_images=depth_images
+            images, img_masks, tokens, masks, depth_images=depth_images, pressure_tensor=pressure_tensor
         )
         suffix_embs, suffix_pad_masks, suffix_att_masks, adarms_cond = self.embed_suffix(x_t, time)
 
