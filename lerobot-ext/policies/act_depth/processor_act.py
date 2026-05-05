@@ -17,6 +17,7 @@ from typing import Any
 
 import torch
 
+from lerobot.configs.types import NormalizationMode
 from lerobot.policies.act.configuration_act import ACTConfig
 from lerobot.processor import (
     AddBatchDimensionProcessorStep,
