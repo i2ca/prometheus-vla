@@ -413,8 +413,9 @@ class PaliGemmaWithExpertModel(
 
     def _set_requires_grad(self):
         if self.freeze_vision_encoder:
-            self.paligemma.vision_tower.eval()
-            for param in self.paligemma.vision_tower.parameters():
+            vision_tower = self.paligemma.vision_tower if hasattr(self.paligemma, "vision_tower") else self.paligemma.model.vision_tower
+            vision_tower.eval()
+            for param in vision_tower.parameters():
                 param.requires_grad = False
         if self.train_expert_only:
             self.paligemma.eval()
@@ -429,14 +430,20 @@ class PaliGemmaWithExpertModel(
             self.paligemma.eval()
 
     def embed_image(self, image: torch.Tensor):
-        # 1. Pega a saída bruta do encoder de visão
-        vision_outputs = self.paligemma.vision_tower(image)
-        
-        # 2. Extrai o tensor real contendo os hidden states
+        # Verifica a versão da arquitetura do PaliGemma (compatibilidade transformers >= 4.52)
+        if hasattr(self.paligemma, "vision_tower"):
+            vision_tower = self.paligemma.vision_tower
+            projector = self.paligemma.multi_modal_projector
+        else:
+            vision_tower = self.paligemma.model.vision_tower
+            projector = self.paligemma.model.multi_modal_projector
+            
+        # 1. Extrai as saídas do encoder de visão
+        vision_outputs = vision_tower(image)
         image_features = vision_outputs.last_hidden_state
         
-        # 3. Passa pelo projetor multimodal para alinhar a dimensão (ex: de 1152 para 2048)
-        image_features = self.paligemma.multi_modal_projector(image_features)
+        # 2. Passa as características pelo projetor multimodal
+        image_features = projector(image_features)
         
         return image_features
 

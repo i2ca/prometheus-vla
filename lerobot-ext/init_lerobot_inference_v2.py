@@ -53,7 +53,7 @@ def main():
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     
     # APONTANDO PARA O SEU MELHOR CHECKPOINT (Step 850 teve o melhor val_metric!)
-    checkpoint_dir = "train_output/pick_up_the_cup_depth-2026-04-30/checkpoints/001000/pretrained_model" 
+    checkpoint_dir = "train_output/pick_up_the_cup_nodepth-260505/checkpoints/000500/pretrained_model" 
     
     policy = load_native_policy(checkpoint_dir, device)
     
