@@ -383,6 +383,22 @@ class PaliGemmaWithExpertModel(
         )
 
         self.paligemma = PaliGemmaForConditionalGeneration(config=vlm_config_hf)
+        
+        # --- FIX DEFINITIVO: Busca Universal do Modelo de Linguagem ---
+        if not hasattr(self.paligemma, "language_model"):
+            # Varre toda a árvore de módulos procurando o Gemma
+            for name, module in self.paligemma.named_modules():
+                if "GemmaForCausalLM" in type(module).__name__:
+                    self.paligemma.language_model = module
+                    break
+                    
+        # Alguns métodos do seu código (como compute_layer_complete) buscam 
+        # o modelo de linguagem dentro de .model, então fazemos uma garantia extra:
+        if hasattr(self.paligemma, "model") and not hasattr(self.paligemma.model, "language_model"):
+            if hasattr(self.paligemma, "language_model"):
+                self.paligemma.model.language_model = self.paligemma.language_model
+        # --------------------------------------------------------------
+                
         self.gemma_expert = GemmaForCausalLM(config=action_expert_config_hf)
         self.gemma_expert.model.embed_tokens = None
 
@@ -448,7 +464,9 @@ class PaliGemmaWithExpertModel(
         return image_features
 
     def embed_language_tokens(self, tokens: torch.Tensor):
-        return self.paligemma.language_model.embed_tokens(tokens)
+        # A API get_input_embeddings() é padrão do HF e sempre funciona, 
+        # independentemente da versão ou estrutura interna da arquitetura.
+        return self.paligemma.language_model.get_input_embeddings()(tokens)
 
     def forward(
         self,
