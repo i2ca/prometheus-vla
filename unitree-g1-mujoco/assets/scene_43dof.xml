@@ -26,13 +26,13 @@
     <site name="com_marker" pos="0.1 0 0" size="0.05" rgba="1 0 0 1" type="sphere"/>
 
   <body name="mesa" pos="0.45 0 0.45">
-      <geom name="geometria_mesa" type="box" size="0.2 0.6 0.45" rgba="0.6 0.4 0.2 1" friction="1 0.005 0.0001"/>
+      <geom name="geometria_mesa" type="box" size="0.2 0.6 0.35" rgba="0.6 0.4 0.2 1" friction="1 0.005 0.0001"/>
       
-      <geom name="borda_fundo" type="box" size="0.01 0.6 0.02" pos="0.19 0 0.47" rgba="0.5 0.3 0.1 1" friction="1 0.005 0.0001"/>
-      <geom name="borda_esquerda" type="box" size="0.2 0.01 0.02" pos="0 0.59 0.47" rgba="0.5 0.3 0.1 1" friction="1 0.005 0.0001"/>
-      <geom name="borda_direita" type="box" size="0.2 0.01 0.02" pos="0 -0.59 0.47" rgba="0.5 0.3 0.1 1" friction="1 0.005 0.0001"/>
+      <geom name="borda_fundo" type="box" size="0.01 0.6 0.02" pos="0.19 0 0.37" rgba="0.5 0.3 0.1 1" friction="1 0.005 0.0001"/>
+      <geom name="borda_esquerda" type="box" size="0.2 0.01 0.02" pos="0 0.59 0.37" rgba="0.5 0.3 0.1 1" friction="1 0.005 0.0001"/>
+      <geom name="borda_direita" type="box" size="0.2 0.01 0.02" pos="0 -0.59 0.37" rgba="0.5 0.3 0.1 1" friction="1 0.005 0.0001"/>
 
-      <body name="corpo_botao" pos="0 0.3 0.47">
+      <body name="corpo_botao" pos="0 0.3 0.37">
         <joint name="junta_botao" type="slide" axis="0 0 1" range="-0.015 0" springref="0" stiffness="100" damping="5"/>
         <geom name="geometria_botao" type="cylinder" size="0.03 0.02" rgba="0 1 0 1" mass="0.01" friction="1 0.005 0.0001"/>
       </body>
