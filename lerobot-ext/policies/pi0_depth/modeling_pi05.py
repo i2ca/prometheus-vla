@@ -225,11 +225,19 @@ def compute_layer_complete(
     query_states = []
     key_states = []
     value_states = []
-    gates = []
+    
     for i, hidden_states in enumerate(inputs_embeds):
         layer = models[i].layers[layer_idx]
-        hidden_states, gate = layer.input_layernorm(hidden_states, cond=adarms_cond[i])  # noqa: PLW2901
-        gates.append(gate)
+        
+        # --- FIX: Injeção de Tempo + Compatibilidade HF Padrão ---
+        if adarms_cond[i] is not None:
+            # Em vez de usar AdaRMS (não suportado no HF nativo), 
+            # somamos a condição de tempo aos tokens de ação (estilo DiT).
+            hidden_states = hidden_states + adarms_cond[i].unsqueeze(1)
+            
+        # Chama layernorm padrão do transformers (retorna só o hidden_states, sem 'gate')
+        hidden_states = layer.input_layernorm(hidden_states)
+        
         input_shape = hidden_states.shape[:-1]
         hidden_shape = (*input_shape, -1, layer.self_attn.head_dim)
         query_state = layer.self_attn.q_proj(hidden_states).view(hidden_shape).transpose(1, 2)
@@ -238,10 +246,12 @@ def compute_layer_complete(
         query_states.append(query_state)
         key_states.append(key_state)
         value_states.append(value_state)
+        
     # Concatenate and process attention
     query_states = torch.cat(query_states, dim=2)
     key_states = torch.cat(key_states, dim=2)
     value_states = torch.cat(value_states, dim=2)
+    
     dummy_tensor = torch.zeros(
         query_states.shape[0],
         query_states.shape[2],
@@ -249,12 +259,16 @@ def compute_layer_complete(
         device=query_states.device,
         dtype=query_states.dtype,
     )
-    cos, sin = paligemma.model.language_model.rotary_emb(dummy_tensor, position_ids)
+    
+    # Chama pelo language_model raiz que mapeamos no init
+    cos, sin = paligemma.language_model.rotary_emb(dummy_tensor, position_ids)
     query_states, key_states = modeling_gemma.apply_rotary_pos_emb(
         query_states, key_states, cos, sin, unsqueeze_dim=1
     )
+    
     batch_size = query_states.shape[0]
     scaling = paligemma.language_model.layers[layer_idx].self_attn.scaling
+    
     # Attention computation
     att_output, _ = modeling_gemma.eager_attention_forward(
         paligemma.language_model.layers[layer_idx].self_attn,
@@ -264,30 +278,41 @@ def compute_layer_complete(
         attention_mask,
         scaling,
     )
-    # Get head_dim from the current layer, not from the model
+    
     head_dim = paligemma.language_model.layers[layer_idx].self_attn.head_dim
     att_output = att_output.reshape(batch_size, -1, 1 * 8 * head_dim)
+    
     # Process layer outputs
     outputs_embeds = []
     start_pos = 0
     for i, hidden_states in enumerate(inputs_embeds):
         layer = models[i].layers[layer_idx]
         end_pos = start_pos + hidden_states.shape[1]
+        
         if att_output.dtype != layer.self_attn.o_proj.weight.dtype:
             att_output = att_output.to(layer.self_attn.o_proj.weight.dtype)
+            
         out_emb = layer.self_attn.o_proj(att_output[:, start_pos:end_pos])
-        # first residual
-        out_emb = modeling_gemma._gated_residual(hidden_states, out_emb, gates[i])  # noqa: SLF001
+        
+        # --- FIX: Residuais Padrões (sem _gated_residual que não existe no HF) ---
+        out_emb = hidden_states + out_emb 
         after_first_residual = out_emb.clone()
-        out_emb, gate = layer.post_attention_layernorm(out_emb, cond=adarms_cond[i])
-        # Convert to bfloat16 if the next layer (mlp) uses bfloat16
+        
+        if adarms_cond[i] is not None:
+            out_emb = out_emb + adarms_cond[i].unsqueeze(1)
+            
+        out_emb = layer.post_attention_layernorm(out_emb)
+        
         if layer.mlp.up_proj.weight.dtype == torch.bfloat16:
             out_emb = out_emb.to(dtype=torch.bfloat16)
         out_emb = layer.mlp(out_emb)
-        # second residual
-        out_emb = modeling_gemma._gated_residual(after_first_residual, out_emb, gate)  # noqa: SLF001
+        
+        # Second residual
+        out_emb = after_first_residual + out_emb
+        
         outputs_embeds.append(out_emb)
         start_pos = end_pos
+        
     return outputs_embeds
 
 
@@ -384,19 +409,25 @@ class PaliGemmaWithExpertModel(
 
         self.paligemma = PaliGemmaForConditionalGeneration(config=vlm_config_hf)
         
-        # --- FIX DEFINITIVO: Busca Universal do Modelo de Linguagem ---
-        if not hasattr(self.paligemma, "language_model"):
-            # Varre toda a árvore de módulos procurando o Gemma
-            for name, module in self.paligemma.named_modules():
-                if "GemmaForCausalLM" in type(module).__name__:
-                    self.paligemma.language_model = module
+        # --- FIX DEFINITIVO V2: Busca pelo Backbone exato ---
+        # O PI0.5 exige acessar as '.layers' e '.norm' diretamente.
+        # Vamos varrer todos os submódulos procurando o GemmaModel base.
+        target_lang_model = None
+        for name, module in self.paligemma.named_modules():
+            # Verifica se o módulo possui a lista de camadas e a normalização final
+            if hasattr(module, "layers") and isinstance(getattr(module, "layers"), torch.nn.ModuleList):
+                if hasattr(module, "norm"):
+                    target_lang_model = module
                     break
                     
-        # Alguns métodos do seu código (como compute_layer_complete) buscam 
-        # o modelo de linguagem dentro de .model, então fazemos uma garantia extra:
+        if target_lang_model is not None:
+            self.paligemma.language_model = target_lang_model
+        else:
+            raise ValueError("Não foi possível encontrar o modelo base do Gemma (com .layers e .norm) dentro do PaliGemma.")
+            
+        # Reforço de hierarquia pro caso de outro método no script buscar via .model
         if hasattr(self.paligemma, "model") and not hasattr(self.paligemma.model, "language_model"):
-            if hasattr(self.paligemma, "language_model"):
-                self.paligemma.model.language_model = self.paligemma.language_model
+            self.paligemma.model.language_model = self.paligemma.language_model
         # --------------------------------------------------------------
                 
         self.gemma_expert = GemmaForCausalLM(config=action_expert_config_hf)
@@ -466,7 +497,7 @@ class PaliGemmaWithExpertModel(
     def embed_language_tokens(self, tokens: torch.Tensor):
         # A API get_input_embeddings() é padrão do HF e sempre funciona, 
         # independentemente da versão ou estrutura interna da arquitetura.
-        return self.paligemma.language_model.get_input_embeddings()(tokens)
+        return self.paligemma.get_input_embeddings()(tokens)
 
     def forward(
         self,
@@ -544,7 +575,11 @@ class PaliGemmaWithExpertModel(
             def compute_final_norms(inputs_embeds, adarms_cond):
                 outputs_embeds = []
                 for i, hidden_states in enumerate(inputs_embeds):
-                    out_emb, _ = models[i].norm(hidden_states, cond=adarms_cond[i])
+                    if adarms_cond[i] is not None:
+                        hidden_states = hidden_states + adarms_cond[i].unsqueeze(1)
+                    
+                    # Usa o norm padrão sem desempacotar tupla e sem passar 'cond'
+                    out_emb = models[i].norm(hidden_states)
                     outputs_embeds.append(out_emb)
                 return outputs_embeds
 
