@@ -48,10 +48,7 @@ from train.inference_pi05_d import load_pi05_d  # noqa: E402  (needs sys.path fi
 from lerobot.cameras.zmq.camera_zmq import ZMQCamera  # noqa: E402
 from lerobot.cameras.zmq.configuration_zmq import ZMQCameraConfig  # noqa: E402
 from lerobot.policies.factory import make_pre_post_processors  # noqa: E402
-from lerobot.robots.unitree_g1.unitree_g1_dex3 import (  # noqa: E402
-    UnitreeG1Dex3,
-    UnitreeG1Dex3Config,
-)
+from robot.unitree_g1.unitree_g1_dex3 import UnitreeG1Dex3, UnitreeG1Dex3Config  # noqa: E402
 
 logger = logging.getLogger("pi05d_runtime")
 
@@ -99,7 +96,17 @@ def build_observation_batch(
         # HWC uint8 -> CHW float [0,1]
         return torch.from_numpy(img).to(device).permute(2, 0, 1).float().div_(255.0).unsqueeze(0)
 
-    rgb_img = obs["cam_rgb_high"]
+    rgb_img = None
+    for _k in ("cam_rgb_high", "head_camera", "cam_rgb_low", "rgb"):
+        _v = obs.get(_k)
+        if _v is not None:
+            rgb_img = _v
+            break
+    if rgb_img is None:
+        avail = [k for k in obs.keys() if "cam" in k.lower() or "rgb" in k.lower() or "image" in k.lower()]
+        raise KeyError(f"no RGB key in obs; tried cam_rgb_high/head_camera/rgb. Camera-like keys: {avail}")
+    left_p = obs.get("left_hand_pressure", [0.0]*33)
+    right_p = obs.get("right_hand_pressure", [0.0]*33)
     depth_img = depth_camera.async_read()
 
     batch = {
@@ -107,10 +114,10 @@ def build_observation_batch(
         "observation.images.head_camera": to_tensor(rgb_img),
         "observation.images.head_camera_depth": to_tensor(depth_img),
         "observation.left_hand_pressure": torch.from_numpy(
-            np.asarray(obs["left_hand_pressure"], dtype=np.float32)
+            np.asarray(left_p, dtype=np.float32)
         ).to(device).unsqueeze(0),
         "observation.right_hand_pressure": torch.from_numpy(
-            np.asarray(obs["right_hand_pressure"], dtype=np.float32)
+            np.asarray(right_p, dtype=np.float32)
         ).to(device).unsqueeze(0),
         "task": task,
     }
@@ -172,7 +179,7 @@ def main():
     )
     logger.info("policy ready")
 
-    robot_cfg = UnitreeG1Dex3Config(robot_ip=args.robot_ip, control_mode=args.control_mode)
+    robot_cfg = UnitreeG1Dex3Config(robot_ip=args.robot_ip, control_mode=args.control_mode, is_simulation=False)
     robot = UnitreeG1Dex3(robot_cfg)
     robot.connect()
     logger.info(f"robot connected at {args.robot_ip}")
