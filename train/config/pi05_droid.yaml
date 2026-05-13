@@ -20,10 +20,12 @@ policy:
   push_to_hub: false
 
 log_freq: 5
-eval_freq: 171
-save_freq: 171
+eval_freq: 500
+save_freq: 500
+depth_fusion: false
+
 batch_size: 16
-steps: 852
+steps: 5000
 
 wandb:
   enable: true
