@@ -435,7 +435,6 @@ class XRG1Arm(Teleoperator):
             elif self.config.input_mode == "controller":
                 
                 # --- HACK DE MEMÓRIA: INJEÇÃO DE IMPEDÂNCIA (KP/KD) ---
-                # Procura a instância do robô na memória RAM e amacia os motores
                 if not hasattr(self, "kp_hacked"):
                     import gc
                     for obj in gc.get_objects():
@@ -443,24 +442,30 @@ class XRG1Arm(Teleoperator):
                             
                             NOVO_KP = 0.3  # Padrão era 0.8 (Trator). 0.3 deixa como Mola.
                             NOVO_KD = 0.1  # Amortecimento suave
+                            KP_BASE_POLEGAR = 0.8  # <--- Mantemos forte para conseguir voltar!
                             
                             if hasattr(obj, "_left_hand_msg") and obj._left_hand_msg is not None:
                                 for i in range(7):
-                                    obj._left_hand_msg.motor_cmd[i].kp = NOVO_KP
+                                    # Aplica força total apenas no motor 0 (base do polegar)
+                                    obj._left_hand_msg.motor_cmd[i].kp = KP_BASE_POLEGAR if i == 0 else NOVO_KP
                                     obj._left_hand_msg.motor_cmd[i].kd = NOVO_KD
                                     
                             if hasattr(obj, "_right_hand_msg") and obj._right_hand_msg is not None:
                                 for i in range(7):
-                                    obj._right_hand_msg.motor_cmd[i].kp = NOVO_KP
+                                    obj._right_hand_msg.motor_cmd[i].kp = KP_BASE_POLEGAR if i == 0 else NOVO_KP
                                     obj._right_hand_msg.motor_cmd[i].kd = NOVO_KD
                                     
                             self.kp_hacked = True
-                            print(f"\n   🪽 [HACK] Kp das mãos Dex3 reduzido para {NOVO_KP}! (Modo Mola Ativado)")
+                            print(f"\n   🪽 [HACK] Kp ajustado! Dedos em {NOVO_KP}, mas base do polegar em {KP_BASE_POLEGAR} para conseguir retornar.")
                             break
 
-                # --- LEITURA DOS GATILHOS (0.0 a 1.0) ---
+                # --- LEITURA DOS GATILHOS COM DEADZONE ---
                 left_trigger = np.clip((10.0 - tele_data.left_ctrl_triggerValue) / 10.0, 0.0, 1.0)
                 right_trigger = np.clip((10.0 - tele_data.right_ctrl_triggerValue) / 10.0, 0.0, 1.0)
+
+                # FORÇA O RETORNO AO ZERO: Se o gatilho for solto (mesmo com folga no controle), zera o valor.
+                if left_trigger < 0.05: left_trigger = 0.0
+                if right_trigger < 0.05: right_trigger = 0.0
 
                 left_squeeze = np.clip(tele_data.left_ctrl_squeezeValue, 0.0, 1.0)
                 right_squeeze = np.clip(tele_data.right_ctrl_squeezeValue, 0.0, 1.0)
@@ -471,8 +476,6 @@ class XRG1Arm(Teleoperator):
                 left_hand_q = np.zeros(7)
                 right_hand_q = np.zeros(7)
 
-                # Como o Kp agora é uma mola suave (0.3), podemos voltar o limite para 1.5.
-                # O dedo vai mirar em 1.5, mas parar docemente no objeto.
                 LEFT_TARGET = np.array([0.0,  1.5,  1.5, -1.5, -1.5, -1.5, -1.5])
                 RIGHT_TARGET = np.array([0.0, -1.5, -1.5,  1.5,  1.5,  1.5,  1.5])
 
@@ -481,29 +484,41 @@ class XRG1Arm(Teleoperator):
                 right_hand_q = right_squeeze * RIGHT_TARGET
 
                 # =========================
-                # PINÇA (AJUSTE FINO)
+                # PINÇA E ROTAÇÃO (AJUSTE FINO)
                 # =========================
                 PINCH_FORCE = 2.0
                 PINCH_OFFSET = 0.2
+                PINCH_OFFSET2 = 0.1
 
                 LEFT_INDEX_ID  = 5   
-                RIGHT_INDEX_ID = 5   
+                RIGHT_INDEX_ID = 5
+   
 
                 # Aplica movimento do indicador
-                left_hand_q[LEFT_INDEX_ID]   += -PINCH_FORCE * left_trigger
-                right_hand_q[RIGHT_INDEX_ID] +=  PINCH_FORCE * right_trigger
+                left_hand_q[5]   += -PINCH_FORCE * left_trigger
+                right_hand_q[5] +=  PINCH_FORCE * right_trigger
 
                 # Offset fixo
-                left_hand_q[LEFT_INDEX_ID]   += -PINCH_OFFSET * left_trigger
-                right_hand_q[RIGHT_INDEX_ID] +=  PINCH_OFFSET * right_trigger  
+                left_hand_q[5]   += -PINCH_OFFSET * left_trigger
+                right_hand_q[5] +=  PINCH_OFFSET * right_trigger
+
+                # Aplica movimento do indicador
+                left_hand_q[6]   += -PINCH_FORCE * left_trigger
+                right_hand_q[6] +=  PINCH_FORCE * right_trigger
+
+                # Offset fixo
+                left_hand_q[6]   += -PINCH_OFFSET2 * left_trigger
+                right_hand_q[6] +=  PINCH_OFFSET2 * right_trigger    
 
                 # ROTAÇÃO DO POLEGAR
+                # Nota: Inverti o sinal da mão direita para +0.5, pois mãos costumam ser espelhadas.
+                # Se a mão direita passar a girar para o lado errado, pode voltar para -0.5.
                 left_hand_q[0]  += -0.5 * left_trigger
-                right_hand_q[0] +=  0.5 * right_trigger 
+                right_hand_q[0] +=  -0.5 * right_trigger 
 
                 # CURVATURA EXTRA
-                left_hand_q[LEFT_INDEX_ID]   += -0.5 * left_trigger
-                right_hand_q[RIGHT_INDEX_ID] +=  0.5 * right_trigger 
+                #left_hand_q[5]   += -0.5 * left_trigger
+                #right_hand_q[5] +=  -0.5 * right_trigger 
 
                 # Polegar acompanha pinça
                 left_hand_q[1] += 0.8 * left_trigger

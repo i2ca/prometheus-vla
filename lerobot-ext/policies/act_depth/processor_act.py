@@ -17,6 +17,7 @@ from typing import Any
 
 import torch
 
+from lerobot.configs.types import NormalizationMode
 from lerobot.policies.act.configuration_act import ACTConfig
 from lerobot.processor import (
     AddBatchDimensionProcessorStep,
@@ -38,35 +39,30 @@ def make_actdepth_pre_post_processors(
     PolicyProcessorPipeline[dict[str, Any], dict[str, Any]],
     PolicyProcessorPipeline[PolicyAction, PolicyAction],
 ]:
-    """Creates the pre- and post-processing pipelines for the ACT policy.
-
-    The pre-processing pipeline handles normalization, batching, and device placement for the model inputs.
-    The post-processing pipeline handles unnormalization and moves the model outputs back to the CPU.
-
-    Args:
-        config (ACTConfig): The ACT policy configuration object.
-        dataset_stats (dict[str, dict[str, torch.Tensor]] | None): A dictionary containing dataset
-            statistics (e.g., mean and std) used for normalization. Defaults to None.
-
-    Returns:
-        tuple[PolicyProcessorPipeline[dict[str, Any], dict[str, Any]], PolicyProcessorPipeline[PolicyAction, PolicyAction]]: A tuple containing the
-        pre-processor pipeline and the post-processor pipeline.
-    """
+    # 1. Cria a lista de features combinada
+    custom_features = {**config.input_features, **config.output_features}
+    
+    # 2. Esconde o mapa de profundidade do Normalizador!
+    if "observation.images.head_camera_depth" in custom_features:
+        del custom_features["observation.images.head_camera_depth"]
 
     input_steps = [
         RenameObservationsProcessorStep(rename_map={}),
         AddBatchDimensionProcessorStep(),
         DeviceProcessorStep(device=config.device),
         NormalizerProcessorStep(
-            features={**config.input_features, **config.output_features},
-            norm_map=config.normalization_mapping,
+            features=custom_features,  # <--- Usa a lista customizada (sem o depth)
+            norm_map=config.normalization_mapping, # <--- Mantém o original
             stats=dataset_stats,
             device=config.device,
         ),
     ]
+    
     output_steps = [
         UnnormalizerProcessorStep(
-            features=config.output_features, norm_map=config.normalization_mapping, stats=dataset_stats
+            features=config.output_features, 
+            norm_map=config.normalization_mapping, 
+            stats=dataset_stats
         ),
         DeviceProcessorStep(device="cpu"),
     ]

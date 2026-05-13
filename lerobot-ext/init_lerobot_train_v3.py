@@ -23,7 +23,7 @@ try:
     # 'policies', troque a linha abaixo para 'import policies'.
     # Se estiver dentro da pasta 'train', use 'import train'.
     import policies  # <- Ajuste para o nome da pasta do seu __init__.py
-    print("[INFO]: Registro nativo 'actdepth' carregado com sucesso via __init__.py!")
+    #print("[INFO]: Registro nativo 'actdepth' carregado com sucesso via __init__.py!")
 except ImportError as e:
     print(f"\n[ERRO DE IMPORTAÇÃO]: Falha ao ler o seu __init__.py: {e}")
     sys.exit(1)
