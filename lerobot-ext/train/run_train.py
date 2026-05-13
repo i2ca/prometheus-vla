@@ -18,6 +18,13 @@ from torch.optim import Optimizer
 
 # Add current directory to path to ensure we can import train.utils
 sys.path.append(os.getcwd())
+# Add this script's directory so we can import sibling modules (pi05_depth_injector, etc.)
+# without relative-import errors when executed as a standalone script.
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+# Add lerobot-ext/ (parent of this script's dir) BEFORE cwd so that
+# `from train.depth_encoder import ...` resolves to lerobot-ext/train/depth_encoder.py
+# (the right file with depth_scale support) instead of prometheus-vla/train/ (older, no depth_encoder.py).
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 # --- MONKEY PATCHES START ---
 from lerobot.datasets.lerobot_dataset import LeRobotDataset
@@ -273,7 +280,7 @@ def train(cfg: CustomTrainPipelineConfig, accelerator: Accelerator | None = None
     # =========================================================
     _device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     if cfg.depth_fusion and cfg.policy.type == "act":
-        from .act_d_injector import inject_act_d
+        from act_d_injector import inject_act_d
 
         inject_act_d(policy, device=_device)
     elif cfg.depth_fusion and cfg.policy.type == "pi05":
@@ -287,7 +294,7 @@ def train(cfg: CustomTrainPipelineConfig, accelerator: Accelerator | None = None
                 injected_ckpt = candidate
 
         if cfg.fusion_mode == "depth_only":
-            from .pi05_depth_injector import inject_pi05_depth
+            from pi05_depth_injector import inject_pi05_depth
 
             inject_pi05_depth(
                 policy,
@@ -297,7 +304,7 @@ def train(cfg: CustomTrainPipelineConfig, accelerator: Accelerator | None = None
                 depth_scale=cfg.depth_scale,
             )
         elif cfg.fusion_mode == "full":
-            from .pi05_d_injector import inject_pi05_d
+            from pi05_d_injector import inject_pi05_d
 
             inject_pi05_d(policy, device=_device, load_injected_from=injected_ckpt)
         else:
