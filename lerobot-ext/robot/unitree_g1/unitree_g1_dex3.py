@@ -383,7 +383,14 @@ class UnitreeG1Dex3(UnitreeG1):
         
 
     def _heartbeat_worker(self):
-        """Mantém os motores rígidos quando o PC trava para salvar o episódio"""
+        """Mantém os motores rígidos quando o PC trava para salvar o episódio.
+        Em dry-run (PROMETHEUS_DRY_RUN=1) não publica nada — apenas dorme."""
+        import os as _os
+        if _os.environ.get("PROMETHEUS_DRY_RUN") == "1":
+            logger.info("[heartbeat] dry-run mode → no commands will be sent")
+            while not self._hand_shutdown_event.is_set():
+                time.sleep(0.5)
+            return
         while not self._hand_shutdown_event.is_set():
             # Se passou mais de 0.05s (50ms) sem receber comando do LeRobot, o PC está salvando dados!
             if time.time() - self._last_action_time > 0.05:

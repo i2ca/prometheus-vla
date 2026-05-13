@@ -229,13 +229,12 @@ class UnitreeG1(Robot):
             # Chamamos a sua função passando a lista de câmeras exigida!
             self.sim_env = make_local_env(cameras=lista_de_cameras)
 
-            import time
             time.sleep(3.0)
             
             # --- FIM DA MODIFICAÇÃO ---
 
         else:
-            self._ChannelFactoryInitialize(0)
+            self._ChannelFactoryInitialize(0, robot_ip=self.config.robot_ip)
 
         # Initialize direct motor control interface
         self.lowcmd_publisher = self._ChannelPublisher(kTopicLowCommand_Debug, hg_LowCmd)
