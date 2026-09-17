@@ -1,0 +1,81 @@
+<?xml version='1.0' encoding='utf-8'?>
+<!--
+  Cena do G1 com DUAS MESAS e uma CAIXA AZUL, para testar o `xiaopeng-wu/pi05_unitree_g1`.
+
+  A política só conhece a instrução "move blue box back and forth between tables", e a cena
+  padrão do `lerobot/unitree-g1-mujoco` é um piso vazio: ele se mexia sem ter o que fazer
+  (medido em 16/09). Esta cena é a `assets/scene_33dof.xml` original mais os objetos, e entra
+  numa CÓPIA do ambiente (ver `pgx/prepara_cena_caixa.sh`) — o cache do HF fica intacto.
+
+  Três correções da 1ª versão, cada uma de um problema MEDIDO:
+   * a caixa CAÍA. Em t=0 não há contato nenhum (conferido), mas os punhos em repouso ficam
+     em x=0.20, z=0.888, logo acima da borda do tampo: qualquer movimento de braço varria a
+     caixa para o chão em ~1 s. Agora o tampo está a 0.70 m e a caixa recuada para x=0.36,
+     com ~0.10 m de folga sob os punhos;
+   * o CHÃO era xadrez AZUL, e virava "várias caixas azuis" na imagem. Agora é cinza neutro,
+     para a caixa ser o único objeto azul da cena;
+   * a caixa era pequena demais (7 cm) para 640x480. Agora tem 9 cm e azul saturado.
+
+  A `global_view` foi aproximada e mira o tronco: ela é a ENTRADA da política, e a 5 m o robô
+  ocupava ~30x60 pixels. O nome tem de continuar `global_view`, senão a política não a acha.
+
+  Alcance: ombro direito em (0, -0.10, 1.085); caixa a 0.504 m dele, dentro do braço esticado
+  (~0.55-0.60 m). A faixa elástica segura o `torso_link`, então o robô não se desloca.
+-->
+<mujoco model="g1_29dof_with_grippers scene caixa azul">
+  <include file="g1_29dof_with_grippers.xml" />
+  <statistic center="0 0 0.5" extent="2.0" />
+
+  <visual>
+    <headlight diffuse="0.6 0.6 0.6" ambient="0.3 0.3 0.3" specular="0 0 0" />
+    <rgba haze="0.15 0.25 0.35 1" />
+    <global azimuth="-130" elevation="-20" offwidth="640" offheight="480" />
+  </visual>
+
+  <asset>
+    <texture type="skybox" builtin="gradient" rgb1="0.45 0.5 0.55" rgb2="0.1 0.1 0.12" width="512" height="3072" />
+    <!-- Cinza neutro de propósito: com o xadrez azul original, o piso inteiro competia com a
+         caixa azul e o olho (e provavelmente a política) se perdia. -->
+    <texture type="2d" name="groundplane" builtin="checker" mark="none" rgb1="0.52 0.52 0.53" rgb2="0.49 0.49 0.50" width="300" height="300" />
+    <material name="groundplane" texture="groundplane" texuniform="true" texrepeat="5 5" reflectance="0.05" />
+    <material name="madeira" rgba="0.72 0.58 0.40 1" />
+    <material name="azul" rgba="0.05 0.30 0.95 1" />
+  </asset>
+
+  <worldbody>
+    <light pos="0 0 1.5" dir="0 0 -1" directional="true" />
+    <light pos="0.6 -0.8 1.8" dir="-0.3 0.4 -1" diffuse="0.4 0.4 0.4" />
+    <geom name="floor" size="0 0 0.05" type="plane" material="groundplane" />
+    <site name="com_marker" pos="0.1 0 0" size="0.05" rgba="1 0 0 1" type="sphere" />
+
+    <!-- Mesas e caixa dimensionadas pelo VÍDEO DO TREINO (16/09): lá a caixa é uma caixa
+         plástica de ~25 cm sobre uma carteira escolar, e ocupa perto de um terço da largura do
+         quadro. Com a caixa de 9 cm e as mesinhas de 28 cm anteriores ela dava 8% do quadro —
+         nada parecido. Tampo continua a 0.70 m. -->
+    <body name="mesa_a" pos="0.48 -0.26 0.35">
+      <geom name="mesa_a_tampo" type="box" size="0.25 0.20 0.02" pos="0 0 0.33" material="madeira" friction="1.0 0.02 0.001" />
+      <geom name="mesa_a_pe" type="box" size="0.05 0.05 0.33" pos="0 0 0" material="madeira" />
+    </body>
+
+    <!-- Mesa da ESQUERDA (y positivo): o destino do "back and forth". -->
+    <body name="mesa_b" pos="0.48 0.26 0.35">
+      <geom name="mesa_b_tampo" type="box" size="0.25 0.20 0.02" pos="0 0 0.33" material="madeira" friction="1.0 0.02 0.001" />
+      <geom name="mesa_b_pe" type="box" size="0.05 0.05 0.33" pos="0 0 0" material="madeira" />
+    </body>
+
+    <!-- Caixa azul: 24 cm de aresta (0.12 de meia-aresta), apoiada no tampo da mesa A: centro em
+         0.70 + 0.12 + 0.002 de folga. -->
+    <body name="caixa_azul" pos="0.45 -0.26 0.822">
+      <freejoint name="caixa_azul_livre" />
+      <geom name="caixa_azul_geom" type="box" size="0.12 0.12 0.12" material="azul"
+            mass="0.5" friction="1.0 0.02 0.001" />
+    </body>
+
+    <!-- Entrada da política: aproximada e mirando o tronco, para enquadrar robô + mesas. -->
+    <camera name="global_view" pos="1.45 -1.05 1.30" mode="targetbody" target="torso_link" fovy="45" />
+  </worldbody>
+
+  <default>
+    <geom friction="1.0" />
+  </default>
+</mujoco>
