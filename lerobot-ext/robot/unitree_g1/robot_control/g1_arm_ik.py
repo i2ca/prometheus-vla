@@ -32,12 +32,37 @@ class G1_29_ArmIK:
     Solves for 14 arm joint positions given target wrist poses.
     """
     
-    def __init__(self, visualization: bool = False):
+    def __init__(self, visualization: bool = False, travar_punho_dir: bool = False,
+                 postura_ref: Optional[np.ndarray] = None):
         """
         Initialize the IK solver.
-        
+
         Args:
             visualization: Enable Meshcat visualization (optional)
+            travar_punho_dir: prende as três juntas do punho DIREITO
+                (`right_wrist_roll/pitch/yaw`, índices 11-13 do vetor reduzido)
+                nos valores passados a cada `solve_ik`. Padrão False — o teleop
+                e o robô real continuam com o punho livre, como sempre.
+
+                Para que serve: com o punho livre o solver o gira à vontade
+                para atingir a pose, e na tela a mão fica rodando durante o
+                movimento. Travado, a posição é resolvida só com as quatro
+                juntas de ombro/cotovelo e a mão mantém a orientação.
+
+                O custo é direto: sobram 4 graus de liberdade para 3 de
+                posição mais a orientação desejada, então poses que antes eram
+                alcançáveis deixam de ser. Medir o aproveitamento depois de
+                ligar isto não é opcional.
+            postura_ref: postura (14 juntas) em torno da qual REGULARIZAR.
+                Padrão None = zeros, que é o comportamento de sempre.
+
+                Isto não é detalhe de ajuste fino. O termo de regularização
+                era `sumsqr(var_q)`, ou seja, puxava toda junta para ZERO — e
+                cotovelo em zero é BRAÇO ESTICADO. Era essa a razão de o
+                cotovelo sair reto e o movimento ficar com cara de alcance
+                forçado, não a busca no espaço nulo. Regularizando em torno de
+                uma postura com o cotovelo dobrado, o solver passa a preferir
+                a mesma família de poses que um braço humano escolhe.
         """
         np.set_printoptions(precision=5, suppress=True, linewidth=200)
         self.visualization = visualization
@@ -143,6 +168,17 @@ class G1_29_ArmIK:
         self.param_tf_l = self.opti.parameter(4, 4)
         self.param_tf_r = self.opti.parameter(4, 4)
 
+        # ── Trava do punho direito ─────────────────────────────────────
+        # Restrição de IGUALDADE, e não peso na função de custo: peso alto
+        # ainda deixa o solver ceder quando o alvo fica difícil, e o punho
+        # voltaria a girar justamente nos casos em que se quer que ele não
+        # gire. Como parâmetro, o valor pode mudar entre chamadas sem
+        # reconstruir o problema.
+        self.travar_punho_dir = travar_punho_dir
+        if travar_punho_dir:
+            self.par_punho_dir = self.opti.parameter(3)
+            self.opti.subject_to(self.var_q[11:14] == self.par_punho_dir)
+
         # Cost terms
         self.translational_cost = casadi.sumsqr(
             self.translational_error(self.var_q, self.param_tf_l, self.param_tf_r)
@@ -150,7 +186,12 @@ class G1_29_ArmIK:
         self.rotation_cost = casadi.sumsqr(
             self.rotational_error(self.var_q, self.param_tf_l, self.param_tf_r)
         )
-        self.regularization_cost = casadi.sumsqr(self.var_q)
+        # Regularização em torno de `postura_ref` (zeros por padrão). Ver o
+        # argumento no docstring: com zeros, o cotovelo é empurrado para reto.
+        self.postura_ref = (np.zeros(self.reduced_robot.model.nq)
+                            if postura_ref is None
+                            else np.asarray(postura_ref, dtype=float))
+        self.regularization_cost = casadi.sumsqr(self.var_q - self.postura_ref)
         self.smooth_cost = casadi.sumsqr(self.var_q - self.var_q_last)
 
         # Joint limits
@@ -221,7 +262,8 @@ class G1_29_ArmIK:
         left_wrist: np.ndarray,
         right_wrist: np.ndarray,
         current_arm_q: Optional[np.ndarray] = None,
-        current_arm_dq: Optional[np.ndarray] = None
+        current_arm_dq: Optional[np.ndarray] = None,
+        punho_dir: Optional[np.ndarray] = None
     ) -> Tuple[np.ndarray, np.ndarray]:
         """
         Solve IK for given target wrist poses.
@@ -242,6 +284,14 @@ class G1_29_ArmIK:
         self.opti.set_value(self.param_tf_l, left_wrist)
         self.opti.set_value(self.param_tf_r, right_wrist)
         self.opti.set_value(self.var_q_last, self.init_data)
+
+        # Valor em que as juntas do punho direito ficam presas nesta chamada.
+        # Sem `punho_dir`, usa o que o `init_data` já traz — o que congela o
+        # punho onde ele estava, em vez de puxá-lo para um valor arbitrário.
+        if self.travar_punho_dir:
+            alvo_punho = (self.init_data[11:14] if punho_dir is None
+                          else np.asarray(punho_dir, dtype=float)[:3])
+            self.opti.set_value(self.par_punho_dir, alvo_punho)
 
         try:
             sol = self.opti.solve()

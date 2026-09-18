@@ -21,6 +21,9 @@ ENV_NOME="prometheus-vla"
 COM_MUJOCO=1
 SO_VERIFICAR=0
 BRANCH_LEROBOT="prometheus-vla/v0.6.1"
+# aarch64 é a ThinkStation PGX / DGX Spark (GB10, CUDA 13). Três passos mudam lá — torch,
+# cyclonedds e realsense — porque o que usamos no x86 não tem wheel para aarch64+cp312.
+ARQ="$(uname -m)"
 
 while [[ $# -gt 0 ]]; do
     case "$1" in
@@ -76,11 +79,13 @@ if [[ $SO_VERIFICAR -eq 0 ]]; then
     echo "python: $(python -V) em $(which python)"
 
     # ── 3. torch ANTES de tudo ───────────────────────────────────────────────
-    passo "3/10  torch + torchvision (índice cu128)"
     # A RTX 5070 é Blackwell (sm_120) e precisa de CUDA 12.8+. Se o torch vier depois,
     # como dependência transitiva, o resolver escolhe um wheel CPU ou cu126 e a GPU
     # some sem aviso nenhum — o import continua funcionando igual.
-    pip install --index-url https://download.pytorch.org/whl/cu128 \
+    # No GB10 (sm_121) o sistema é CUDA 13: o índice é o cu130, que tem aarch64.
+    if [[ "$ARQ" == "aarch64" ]]; then INDICE_TORCH=cu130; else INDICE_TORCH=cu128; fi
+    passo "3/10  torch + torchvision (índice $INDICE_TORCH)"
+    pip install --index-url "https://download.pytorch.org/whl/$INDICE_TORCH" \
         "torch>=2.7,<2.12" "torchvision>=0.22.0,<0.27.0"
 
     # ── 4. SDK da Unitree ────────────────────────────────────────────────────
@@ -103,7 +108,15 @@ if [[ $SO_VERIFICAR -eq 0 ]]; then
     #
     # E vem do submódulo (editable), não do git+https: o upstream avança sozinho e o
     # SHA que testamos é o registrado no submódulo.
-    pip install "cyclonedds==11.0.1"
+    if [[ "$ARQ" == "aarch64" ]]; then
+        # O 11.0.1 não tem wheel Linux aarch64 no PyPI, só sdist. A lib C vem do
+        # conda-forge na MESMA versão e o binding compila contra ela: binding e lib de
+        # versões diferentes é exatamente o "buffer overflow detected" do 0.10.2.
+        conda install -y -c conda-forge --override-channels "cyclonedds=11.0.1"
+        CYCLONEDDS_HOME="$CONDA_PREFIX" pip install --no-binary cyclonedds "cyclonedds==11.0.1"
+    else
+        pip install "cyclonedds==11.0.1"
+    fi
     pip install --no-deps -e ./unitree_sdk2_python
 
     # ── 5. lerobot ───────────────────────────────────────────────────────────
@@ -111,7 +124,14 @@ if [[ $SO_VERIFICAR -eq 0 ]]; then
     # `training` traz accelerate e wandb — sem ele o `run_train.py` das políticas
     # morre no `from accelerate import Accelerator`. Não é opcional para quem
     # treina; o `dataset` sozinho só dá conta de gravar e ler dataset.
-    pip install -e "./lerobot[unitree_g1_dex3,televuer,intelrealsense,pi,dataset,training]"
+    if [[ "$ARQ" == "aarch64" ]]; then
+        # O extra `intelrealsense` fixa pyrealsense2<2.57, que não tem wheel
+        # aarch64+cp312; o primeiro que tem é o 2.58.
+        pip install -e "./lerobot[unitree_g1_dex3,televuer,pi,dataset,training]"
+        pip install "pyrealsense2>=2.58,<2.59"
+    else
+        pip install -e "./lerobot[unitree_g1_dex3,televuer,intelrealsense,pi,dataset,training]"
+    fi
 
     # ── 6. Forks vendorizados ────────────────────────────────────────────────
     passo "6/10  televuer e dex_retargeting (forks do repo, editable)"
@@ -145,7 +165,25 @@ if [[ $SO_VERIFICAR -eq 0 ]]; then
     #  - o conda substitui o numpy do pip pelo build de conda-forge da MESMA versão
     #    (2.2.6). Depois do lerobot, é o lerobot que fixa a versão e o conda só troca o
     #    build; antes dele, o resolver do conda escolhe sozinho.
-    conda install -y -c conda-forge --override-channels pinocchio casadi
+    #
+    # E o numpy tem que ser FIXADO aqui: sem trava, o solver do conda sobe para o mais
+    # novo (2.5.x no aarch64), fora do numpy<2.3 que o lerobot exige.
+    #
+    # No aarch64 o BLAS padrão do conda-forge é o NVPL, e o wheel do torch traz o SEU
+    # libnvpl_blas_core.so.0, mais antigo e com o mesmo soname. Quando o torch é
+    # importado antes do numpy, o do torch vence e o numpy morre com "undefined symbol:
+    # nvpl_blas_core_scabs1". O `import numpy, torch` da verificação passa, e só
+    # `import torch` primeiro quebra. O blis é o BLAS que o env x86 validado já usa.
+    #
+    # O torchcodec do PyPI não traz FFmpeg. No x86 ele encontra o do apt
+    # (/usr/lib/.../libavutil.so.60), mas o DGX OS vem sem, e o apt pede sudo. Por isso
+    # o FFmpeg entra pelo conda-forge, no mesmo solve, para não mexer nas travas acima.
+    if [[ "$ARQ" == "aarch64" ]]; then
+        conda install -y -c conda-forge --override-channels pinocchio casadi "numpy<2.3" \
+            "libblas=*=*blis" "_openmp_mutex=*=*_gnu" "ffmpeg>=4,<9"
+    else
+        conda install -y -c conda-forge --override-channels pinocchio casadi "numpy<2.3"
+    fi
 
     # O ipopt do conda-forge é multithread e, sem limitar, cada chamada de IK gasta
     # ~83 ms em vez de ~0,8 ms — o FPS da teleop afunda. Gravado no env para valer em

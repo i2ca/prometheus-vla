@@ -20,9 +20,9 @@ O que este cliente tem de novo em relação ao `init_lerobot_inference_client.py
   - manda as DUAS câmeras de cor (cabeça e pulso) e a profundidade métrica;
   - manda a frase da tarefa (o FastWAM é condicionado por linguagem);
   - chunk limitado a 32 ações (`action_horizon` do modelo, contra 60 do ACT-D);
-  - painel de depuração com quatro quadrantes (`--v-debug`): atenção do DiT,
-    profundidade crua × a que o modelo recebeu, nuvem de pontos e temperatura
-    dos motores.
+  - painel de depuração com quatro quadrantes (`--v-debug` numa janela local,
+    `--v-web` no navegador): atenção do DiT, profundidade crua × a que o modelo
+    recebeu, nuvem de pontos e temperatura dos motores.
 
 Banda: a observação vai crua, ~3 MB por inferência (duas câmeras 848x480 mais a
 profundidade de 16 bits). A ~1 inferência por segundo isso é nada numa LAN, e
@@ -36,7 +36,11 @@ Opções:
   --server=<IP>        (obrigatório) IP da athena
   --port=<INT>         porta do servidor (padrão: 5600)
   --sim                modo simulação (o robô vira 127.0.0.1; exige o MuJoCo no ar)
-  --robot-ip=<IP>      IP do G1 real (padrão: 192.168.123.164). Ignorado com --sim.
+  --robot-ip=<IP>      IP do G1 real (padrão: 10.9.8.73, o endereço do robô na LAN
+                       do laboratório). O bridge do robô (`run_g1_server.py`)
+                       escuta em 0.0.0.0, então este IP funciona tanto da athena
+                       quanto do seu PC; 192.168.123.164 (o cabo) só funciona de
+                       quem está no cabo. Ignorado com --sim.
   --replay=<PATH:EP>   ALIMENTA O MODELO COM UM EPISÓDIO GRAVADO em vez das
                        câmeras. Ex: --replay=meu_dataset/white_cup_on_dripper_2026-08-11:25
                        O robô (MuJoCo ou real) executa as ações resultantes, então
@@ -51,6 +55,23 @@ Opções:
                        combinação que nunca existiu.
   --replay-uma-vez     encerra ao fim do episódio (padrão: repete em loop, para
                        dar tempo de olhar o painel e o robô sem ficar relançando)
+  --pose-inicial=<PATH:EP>  LEVA O ROBÔ À POSE DE PARTIDA das demonstrações antes
+                       de entregar o controle ao modelo. Ex:
+                       --pose-inicial=meu_dataset/white_cup_on_dripper_2026-08-11:25
+                       Use SEMPRE no robô real. O FastWAM é condicionado pela
+                       propriocepção, e os episódios começam numa pose de
+                       prontidão (cotovelo esquerdo a ~1,386 rad). Começar de
+                       zeros entrega um estado fora da distribuição, o modelo
+                       responde com a média — uma pose parada —, o robô fica
+                       nela, o estado continua fora da distribuição, e ele TRAVA.
+                       Isso não aparece no --replay: lá o estado vem do dataset.
+  --episodico          espera um comando, executa, volta à pose neutra e espera de novo.
+                       Os comandos vêm do teclado; o servidor NÃO é reiniciado entre eles
+                       (a `task` vai em cada requisição). Sem este flag o robô roda contínuo,
+                       como sempre.
+  --orcamento=<SEG>    quanto tempo cada comando pode rodar no modo episódico (padrão 20).
+                       Enter encerra antes. NÃO existe detecção automática de fim: uma
+                       política travada é indistinguível de uma que terminou.
   --rampa=<SEG>        tempo para sair da pose atual do robô até a primeira ação
                        do modelo (padrão: 2.0; 0 desliga). Os episódios começam
                        com os braços numa pose de prontidão (no ep 25, cotovelo
@@ -64,12 +85,26 @@ Opções:
                        no formato antigo. Perde resolução (~8 mm por degrau) —
                        serve para ver o caminho funcionando, não para medir.
   --cam-robot=<IP>     stream ZMQ de câmera externa
-  --port-cam=<PORTA>   porta do stream (padrão: 5555)
+  --port-cam=<PORTA>   porta do stream da cabeça + profundidade (padrão: 5555)
+  --port-cam-pulso=<PORTA>  porta do stream da câmera de PULSO (padrão: 5556).
+                       No robô real ela vem de outro servidor
+                       (`right_arm_realsense_server.py`), numa porta própria; o
+                       `--cam-robot` sozinho traria só a cabeça, e o mosaico
+                       ficaria com metade real e metade do simulador. Use 0 para
+                       desligar e ficar com a câmera de pulso do corpo local.
   --task=<STR>         frase da tarefa; sem isto o servidor usa a dele
   --chunk=<INT>        ações por chunk (padrão: 32 = o horizonte do modelo)
   --lead=<INT>         pede nova inferência com N ações restantes (padrão: 24)
   --fps=<INT>          Hz do loop de controle (padrão: 30)
-  --v-debug            abre o painel de depuração (os quatro quadrantes)
+  --v-debug            abre o painel de depuração numa janela local (exige X)
+  --v-web[=PORTA]      serve o MESMO painel por HTTP (padrão: 8088). Para máquina
+                       sem tela: rode por SSH e abra http://<ip>:8088/ no
+                       navegador — do PC ou do celular, ao lado do robô. Pode ser
+                       usado junto com --v-debug.
+  --web-fps=<N>        quadros por segundo do painel web (padrão: 10). O desenho
+                       roda em thread separada; isto não afeta o loop de controle.
+  --web-host=<IP>      interface onde o painel escuta (padrão: 0.0.0.0 = a LAN
+                       inteira; use 127.0.0.1 para deixar só nesta máquina)
   --intrinsics=fx,fy,cx,cy   intrínsecos da câmera para a nuvem de pontos
                        (padrão: 617,617,424,240 — nominais da RealSense 848x480)
   --debug              loga ações e tempos
@@ -79,16 +114,26 @@ Opções:
 
 Exemplo:
   python init_lerobot_inference_fastwamd_client.py \\
-      --server=10.9.8.252 --cam-robot=192.168.123.164 \\
+      --server=10.9.8.252 --cam-robot=10.9.8.73 \\
       --chunk=32 --lead=24 --fps=30 --v-debug --debug
+
+  Robô real, sem tela na máquina de controle (acompanha pelo navegador):
+  python init_lerobot_inference_fastwamd_client.py \\
+      --server=10.9.8.252 --robot-ip=10.9.8.73 --cam-robot=10.9.8.73 \\
+      --chunk=32 --lead=24 --fps=15 --v-web=8088 --debug
+
+  Tudo na athena (servidor num screen, controle noutro) — ver `athena/README.md`:
+  screen -dmS infer   bash /data/train_output/launch_server_fastwamd.sh 2
+  screen -dmS control bash /data/train_output/launch_client_fastwamd.sh
 """
 
 import os
 import sys
+import threading
 import time
 import multiprocessing as mp
 from datetime import datetime
-from queue import Empty, Full
+from queue import Empty, Full, Queue
 
 # ⚠️ O zmq vem ANTES de qualquer coisa que puxe torch (aqui, o
 # `init_lerobot_inference_async_v2`). Ordem trocada = `Segmentation fault` sem
@@ -107,7 +152,9 @@ import numpy as np
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from init_lerobot_inference_async_v2 import setup_cameras, get_camera_frames  # noqa: E402
-from viz_debug_fastwamd import INTRINSECOS_PADRAO, PainelDebug  # noqa: E402
+from viz_debug_fastwamd import (  # noqa: E402
+    INTRINSECOS_PADRAO, GrupoDePaineis, PainelDebug, PainelWeb,
+)
 
 # Mesma ordem do dataset e do servidor. Ver a nota lá: são 29 juntas, com o
 # `kWaistYaw.q` no meio e as duas mãos em ordens de dedo diferentes.
@@ -191,6 +238,64 @@ def converte_depth_legado(mapa: np.ndarray) -> np.ndarray:
     if mapa.ndim == 3:
         mapa = mapa[..., 0]
     return (mapa.astype(np.float32) * (2000.0 / 255.0)).astype(np.uint16)
+
+
+def le_cameras_externas(obs: dict, stream_cabeca, stream_pulso, estado: dict) -> dict:
+    """Injeta em `obs` as câmeras do robô real, segurando o último quadro bom.
+
+    Duas coisas que o caminho antigo (`get_camera_frames`) fazia mal e que
+    custaram um teste inteiro:
+
+    1. SEM QUADRO NOVO, A OBSERVAÇÃO FICAVA COM A IMAGEM LOCAL. No modo
+       `--cam-robot` junto com `--sim`, "imagem local" é a cena do MuJoCo: o
+       modelo passava a receber o simulador achando que recebia o robô, sem uma
+       linha de aviso. É a diferença entre um teste e um teste que mente.
+
+    2. O `recv` do `SensorClient` é bloqueante. Com timeout (posto na subida) ele
+       levanta `zmq.Again` em vez de travar, e aí a decisão é aqui: repetir o
+       último quadro bom, contar há quantos ciclos ele está velho, e avisar.
+
+    Repetir o último quadro é o comportamento certo por alguns ciclos — a
+    câmera publica a ~30 Hz e o loop roda a 15, então uma falha isolada é
+    normal. O que não pode é passar despercebido quando vira permanente.
+    """
+    from Scripts_Prometheus_int.sim.sensor_utils import ImageUtils
+
+    fontes = (
+        (stream_cabeca, ("head_camera", "head_camera_depth")),
+        (stream_pulso, ("right_wrist_camera",)),
+    )
+    for stream, chaves in fontes:
+        if stream is None:
+            continue
+        novo = None
+        try:
+            msg = stream.receive_message()
+            if msg and "images" in msg:
+                novo = msg["images"]
+        except zmq.Again:
+            novo = None
+        except Exception as erro:                      # socket fechado, decode ruim
+            print(f"\n⚠️  Câmera {chaves[0]}: {erro}")
+            novo = None
+
+        for chave in chaves:
+            bruto = novo.get(chave) if novo else None
+            if bruto is not None:
+                estado[chave] = ImageUtils.decode_image(bruto)
+                estado[f"{chave}_velho"] = 0
+            else:
+                estado[f"{chave}_velho"] = estado.get(f"{chave}_velho", 0) + 1
+
+            if chave in estado:
+                obs[chave] = estado[chave]
+            velho = estado.get(f"{chave}_velho", 0)
+            # 15 ciclos a 15 Hz = 1 s sem quadro. Abaixo disso é jitter de rede;
+            # acima, a câmera parou e o que o modelo está vendo é passado.
+            if velho and velho % 15 == 0:
+                print(f"\n⚠️  {chave}: {velho} ciclos sem quadro novo "
+                      f"({velho / 15:.0f} s) — o modelo está vendo imagem velha.")
+    return obs
 
 
 def observacao_para_rede(obs: dict, depth_legado: bool = False) -> dict:
@@ -327,6 +432,59 @@ class ReplayDeEpisodio:
         return obs, False
 
 
+def pose_de_partida_do_dataset(raiz: str, episodio: int) -> np.ndarray:
+    """O estado do quadro 0 de um episódio gravado, no vetor de 29 juntas.
+
+    Existe por causa de um modo de falha que não parece falha: o FastWAM é
+    condicionado pela PROPRIOCEPÇÃO, e todas as demonstrações começam numa pose
+    de prontidão (medido nos 27 episódios: cotovelo esquerdo a 1,386 rad,
+    ombro direito a -0,551, cotovelo direito a 0,654). Um robô que começa perto
+    de zeros entrega ao modelo um estado que ele nunca viu — e a resposta a uma
+    entrada fora da distribuição é a média do que ele aprendeu, que é uma pose
+    parada. O robô então FICA nessa pose, o estado continua fora da distribuição,
+    e o laço se fecha: ele trava numa posição e não sai mais.
+
+    Nada disso aparece no replay, porque lá o estado também vem do dataset. É a
+    diferença entre "funciona na simulação com vídeo gravado" e "trava no robô".
+    """
+    os.environ.setdefault("HF_HUB_OFFLINE", "1")
+    from lerobot.datasets.lerobot_dataset import LeRobotDataset
+
+    ds = LeRobotDataset(repo_id=os.path.basename(os.path.normpath(raiz)),
+                        root=raiz, episodes=[episodio])
+    if len(ds) == 0:
+        raise SystemExit(f"episódio {episodio} vazio em {raiz}")
+    return ds[0]["observation.state"].numpy().astype(np.float32)
+
+
+def le_pose_atual(robot) -> np.ndarray:
+    """Pose das 29 juntas, lida do robô agora."""
+    try:
+        obs = robot.get_observation() or {}
+    except Exception:
+        obs = {}
+    return np.array([float(obs.get(n, 0.0)) for n in JUNTAS_G1], dtype=np.float32)
+
+
+def leva_ate_a_pose(robot, de: np.ndarray, para: np.ndarray, segundos: float,
+                    fps: int) -> None:
+    """Interpola do estado atual do robô até a pose alvo, em `segundos`.
+
+    Um degrau de posição num motor com kp alto vira torque de pico: a mesma
+    razão da `--rampa` do modelo, só que aqui o destino é a pose de partida das
+    demonstrações, e não a primeira ação prevista.
+    """
+    n = max(1, int(segundos * fps))
+    print(f"🧭 Levando o robô à pose de partida das demonstrações "
+          f"({np.abs(para - de).max():.2f} rad de distância, {segundos:.1f} s)...")
+    for k in range(1, n + 1):
+        t = k / n
+        alvo = (1.0 - t) * de + t * para
+        robot.send_action({nome: float(alvo[i]) for i, nome in enumerate(JUNTAS_G1)})
+        time.sleep(1.0 / fps)
+    print("   ✅ na pose de partida.")
+
+
 # ═════════════════════════════════════════════════════════════════════════
 # Processo de inferência remota
 # ═════════════════════════════════════════════════════════════════════════
@@ -343,9 +501,19 @@ def _worker_remoto(server_ip, server_port, n_acoes, quer_debug, task, verbose, d
 
     while not stop_evt.is_set():
         try:
-            obs, passo = obs_queue.get(timeout=0.5)
+            item = obs_queue.get(timeout=0.5)
         except Empty:
             continue
+        # A tarefa vai POR REQUISIÇÃO, e não fixa na construção do worker: é o
+        # que permite trocar de comando sem reiniciar processo nem recarregar
+        # modelo. O servidor já lê `msg.get("task")` a cada pedido
+        # (`init_lerobot_inference_fastwamd_server.py:355`), então do lado dele
+        # não muda nada.
+        if len(item) == 3:
+            obs, passo, task_pedido = item
+        else:
+            obs, passo = item
+            task_pedido = task
 
         try:
             obs_rede = observacao_para_rede(obs, depth_legado)
@@ -357,8 +525,8 @@ def _worker_remoto(server_ip, server_port, n_acoes, quer_debug, task, verbose, d
                 "actions_per_chunk": int(n_acoes),
                 "want_debug": bool(quer_debug),
             }
-            if task:
-                pedido["task"] = task
+            if task_pedido:
+                pedido["task"] = task_pedido
 
             t0 = time.perf_counter()
             socket.send(_pack(pedido))
@@ -449,6 +617,53 @@ class ProcessoInferenciaRemota:
 # ═════════════════════════════════════════════════════════════════════════
 # Principal
 # ═════════════════════════════════════════════════════════════════════════
+
+# ==========================================================================
+# MODO EPISÓDICO
+# ==========================================================================
+# "dá um comando, ela executa, e espera o próximo" — sem derrubar o servidor
+# entre um e outro. O modelo fica carregado do outro lado o tempo todo; o que
+# muda por comando é só a string de `task`, que o servidor já lê a cada pedido
+# (`init_lerobot_inference_fastwamd_server.py:355`).
+#
+#   OCIOSO ──comando──> EXECUTANDO ──fim──> PARQUE ──> OCIOSO
+#
+# O fim de uma tarefa é por ORÇAMENTO DE TEMPO ou por Enter do operador. Não
+# use "as ações pararam de mudar" como critério: o modo de falha medido desta
+# política é justamente TRAVAR (ver o cabeçalho de
+# `config/train/pi05_cotreino_sim_real.yaml`), e uma política travada é
+# indistinguível de uma que terminou. O critério automático daria "sucesso"
+# exatamente quando algo deu errado.
+
+
+class FilaDeComandos(threading.Thread):
+    """Lê linhas do teclado sem bloquear o laço de 30 Hz."""
+
+    def __init__(self):
+        super().__init__(daemon=True)
+        self.fila: "Queue[str]" = Queue()
+        self._parar = threading.Event()
+
+    def run(self):
+        while not self._parar.is_set():
+            try:
+                linha = sys.stdin.readline()
+            except Exception:
+                break
+            if not linha:
+                break
+            self.fila.put(linha.strip())
+
+    def pega(self) -> str | None:
+        try:
+            return self.fila.get_nowait()
+        except Empty:
+            return None
+
+    def para(self):
+        self._parar.set()
+
+
 def main():
     if any(f in sys.argv for f in ["-h", "--help"]):
         print(__doc__)
@@ -459,21 +674,33 @@ def main():
     server_ip = None
     server_port = 5600
     is_sim = False
-    robot_ip = "192.168.123.164"
+    # O robô na LAN do laboratório, e não no cabo (192.168.123.164): o bridge
+    # `run_g1_server.py` faz bind em 0.0.0.0, então este endereço vale da athena
+    # E do PC do Miguel. Com o IP do cabo, só quem está no cabo alcança — e o
+    # ponto de rodar o controle na athena é justamente não depender disso.
+    robot_ip = "10.9.8.73"
     depth_legado = False
     replay_raiz = None
     replay_ep = 0
+    pose_raiz = None
+    pose_ep = 0
     replay_loop = True
     estado_do_robo = False
     reduzir = True
     rampa_s = 2.0
+    episodico = False
+    orcamento_s = 20.0
     cam_robot_ip = None
     cam_port = "5555"
+    cam_port_pulso = "5556"
     task = None
     n_acoes = 32
     lead = 24
     fps = 30
     ver_debug = False
+    web_porta = None
+    web_fps = 10.0
+    web_host = "0.0.0.0"
     verbose = False
     log_ativo = False
     log_path = None
@@ -498,6 +725,13 @@ def main():
                 replay_raiz, replay_ep = valor, 0
             else:
                 replay_ep = int(ep)
+        elif arg.startswith("--pose-inicial="):
+            valor = arg.split("=", 1)[1]
+            pose_raiz, _, ep = valor.rpartition(":")
+            if not pose_raiz:
+                pose_raiz, pose_ep = valor, 0
+            else:
+                pose_ep = int(ep)
         elif arg == "--estado-robo":
             estado_do_robo = True
         elif arg == "--replay-uma-vez":
@@ -506,10 +740,16 @@ def main():
             reduzir = False
         elif arg.startswith("--rampa="):
             rampa_s = float(arg.split("=", 1)[1])
+        elif arg == "--episodico":
+            episodico = True
+        elif arg.startswith("--orcamento="):
+            orcamento_s = float(arg.split("=", 1)[1])
         elif arg.startswith("--cam-robot="):
             cam_robot_ip = arg.split("=", 1)[1]
         elif arg.startswith("--port-cam="):
             cam_port = arg.split("=", 1)[1]
+        elif arg.startswith("--port-cam-pulso="):
+            cam_port_pulso = arg.split("=", 1)[1]
         elif arg.startswith("--task="):
             task = arg.split("=", 1)[1]
         elif arg.startswith("--chunk="):
@@ -520,6 +760,14 @@ def main():
             fps = int(arg.split("=", 1)[1])
         elif arg == "--v-debug":
             ver_debug = True
+        elif arg == "--v-web":
+            web_porta = 8088
+        elif arg.startswith("--v-web="):
+            web_porta = int(arg.split("=", 1)[1])
+        elif arg.startswith("--web-fps="):
+            web_fps = float(arg.split("=", 1)[1])
+        elif arg.startswith("--web-host="):
+            web_host = arg.split("=", 1)[1]
         elif arg.startswith("--intrinsics="):
             fx, fy, cx, cy = (float(v) for v in arg.split("=", 1)[1].split(","))
             intrinsecos = {"fx": fx, "fy": fy, "cx": cx, "cy": cy}
@@ -558,6 +806,35 @@ def main():
     stream_client, fake_cap, fake_img_rgb, fake_depth_cap, fake_depth_img = setup_cameras(
         cam_robot_ip, cam_port, None, None
     )
+
+    # ── Segunda assinatura: a câmera de PULSO ───────────────────────────────
+    # O `setup_cameras` cobre só `head_camera` e `head_camera_depth`, porque foi
+    # escrito para o ACT-D, que usa uma câmera só. O FastWAM-D usa DUAS, e no
+    # robô real elas vêm de servidores diferentes: a cabeça do
+    # `full_realsenser_server.py` na 5555 e o pulso do
+    # `right_arm_realsense_server.py` na 5556.
+    #
+    # Sem esta segunda assinatura o `--cam-robot` traz a cabeça do robô e deixa
+    # o pulso vindo do corpo local — no modo `--sim` isso significa metade do
+    # mosaico com a bancada real e metade com a cena do MuJoCo. O modelo recebe
+    # uma imagem que não existe em lugar nenhum, e o resultado não diz nada
+    # sobre o robô nem sobre o simulador.
+    ultimos_quadros: dict = {}   # último quadro bom por câmera + contador de defasagem
+    stream_pulso = None
+    if cam_robot_ip and str(cam_port_pulso) not in ("0", ""):
+        from Scripts_Prometheus_int.sim.sensor_utils import SensorClient
+        stream_pulso = SensorClient()
+        stream_pulso.start_client(server_ip=cam_robot_ip, port=int(cam_port_pulso))
+        print(f"📡 Câmera de pulso em tcp://{cam_robot_ip}:{cam_port_pulso}")
+
+    # ── Timeout de recepção: o `SensorClient` não põe nenhum ────────────────
+    # O `recv_multipart` dele é BLOQUEANTE. Com a câmera do robô caindo no meio
+    # da sessão — mau contato do cabo, que já aconteceu — o loop de controle
+    # trava dentro do recv e não imprime nada: o painel congela, o robô para de
+    # receber ação e não há erro em lugar nenhum para dizer por quê.
+    for _sock in (stream_client, stream_pulso):
+        if _sock is not None:
+            _sock.socket.setsockopt(zmq.RCVTIMEO, 700)
 
     from robot.unitree_g1.unitree_g1_dex3 import UnitreeG1Dex3, UnitreeG1Dex3Config
     print(f"⏳ Conectando ao Unitree G1 (sim={is_sim}, ip={robot_ip})...")
@@ -622,24 +899,95 @@ def main():
     # laço carrega o estado GRAVADO, que já é o destino — partir dele faria a
     # rampa não fazer nada.
     pose_inicial = np.array([float(conferencia.get(n, 0.0)) for n in JUNTAS_G1], dtype=np.float32)
+    alvo_pose = None
+
+    # ── Pose de partida ──────────────────────────────────────────────────────
+    # Sem isto, no robô real, o modelo recebe um estado que nunca viu e responde
+    # com a média do que aprendeu — uma pose parada. Ver
+    # `pose_de_partida_do_dataset` para o laço que isso fecha.
+    # O `and not is_sim` saiu daqui em 02/09, e a medição que derrubou ele foi
+    # esta: MESMA imagem do robô real, dois estados diferentes, mandados direto
+    # ao servidor —
+    #
+    #   estado zerado (o que o MuJoCo entrega na partida):  566 de 928 valores
+    #                                                       fora da faixa, 5 das
+    #                                                       7 juntas do braço
+    #                                                       congeladas;
+    #   pose inicial do ep24 (o que o dataset tem):         2 de 928, nenhuma
+    #                                                       junta congelada.
+    #
+    # Ou seja: o corpo virtual começando em zeros é OOD do quadro 0, e o modelo
+    # responde com a média — exatamente o laço descrito na ajuda deste flag. A
+    # suposição de que "no simulador não precisa" era falsa, e escondia o
+    # problema atrás de uma conclusão errada sobre a câmera.
+    if pose_raiz:
+        alvo = pose_de_partida_do_dataset(pose_raiz, pose_ep)
+        distancia = np.abs(alvo - pose_inicial)
+        print(f"\n📏 Distância do robô até a pose de partida do episódio {pose_ep}:")
+        for nome_grupo, fatia in (("braço esq", slice(0, 7)), ("braço dir", slice(7, 14)),
+                                  ("cintura", slice(14, 15)), ("mãos", slice(15, 29))):
+            print(f"   {nome_grupo:10s} pior {distancia[fatia].max():.3f} rad")
+        if distancia.max() > 0.15:
+            leva_ate_a_pose(robot, pose_inicial, alvo, max(rampa_s, 3.0), fps)
+            pose_inicial = alvo
+        else:
+            print("   já está na pose — nada a fazer.")
+        alvo_pose = alvo
+
+    # Destino do parqueamento entre comandos no modo episódico. A pose de
+    # partida do dataset é a escolha certa: é a única de onde o modelo
+    # comprovadamente responde bem (a medição do comentário acima). Sem
+    # `--pose-raiz`, cai para a pose em que o robô estava ao subir o cliente.
+    pose_neutra = alvo_pose if alvo_pose is not None else pose_inicial.copy()
 
     replay = None
     if replay_raiz:
         replay = ReplayDeEpisodio(replay_raiz, replay_ep,
                                   usar_estado_gravado=not estado_do_robo)
 
-    painel = None
+    # Os quadrantes 1 e 2 só existem se o SERVIDOR instalar os ganchos de
+    # captura, e isso é pedido por inferência: qualquer painel ligado implica
+    # `want_debug`. Esquecer isto deixa o painel web no ar mostrando dois
+    # quadrantes eternamente "aguardando o servidor".
+    quer_debug = ver_debug or web_porta is not None
+
+    paineis = []
     if ver_debug:
-        painel = PainelDebug(intrinsecos=intrinsecos)
+        paineis.append(PainelDebug(intrinsecos=intrinsecos))
+    if web_porta is not None:
+        paineis.append(PainelWeb(porta=web_porta, host=web_host, fps=web_fps,
+                                 intrinsecos=intrinsecos))
+    painel = None
+    if paineis:
+        painel = paineis[0] if len(paineis) == 1 else GrupoDePaineis(paineis)
         painel.create()
 
-    inf = ProcessoInferenciaRemota(server_ip, server_port, n_acoes, ver_debug, task, verbose,
+    inf = ProcessoInferenciaRemota(server_ip, server_port, n_acoes, quer_debug, task, verbose,
                                    depth_legado, reduzir)
     inf.start()
 
     print(f"🚀 Loop de controle — {fps} Hz | chunk={n_acoes} | lead={lead}")
     print(f"   Servidor: {server_ip}:{server_port}")
     print("   [Ctrl+C para parar]\n")
+
+    # ── Estado episódico ─────────────────────────────────────────────────
+    # Com `--episodico`, o robô não roda continuamente: espera um comando,
+    # executa por um orçamento de tempo, volta à pose neutra e espera de novo.
+    comandos = None
+    task_atual = task
+    estado = "EXECUTANDO"      # sem --episodico o comportamento é o de sempre
+    t_fim_tarefa = 0.0
+    if episodico:
+        comandos = FilaDeComandos()
+        comandos.start()
+        estado = "OCIOSO"
+        task_atual = None
+        print("\n" + "=" * 62)
+        print("MODO EPISÓDICO — digite um comando e Enter para executar.")
+        print(f"Cada tarefa roda por até {orcamento_s:.0f} s; Enter encerra antes.")
+        print("Ctrl+C sai.")
+        print("=" * 62)
+        print("\nOCIOSO> ", end="", flush=True)
 
     passo_atual = 0
     chunks_ativos: list[dict] = []
@@ -654,6 +1002,60 @@ def main():
     try:
         while True:
             t_inicio = time.perf_counter()
+
+            # ── Máquina de estados episódica ──────────────────────────────
+            if comandos is not None:
+                linha = comandos.pega()
+
+                if estado == "OCIOSO":
+                    if linha is None:
+                        time.sleep(0.05)      # nada a fazer: não queima CPU
+                        continue
+                    if not linha:
+                        print("OCIOSO> ", end="", flush=True)
+                        continue
+                    # Começa a tarefa. Limpar os chunks é o equivalente ao
+                    # `policy.reset()`: sem isso o robô terminaria o chunk
+                    # anterior — até 50 passos, 1,7 s a 30 fps — obedecendo ao
+                    # comando velho.
+                    task_atual = linha
+                    chunks_ativos.clear()
+                    passo_atual = 0
+                    esperando = False
+                    ultima_acao = None
+                    pose_inicial = le_pose_atual(robot)
+                    t_fim_tarefa = time.time() + orcamento_s
+                    estado = "EXECUTANDO"
+                    print(f"\n▶ executando: {task_atual!r}  (até {orcamento_s:.0f} s, "
+                          f"Enter encerra)")
+
+                elif estado == "EXECUTANDO":
+                    agora = time.time()
+                    motivo = None
+                    if linha is not None:
+                        motivo = "Enter do operador"
+                    elif agora >= t_fim_tarefa:
+                        motivo = f"orçamento de {orcamento_s:.0f} s"
+                    if motivo:
+                        print(f"\n✔ tarefa encerrada ({motivo})")
+                        # PARQUE: volta à pose neutra antes de aceitar o próximo
+                        # comando. Sem isto, a tarefa seguinte começaria de onde
+                        # a anterior parou — e o modelo é MUITO sensível a
+                        # começar fora da pose de partida (medido: com estado
+                        # zerado, 566 de 928 valores fora da faixa).
+                        if pose_neutra is not None:
+                            print("⏎ voltando à pose neutra ...", end="", flush=True)
+                            leva_ate_a_pose(robot, le_pose_atual(robot), pose_neutra,
+                                            max(rampa_s, 3.0), fps)
+                            print(" ok")
+                        chunks_ativos.clear()
+                        passo_atual = 0
+                        esperando = False
+                        ultima_acao = None
+                        task_atual = None
+                        estado = "OCIOSO"
+                        print("\nOCIOSO> ", end="", flush=True)
+                        continue
 
             obs_valida = True
             try:
@@ -672,9 +1074,8 @@ def main():
                               f"({replay.n} quadros).")
                         break
                 else:
-                    obs, fake_img_rgb = get_camera_frames(
-                        obs, stream_client, fake_cap, fake_img_rgb,
-                        fake_depth_cap=fake_depth_cap, fake_depth_img=fake_depth_img,
+                    obs = le_cameras_externas(
+                        obs, stream_client, stream_pulso, ultimos_quadros
                     )
 
             # ── Painel ────────────────────────────────────────────────────
@@ -702,7 +1103,7 @@ def main():
 
             if obs_valida and restantes <= lead and not esperando:
                 try:
-                    inf.obs_queue.put_nowait((obs, passo_atual))
+                    inf.obs_queue.put_nowait((obs, passo_atual, task_atual))
                     esperando = True
                 except Full:
                     try:
@@ -710,7 +1111,7 @@ def main():
                     except Empty:
                         pass
                     try:
-                        inf.obs_queue.put_nowait((obs, passo_atual))
+                        inf.obs_queue.put_nowait((obs, passo_atual, task_atual))
                         esperando = True
                     except Full:
                         pass
@@ -768,7 +1169,19 @@ def main():
 
                     if verbose:
                         braco = " | ".join(f"{v:.3f}" for v in acao[:7])
-                        print(f"\r🤖 [{braco}] chunks={len(chunks_ativos)}", end="", flush=True)
+                        # A DISTÂNCIA DO ESTADO ATÉ A POSE DE PARTIDA é o número
+                        # que diz se o modelo está dentro da distribuição. Sem
+                        # ele, um corpo que saiu da pose e um modelo que não
+                        # reconhece a cena produzem exatamente o mesmo sintoma na
+                        # tela — ações paradas —, e foi assim que a câmera levou
+                        # a culpa por um problema de propriocepção.
+                        deriva = ""
+                        if alvo_pose is not None:
+                            atual = np.array([float((obs or {}).get(n, 0.0))
+                                              for n in JUNTAS_G1], dtype=np.float32)
+                            deriva = f" | deriva {np.abs(atual - alvo_pose).max():.3f} rad"
+                        print(f"\r🤖 [{braco}] chunks={len(chunks_ativos)}{deriva}",
+                              end="", flush=True)
 
                     robot.send_action({nome: float(acao[i]) for i, nome in enumerate(JUNTAS_G1)})
             elif verbose:
@@ -785,6 +1198,7 @@ def main():
                 soma_dt, n_ciclos = 0.0, 0
 
             if painel is not None:
+                painel.define_chunks(chunks_ativos, passo_atual, lead)
                 painel.define_cabecalho(
                     (f"replay ep{replay.episodio} {replay.i}/{replay.n} | " if replay else "")
                     + f"FastWAM-D | passo {passo_atual} | chunks {len(chunks_ativos)} | "
@@ -813,10 +1227,19 @@ def main():
             fake_depth_cap.release()
         if stream_client is not None:
             stream_client.stop_client()
+        if stream_pulso is not None:
+            stream_pulso.stop_client()
         robot.disconnect()
         if painel is not None:
             painel.destroy()
-        cv2.destroyAllWindows()
+        try:
+            cv2.destroyAllWindows()
+        except cv2.error:
+            # Build headless (o do lerobot): `destroyAllWindows` não existe de
+            # verdade e levanta "The function is not implemented". Sem este
+            # try, rodar só com --v-web terminaria com traceback no encerramento
+            # — depois de tudo já ter sido fechado direito acima.
+            pass
         print("✅ Encerrado com segurança.")
 
         # `os._exit` em vez de deixar o interpretador desmontar sozinho: com

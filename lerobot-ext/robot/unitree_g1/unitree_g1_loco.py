@@ -257,7 +257,14 @@ class UnitreeG1(Robot):
     def connect(self, calibrate: bool = True) -> None:  # connect to DDS
         # Import channel classes and message types based on mode
         # (deferred imports to avoid circular import in unitree_sdk2py)
-        if self.config.is_simulation:
+        #
+        # DDS de verdade SÓ na simulação LOCAL. Na remota o MuJoCo está em outra
+        # máquina e quem fala DDS lá é a ponte `run_sim_remote.py`, que expõe
+        # ZMQ nas portas 6000-6003 — o mesmo protocolo do servidor do robô real.
+        # Com o DDS aqui, `ChannelFactoryInitialize(0, "<ip>")` passava o IP
+        # como nome de interface ao CycloneDDS e morria com
+        # "does not match an available interface".
+        if self.config.is_simulation and not self.config.remote_sim_ip:
             from unitree_sdk2py.idl.default import unitree_hg_msg_dds__LowCmd_
             from unitree_sdk2py.idl.unitree_hg.msg.dds_ import (
                 LowCmd_ as hg_LowCmd,
@@ -305,11 +312,16 @@ class UnitreeG1(Robot):
 
         elif self.config.remote_sim_ip:
             # ── Simulação REMOTA: MuJoCo roda no PC do Miguel ─────────────
-            # Não sobe nada localmente. Apenas aponta o DDS para o IP remoto.
+            # Não sobe nada localmente: os sockets ZMQ apontam para a ponte
+            # `run_sim_remote.py` no PC remoto (portas 6000-6003).
             self.config.robot_ip = self.config.remote_sim_ip
             self._ChannelFactoryInitialize(0, self.config.remote_sim_ip)
             print(f"🌐 Modo simulação remota: conectando ao MuJoCo em {self.config.remote_sim_ip}")
-            active_mode = self._query_server_mode(self.config.robot_ip)
+            # A ponte não publica o modo na 6004 (é coisa do servidor do robô
+            # real); consultar só custaria dois timeouts de 5 s. Mesma regra da
+            # simulação local.
+            active_mode = "loco" if self.config.control_mode == "high_level" else "debug"
+            logger.info(f"[UnitreeG1] Simulação remota: modo derivado do config = '{active_mode}'")
 
         else:
             # ── Robô real ─────────────────────────────────────────────────
@@ -322,7 +334,7 @@ class UnitreeG1(Robot):
         # Lê da porta 6004 qual modo o servidor está usando e escolhe
         # o tópico de comando correto. Não requer nenhum switch aqui.
         # ----------------------------------------------------------------
-        if not (self.config.is_simulation and not self.config.remote_sim_ip):
+        if not self.config.is_simulation:
             active_mode = self._query_server_mode(self.config.robot_ip)
             logger.info(f"[UnitreeG1] Modo reportado pelo servidor: '{active_mode}'")
 
@@ -652,7 +664,7 @@ class UnitreeG1(Robot):
         # Inclui o yaw do tronco quando use_waist_yaw=True (ver body_joint_index)
         joint_index = self.body_joint_index
 
-        max_delta = 0.1  # Radianos por ciclo. (~5 rad/s a 250Hz). Ajuste conforme necessário.
+        max_delta = 0.01  # Radianos por ciclo. (~5 rad/s a 250Hz). Ajuste conforme necessário.
         waist_limit = getattr(self.config, "waist_yaw_limit", 1.0)
 
         for motor in joint_index:

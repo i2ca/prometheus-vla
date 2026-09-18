@@ -96,7 +96,10 @@ class ImageUtils:
     @staticmethod
     def encode_image(image: np.ndarray) -> str:
         """Encode numpy image to base64-encoded JPEG string"""
-        _, color_buffer = cv2.imencode(".jpg", image, [int(cv2.IMWRITE_JPEG_QUALITY), 80])
+        # 95, não 80: a 80 os blocos de 8×8 somavam ruído à sombra em escada do
+        # render e às bordas finas dos dedos. O stream é local/VPN; o custo é
+        # ~2× de banda por quadro, sem mexer na imagem que o modelo viu no treino.
+        _, color_buffer = cv2.imencode(".jpg", image, [int(cv2.IMWRITE_JPEG_QUALITY), 95])
         return base64.b64encode(color_buffer).decode("utf-8")
 
     @staticmethod

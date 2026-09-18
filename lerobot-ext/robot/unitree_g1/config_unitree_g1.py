@@ -26,25 +26,10 @@ _GAINS: dict[str, dict[str, list[float]]] = {
         "kd": [2, 2, 2, 4, 2, 2],
     },  # pitch, roll, yaw, knee, ankle_pitch, ankle_roll
     "right_leg": {"kp": [0, 0, 0, 0, 0, 0], "kd": [2, 2, 2, 4, 2, 2]},
-    # A cintura é dividida em duas partes porque elas têm papéis diferentes:
-    #   waist_yaw  → junta COMANDADA (entra no vetor de ação com use_waist_yaw)
-    #   waist_lock → roll e pitch, TRAVADOS em posição neutra
-    # Separadas, dá para endurecer a trava sem alterar a resposta do yaw.
-    # A ordem no vetor plano continua sendo yaw(12), roll(13), pitch(14).
     "waist_yaw": {"kp": [300], "kd": [6]},          # 12
     "waist_lock": {"kp": [300, 300], "kd": [6, 6]},  # 13 roll, 14 pitch
-    # ⚠️ TEMPORÁRIO — BRAÇO ESQUERDO DESLIGADO (defeito de hardware).
-    # kp=0 e kd=0 com mode=1: o motor recebe o alvo mas não gera torque nenhum,
-    # então o braço fica COMPLETAMENTE MOLE e cai por gravidade assim que o
-    # robô é energizado. Apoie ou amarre o braço esquerdo antes de ligar.
-    # O teleop continua calculando e GRAVANDO as 7 juntas esquerdas no dataset,
-    # só que elas não são executadas — episódios gravados assim têm a metade
-    # esquerda do vetor de ação inútil. Restaure os valores abaixo quando o
-    # braço voltar do conserto:
-    #   "left_arm":   {"kp": [80, 80, 80, 80], "kd": [3, 3, 3, 0.3]}
-    #   "left_wrist": {"kp": [40, 40, 40],     "kd": [1.5, 1.5, 1.5]}
-    "left_arm": {"kp": [0, 0, 0, 0], "kd": [0, 0, 0, 0]},  # shoulder_pitch/roll/yaw, elbow
-    "left_wrist": {"kp": [0, 0, 0], "kd": [0, 0, 0]},  # roll, pitch, yaw
+    "left_arm": {"kp": [80, 80, 80, 80], "kd": [3, 3, 3, 3]},  # shoulder_pitch/roll/yaw, elbow
+    "left_wrist": {"kp": [40, 40, 40], "kd": [1.5, 1.5, 1.5]},  # roll, pitch, yaw
     "right_arm": {"kp": [80, 80, 80, 80], "kd": [3, 3, 3, 0.3]},
     "right_wrist": {"kp": [40, 40, 40], "kd": [1.5, 1.5, 1.5]},
     "other": {"kp": [80, 80, 80, 80, 80, 80], "kd": [3, 3, 3, 3, 3, 3]},
@@ -90,20 +75,6 @@ class UnitreeG1Config(RobotConfig):
 
     # Control mode: "full_body" (all 29 joints) or "upper_body" (14 arm joints only)
     control_mode: str = "upper_body"
-
-    # Inclui o yaw do tronco (kWaistYaw, motor 12) no espaço de ação.
-    #
-    # Só afeta os modos "upper_body" e "high_level" — em "full_body" as 29 juntas
-    # já estão presentes. Com True:
-    #   • o vetor de corpo passa de 14 para 15 dims (yaw no fim, dim 14)
-    #   • roll e pitch da cintura (13, 14) são TRAVADOS em posição neutra
-    #   • o yaw fica livre para receber comando do operador ou da política
-    #
-    # Sem travar roll/pitch a cintura fica mole: com mode=0/kp=0/kd=0 nenhum
-    # controlador assume essas duas juntas e o tronco balança sozinho.
-    #
-    # ATENÇÃO: mudar isto muda o schema do dataset (28 → 29 dims com as mãos).
-    # Datasets gravados com valores diferentes não podem ser juntados.
     use_waist_yaw: bool = False
 
     # Os ganhos da trava de cintura NÃO são campos separados: saem de `kp`/`kd`

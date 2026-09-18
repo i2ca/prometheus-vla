@@ -1,104 +1,94 @@
 #!/usr/bin/env python
+# Licensed under the Apache License, Version 2.0.
+"""
+PI05-Depth — pipeline de pré e pós-processamento.
+================================================================================
+**O prompt é parte do checkpoint.** O π0.5 não recebe o estado por uma projeção
+linear: ele **escreve o estado dentro do prompt**, discretizado em 256 níveis:
 
-# Copyright 2025 Physical Intelligence and The HuggingFace Inc. team. All rights reserved.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+    Task: place the white cup on the dripper, State: 128 131 96 ... ;\\nAction:
 
-from copy import deepcopy
+Se a nossa string sair diferente da que o `lerobot/pi05_base` viu no treino, os
+pesos continuam carregando e o modelo continua rodando — só que lendo um formato
+que nunca viu. Por isso este arquivo **herda** o passo do upstream em vez de
+copiá-lo: a formatação, os bins e a ordem dos passos vêm de lá.
+
+── As duas diferenças que mantemos, e por quê ───────────────────────────────
+
+1. **`pad_state_to_max`.** O passo do upstream discretiza o estado com a
+   dimensão que chegar. O `pi05_base` foi treinado com `observation.state` de
+   **32** (está no `config.json` dele), então o prompt do checkpoint tem 32
+   números. O nosso robô manda 29. Sem completar até 32, o prompt tem
+   comprimento diferente do que o checkpoint viu — e o estado é a única coisa
+   que diz ao modelo onde o braço está. Padding com zeros DEPOIS da
+   normalização, que é onde 0 cai no meio da faixa [-1, 1].
+
+2. **`override_task`.** Força um prompt fixo, ignorando a `task` do dataset.
+   DESLIGA o multi-tarefa — existe só para depurar.
+
+O resto (renomear observações, batch, normalizar, tokenizar com o PaliGemma,
+mover para o dispositivo) é montado com as mesmas peças do upstream.
+"""
+
+from __future__ import annotations
+
 from dataclasses import dataclass
 from typing import Any
 
-import numpy as np
 import torch
 
-from lerobot.configs.types import PipelineFeatureType, PolicyFeature
-from .configuration_pi05 import PI05DEPTHConfig
-from .modeling_pi05 import pad_vector
+from lerobot.policies.common.vla_utils import pad_vector
+from lerobot.policies.pi05.processor_pi05 import Pi05PrepareStateTokenizerProcessorStep
 from lerobot.processor import (
-    AddBatchDimensionProcessorStep,
-    DeviceProcessorStep,
-    NormalizerProcessorStep,
     PolicyAction,
     PolicyProcessorPipeline,
     ProcessorStep,
     ProcessorStepRegistry,
-    RenameObservationsProcessorStep,
     TokenizerProcessorStep,
-    UnnormalizerProcessorStep,
+    make_default_policy_processor_steps,
+    make_policy_processor_pipelines,
 )
-from lerobot.processor.converters import policy_action_to_transition, transition_to_policy_action
-from lerobot.processor.pipeline import EnvTransition, TransitionKey
-from lerobot.utils.constants import (
-    OBS_STATE,
-    POLICY_POSTPROCESSOR_DEFAULT_NAME,
-    POLICY_PREPROCESSOR_DEFAULT_NAME,
-)
+from lerobot.lerobot_types import EnvTransition, TransitionKey
+from lerobot.utils.constants import OBS_STATE
+
+from .configuration_pi05 import PI05DEPTHConfig
 
 
 @ProcessorStepRegistry.register(name="pi05depth_prepare_state_tokenizer_processor_step")
 @dataclass
-class Pi05DEPTHPrepareStateTokenizerProcessorStep(ProcessorStep):
-    """
-    Processor step to prepare the state and tokenize the language input.
+class Pi05DepthPrepareStateTokenizerProcessorStep(Pi05PrepareStateTokenizerProcessorStep):
+    """O passo do upstream, com o estado completado até `max_state_dim` e o
+    prompt opcionalmente forçado.
+
+    A discretização, o texto e a ordem continuam sendo os do upstream: aqui só
+    mexemos no que ENTRA nele.
     """
 
-    max_state_dim: int = 32
-    task_key: str = "task"
     override_task: str | None = None
+    pad_state_to_max: bool = True
 
     def __call__(self, transition: EnvTransition) -> EnvTransition:
-        transition = transition.copy()
+        if self.pad_state_to_max:
+            observacao = transition.get(TransitionKey.OBSERVATION)
+            estado = observacao.get(OBS_STATE) if observacao else None
+            if estado is not None and estado.shape[-1] < self.max_state_dim:
+                transition = transition.copy()
+                transition[TransitionKey.OBSERVATION] = {
+                    **observacao,
+                    OBS_STATE: pad_vector(estado, self.max_state_dim),
+                }
 
-        state = transition.get(TransitionKey.OBSERVATION, {}).get(OBS_STATE)
-        if state is None:
-            raise ValueError("State is required for PI05")
-        tasks = transition.get(TransitionKey.COMPLEMENTARY_DATA, {}).get(self.task_key)
-        if tasks is None:
-            raise ValueError("No task found in complementary data")
+        if self.override_task is not None:
+            extra = transition.get(TransitionKey.COMPLEMENTARY_DATA, {})
+            tarefas = extra.get(self.task_key)
+            if tarefas is not None:
+                transition = transition.copy()
+                transition[TransitionKey.COMPLEMENTARY_DATA] = {
+                    **extra,
+                    self.task_key: [self.override_task] * len(tarefas),
+                }
 
-        # TODO: check if this necessary
-        state = deepcopy(state)
-
-        # Prepare state (pad to max_state_dim)
-        state = pad_vector(state, self.max_state_dim)
-
-        # State should already be normalized to [-1, 1] by the NormalizerProcessorStep that runs before this step
-        # Discretize into 256 bins (see openpi `PaligemmaTokenizer.tokenize()`)
-        state_np = state.cpu().numpy()
-        discretized_states = np.digitize(state_np, bins=np.linspace(-1, 1, 256 + 1)[:-1]) - 1
-
-        full_prompts = []
-        for i, task in enumerate(tasks):
-            # Se o override_task foi passado no YAML, usa ele. Se não, usa o do dataset.
-            current_task = self.override_task if self.override_task is not None else task
-            
-            cleaned_text = current_task.strip().replace("_", " ").replace("\n", " ")
-            state_str = " ".join(map(str, discretized_states[i]))
-            full_prompt = f"Task: {cleaned_text}, State: {state_str};\nAction: "
-            full_prompts.append(full_prompt)
-
-        transition[TransitionKey.COMPLEMENTARY_DATA][self.task_key] = full_prompts
-        # Normalize state to [-1, 1] range if needed (assuming it's already normalized by normalizer processor step!!)
-        # Discretize into 256 bins (see openpi `PaligemmaTokenizer.tokenize()`)
-        return transition
-
-    def transform_features(
-        self, features: dict[PipelineFeatureType, dict[str, PolicyFeature]]
-    ) -> dict[PipelineFeatureType, dict[str, PolicyFeature]]:
-        """
-        This step does not alter the feature definitions.
-        """
-        return features
+        return super().__call__(transition)
 
 
 def make_pi05depth_pre_post_processors(
@@ -108,46 +98,21 @@ def make_pi05depth_pre_post_processors(
     PolicyProcessorPipeline[dict[str, Any], dict[str, Any]],
     PolicyProcessorPipeline[PolicyAction, PolicyAction],
 ]:
+    """Mesma pipeline do `make_pi05_pre_post_processors`, com o nosso passo.
+
+    A ordem é a do upstream e não é negociável: o `NormalizerProcessorStep` TEM
+    de vir antes do passo de estado+tokenizer, porque a discretização em 256
+    bins assume o estado já normalizado em [-1, 1].
     """
-    Constructs pre-processor and post-processor pipelines for the PI0 policy.
+    passos = make_default_policy_processor_steps(config, dataset_stats)
 
-    The pre-processing pipeline prepares input data for the model by:
-    1. Renaming features to match pretrained configurations.
-    2. Normalizing input and output features based on dataset statistics.
-    3. Adding a batch dimension.
-    4. Appending a newline character to the task description for tokenizer compatibility.
-    5. Tokenizing the text prompt using the PaliGemma tokenizer.
-    6. Moving all data to the specified device.
-
-    The post-processing pipeline handles the model's output by:
-    1. Moving data to the CPU.
-    2. Unnormalizing the output features to their original scale.
-
-    Args:
-        config: The configuration object for the PI0 policy.
-        dataset_stats: A dictionary of statistics for normalization.
-        preprocessor_kwargs: Additional arguments for the pre-processor pipeline.
-        postprocessor_kwargs: Additional arguments for the post-processor pipeline.
-
-    Returns:
-        A tuple containing the configured pre-processor and post-processor pipelines.
-    """
-
-    # Add remaining processors
-    input_steps: list[ProcessorStep] = [
-        RenameObservationsProcessorStep(rename_map={}),  # To mimic the same processor as pretrained one
-        AddBatchDimensionProcessorStep(),
-        # NOTE: NormalizerProcessorStep MUST come before Pi05PrepareStateTokenizerProcessorStep
-        # because the tokenizer step expects normalized state in [-1, 1] range for discretization
-        # NOTE: NormalizerProcessorStep MUST come before Pi05PrepareStateTokenizerProcessorStep
-        NormalizerProcessorStep(
-            features={**config.input_features, **config.output_features},
-            norm_map=config.normalization_mapping,
-            stats=dataset_stats,
-        ),
-        Pi05DEPTHPrepareStateTokenizerProcessorStep(
+    entrada: list[ProcessorStep] = [
+        passos.rename_observations,
+        passos.add_batch_dim,
+        passos.normalize,
+        Pi05DepthPrepareStateTokenizerProcessorStep(
             max_state_dim=config.max_state_dim,
-            override_task=getattr(config, "override_task", None) # ← ADICIONE AQUI
+            override_task=config.override_task,
         ),
         TokenizerProcessorStep(
             tokenizer_name="google/paligemma-3b-pt-224",
@@ -155,25 +120,12 @@ def make_pi05depth_pre_post_processors(
             padding_side="right",
             padding="max_length",
         ),
-        DeviceProcessorStep(device=config.device),
+        passos.to_device,
     ]
 
-    output_steps: list[ProcessorStep] = [
-        UnnormalizerProcessorStep(
-            features=config.output_features, norm_map=config.normalization_mapping, stats=dataset_stats
-        ),
-        DeviceProcessorStep(device="cpu"),
+    saida: list[ProcessorStep] = [
+        passos.unnormalize,
+        passos.to_cpu,
     ]
 
-    return (
-        PolicyProcessorPipeline[dict[str, Any], dict[str, Any]](
-            steps=input_steps,
-            name=POLICY_PREPROCESSOR_DEFAULT_NAME,
-        ),
-        PolicyProcessorPipeline[PolicyAction, PolicyAction](
-            steps=output_steps,
-            name=POLICY_POSTPROCESSOR_DEFAULT_NAME,
-            to_transition=policy_action_to_transition,
-            to_output=transition_to_policy_action,
-        ),
-    )
+    return make_policy_processor_pipelines(input_steps=entrada, output_steps=saida)

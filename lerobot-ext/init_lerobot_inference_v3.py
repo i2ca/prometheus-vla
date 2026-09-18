@@ -13,6 +13,9 @@ Uso:
 Opções:
   --checkpoint=<PATH>    (obrigatório) Caminho para o pretrained_model
   --task="<TEXTO>"       Comando em linguagem natural (obrigatório para VLAs)
+  --pose-inicial         Leva os braços à pose em que os episódios do dataset
+                         começam, ANTES de soltar a política. Sem isto o robô
+                         parte de uma pose que o modelo nunca viu.
   --interactive          Permite trocar o comando digitando durante a execução
   --sim                  Modo simulação (sem robô real)
   --cam-robot=<IP>       Stream ZMQ de câmera externa
@@ -21,6 +24,9 @@ Opções:
   --uncertainty=<FLOAT>  Ativa o uncertainty gate (ex: 0.1)
   --v                    Abre janela de visualização da câmera
   --debug                Loga ações no terminal em tempo real
+  --v-web[=PORTA]        Painel de debug no navegador (só pi05depth; padrão 8088):
+                         atenção das ações sobre as câmeras, depth, nuvem e o
+                         chunk em execução. Abra http://<ip-desta-máquina>:PORTA/
   -h, --help             Mostra esta mensagem
 
 Exemplos:
@@ -183,12 +189,50 @@ def _depth_to_tensor(depth: "np.ndarray", device=None) -> "torch.Tensor":
     return tensor if device is None else tensor.to(device)
 
 
+# MEDIDO 18/09/2026 — pose em que os 302 episódios de "place the white cup on the dripper"
+# COMEÇAM, no `cotreino_completo_2026-09-11` (média do primeiro quadro de cada episódio).
+#
+# Por que isto existe: o MuJoCo nasce com os braços caídos, e essa pose fica a **0,906 rad em
+# média** da pose de partida do dataset — os dois punhos dobrados 2 rad (115°) para o lado
+# errado. Depois da normalização por quantis do π0.5, o punho esquerdo entra em **-5,02** num
+# espaço onde o modelo só viu [-1, +1]. A primeira observação já está fora da distribuição e a
+# política extrapola a partir do primeiro quadro — é o mesmo bug que o `--pose-inicial` do
+# `pgx/roda_politica_g1_isaaclab.py` corrige no IsaacLab.
+#
+# São 15 valores: as 14 juntas dos braços e o yaw do tronco, na ordem do `info.json`. As 14
+# dimensões das mãos ficam em zero porque no dado do copo elas SÃO zero (desvio 0,000).
+POSE_PARTIDA_COPO = [0.958, 0.683, 1.476, -0.554, -1.501, 0.505, -0.225,
+                     -0.941, -0.628, -0.313, 0.388, 0.232, 0.655, 0.337,
+                     -0.036]
+
+
+def leva_a_pose_de_partida(robot, joint_names, alvo=None, segundos=3.0, fps=30) -> None:
+    """Interpola da pose atual até a pose de partida do dataset, antes de soltar a política."""
+    import numpy as _np
+
+    alvo = list(alvo or POSE_PARTIDA_COPO)
+    obs = robot.get_observation() or {}
+    inicio = [float(obs.get(n, 0.0)) for n in joint_names]
+    fim = list(inicio)
+    fim[:len(alvo)] = alvo                       # mãos ficam onde estão (zero no dado do copo)
+    passos = max(1, int(segundos * fps))
+    for k in range(1, passos + 1):
+        a = k / passos
+        q = [(1 - a) * i + a * f for i, f in zip(inicio, fim)]
+        robot.send_action({n: float(v) for n, v in zip(joint_names, q)})
+        time.sleep(1.0 / fps)
+    depois = robot.get_observation() or {}
+    erro = max(abs(float(depois.get(n, 0.0)) - f) for n, f in zip(joint_names, fim))
+    print(f"🎯 pose de partida do dataset aplicada | maior erro de junta: {erro:.3f} rad")
+
+
 def make_raw_obs(
     obs: dict,
     joint_names: list[str],
     has_depth: bool = False,
     has_pressure: bool = False,
     task: str | None = None,
+    image_keys: list[str] | None = None,
 ) -> dict:
     """
     Monta o dict de observação SEM batch dim e SEM normalização.
@@ -208,11 +252,20 @@ def make_raw_obs(
     raw["observation.state"] = torch.tensor(state_vector, dtype=torch.float32)
 
     # RGB [C, H, W] em [0, 1] — preprocessor aplica ImageNet mean/std (ACT) ou nada (PI05 IDENTITY)
-    rgb = obs.get("head_camera")
-    if rgb is not None:
-        raw["observation.images.head_camera"] = (
-            torch.from_numpy(rgb).permute(2, 0, 1).float().div(255.0)
-        )
+    #
+    # TODAS as câmeras RGB que o checkpoint declara (`image_keys`), e não só a
+    # cabeça. Até 15/09/2026 só a cabeça entrava: um modelo treinado com cabeça +
+    # pulso rodava SEM o pulso e sem erro nenhum — o π0.5 preenche câmera
+    # ausente com imagem vazia mascarada e segue.
+    for chave in image_keys or ["observation.images.head_camera"]:
+        nome = chave.rsplit(".", 1)[-1]
+        if nome.endswith("depth"):
+            continue
+        rgb = obs.get(nome)
+        if rgb is not None:
+            raw[chave] = (
+                torch.from_numpy(np.ascontiguousarray(rgb)).permute(2, 0, 1).float().div(255.0)
+            )
 
     # Depth [C, H, W] em [0, 1]
     if has_depth:
@@ -273,8 +326,11 @@ def get_camera_frames(obs, stream_client, fake_cap, fake_img_rgb):
         from Scripts_Prometheus_int.sim.sensor_utils import ImageUtils
         msg = stream_client.receive_message()
         if msg and "images" in msg:
-            obs["head_camera"] = ImageUtils.decode_image(msg["images"]["head_camera"])
-            obs["head_camera_depth"] = ImageUtils.decode_image(msg["images"]["head_camera_depth"])
+            # TODAS as câmeras do stream, não só a cabeça. O MuJoCo publica
+            # cabeça, depth e pulso no MESMO stream (5555); copiando só as duas
+            # primeiras, a `right_wrist_camera` chegava e era descartada aqui.
+            for nome, dado in msg["images"].items():
+                obs[nome] = ImageUtils.decode_image(dado)
     elif fake_cap is not None:
         ret, frame = fake_cap.read()
         if not ret:
@@ -309,6 +365,8 @@ def main():
     fps = 30
     task_cli = None
     interactive = False
+    pose_inicial = False
+    web_porta = None
 
     for arg in sys.argv[1:]:
         if arg.startswith("--checkpoint="):
@@ -336,6 +394,12 @@ def main():
             task_cli = arg.split("=", 1)[1]
         elif arg == "--interactive":
             interactive = True
+        elif arg == "--pose-inicial":
+            pose_inicial = True
+        elif arg == "--v-web":
+            web_porta = 8088
+        elif arg.startswith("--v-web="):
+            web_porta = int(arg.split("=", 1)[1])
 
     if checkpoint_dir is None:
         print("❌ ERRO: --checkpoint obrigatório.")
@@ -349,6 +413,12 @@ def main():
     policy, policy_type = load_policy(checkpoint_dir, device)
 
     has_depth    = getattr(policy.config, "use_depth_3d", False)
+    # MEDIDO 18/09/2026: `use_wrist_camera` nasce False no `UnitreeG1Dex3Config`, e este script
+    # nunca passava o parâmetro. Resultado: o MuJoCo subia com DUAS câmeras (head + depth), o
+    # checkpoint pedia `right_wrist_camera`, e ela entrava faltando — o aviso "câmeras que o
+    # checkpoint espera e NÃO chegaram" era impresso e a inferência seguia com essa entrada
+    # ausente. Agora quem decide é o próprio checkpoint.
+    has_wrist    = "observation.images.right_wrist_camera" in (policy.config.image_features or {})
     has_pressure = getattr(policy.config, "use_pressure", False)
     print(f"   Depth 3D: {has_depth} | Pressão: {has_pressure}")
 
@@ -417,6 +487,11 @@ def main():
         robot_ip="10.9.8.73",
         #robot_ip="192.168.123.164",
         control_mode="upper_body",
+        use_waist_yaw=True,     # sem isto o robô não expõe nem comanda kWaistYaw.q
+        # Só abre o stream de profundidade se o checkpoint usa: um π0.5 sem
+        # `use_depth_3d` roda contra `run_sim.py --so-rgb` sem esperar por ela.
+        use_depth_camera=has_depth,
+        use_wrist_camera=has_wrist,
         is_simulation=is_sim,
         remote_sim_ip=remote_sim_ip,
     )
@@ -436,6 +511,10 @@ def main():
         "kRightShoulderPitch.q", "kRightShoulderRoll.q", "kRightShoulderYaw.q",
         "kRightElbow.q",         "kRightWristRoll.q",     "kRightWristPitch.q",
         "kRightWristYaw.q",
+        # Schema v2 (SCHEMA_G1_V2.md): 29 juntas, o yaw do tronco na dim 14.
+        # Sem ele o estado entra com as mãos deslocadas uma posição e a ação
+        # volta para as juntas erradas — sem erro nenhum.
+        "kWaistYaw.q",
         "left_hand_thumb_0_joint.q",  "left_hand_thumb_1_joint.q",
         "left_hand_thumb_2_joint.q",  "left_hand_middle_0_joint.q",
         "left_hand_middle_1_joint.q", "left_hand_index_0_joint.q",
@@ -445,6 +524,49 @@ def main():
         "right_hand_index_1_joint.q", "right_hand_middle_0_joint.q",
         "right_hand_middle_1_joint.q",
     ]
+
+    dim_acao = policy.config.output_features["action"].shape[0]
+    if len(joint_names) != dim_acao:
+        raise SystemExit(
+            f"❌ o checkpoint prevê {dim_acao} juntas e o script conhece {len(joint_names)}. "
+            "Casar a lista `joint_names` com o `info.json` do dataset de treino."
+        )
+
+    # ── Painel de debug no navegador (--v-web) ───────────────────────
+    painel = None
+    linha_base = None
+    chunks_painel = None
+    infer_ms = 0.0
+    massa = None
+    passo_global = 0
+    if web_porta is not None:
+        if policy_type != "pi05depth":
+            print(f"⚠️  --v-web só existe para pi05depth; '{policy_type}' segue sem painel.")
+        else:
+            from viz_debug_fastwamd import PainelWeb, INTRINSECOS_PADRAO
+            from policies.pi0_depth.debug_atencao_pi05 import (
+                CapturaAtencaoPI05, LinhaDeBaseDaAtencao, mosaico_como_o_modelo,
+                profundidade_mm_para_painel,
+            )
+            chaves_imagem = list(policy.config.image_features)
+            # A nuvem de pontos precisa dos intrínsecos da câmera que está
+            # mandando a profundidade. No MuJoCo é a `head_camera_depth` do MJCF:
+            # fovy 58° a 848×480 → f = 240 / tan(29°) ≈ 433 px, pixel quadrado.
+            intrinsecos = ({"fx": 433.0, "fy": 433.0, "cx": 424.0, "cy": 240.0} if is_sim
+                           else dict(INTRINSECOS_PADRAO))
+            painel = PainelWeb(porta=web_porta, fps=10, intrinsecos=intrinsecos)
+            painel.nome_atencao = "pi0.5 (acoes -> cameras)"
+            painel.create()
+            linha_base = LinhaDeBaseDaAtencao()
+            print(f"📊 Painel de debug: {', '.join(painel.urls())}")
+
+    # Uma thread para o laço: a IK do braço roda a cada quadro e, com o ipopt multithread do
+    # conda-forge, ela sai de 0,8 ms para 83 ms. Aqui e não no ambiente porque o MESMO processo
+    # acabou de carregar 9,3 GB de pesos, e essa parte quer TODAS as threads.
+    torch.set_num_threads(1)
+
+    if pose_inicial:
+        leva_a_pose_de_partida(robot, joint_names, fps=fps)
 
     print(f"\n🚀 INFERÊNCIA ATIVA [{policy_type.upper()}] — O robô vai se mover!")
     if show_video:
@@ -486,7 +608,15 @@ def main():
                 has_depth=has_depth,
                 has_pressure=has_pressure,
                 task=task_box[0],   # lido a cada passo: --interactive pode ter trocado
+                image_keys=list(policy.config.image_features),
             )
+            if passo_global == 0:
+                faltando = [k for k in policy.config.image_features
+                            if k not in raw_obs and not k.endswith("depth")]
+                if faltando:
+                    print(f"\n⚠️  câmeras que o checkpoint espera e NÃO chegaram: {faltando}")
+                else:
+                    print(f"📷 câmeras entregues ao modelo: {list(policy.config.image_features)}")
 
             # 5. Preprocessor: normaliza + batch dim + device
             #    ACT:  mean/std nas imagens (ImageNet) e estado (dataset stats)
@@ -512,8 +642,36 @@ def main():
                         batch[k] = batch[k].unsqueeze(0)
 
             # 6. Inferência
+            #    Com o painel, só o passo que calcula um chunk NOVO (fila vazia)
+            #    roda dentro da captura de atenção; os outros só tiram da fila.
+            chunk_novo = painel is not None and len(policy._action_queue) == 0
+            t_inferencia = time.perf_counter()
             with torch.inference_mode():
-                action = policy.select_action(batch)
+                if chunk_novo:
+                    with CapturaAtencaoPI05(policy) as captura:
+                        action = policy.select_action(batch)
+                else:
+                    action = policy.select_action(batch)
+
+            if chunk_novo:
+                infer_ms = (time.perf_counter() - t_inferencia) * 1000
+                resumo = captura.resumo()
+                if resumo is not None:
+                    painel.define_debug_servidor(linha_base.payload(resumo))
+                    massa = resumo["massa"]
+                # O chunk inteiro, em radianos, para o quadrante 4: a ação deste
+                # passo mais as que ficaram na fila.
+                try:
+                    with torch.inference_mode():
+                        chunk_norm = torch.stack([action] + list(policy._action_queue), dim=1)
+                        chunk_rad = postprocessor(chunk_norm)
+                    if isinstance(chunk_rad, dict):
+                        chunk_rad = chunk_rad["action"]
+                    chunks_painel = [{"inicio": passo_global,
+                                      "chunk": chunk_rad[0].float().cpu().numpy()}]
+                except Exception as erro:
+                    print(f"\n⚠️  painel: chunk não desnormalizado ({erro})")
+                    chunks_painel = None
 
             # 7. Postprocessor: desnormaliza ação → radianos reais → CPU
             #    ACT:  action * std + mean   (MEAN_STD inverso)
@@ -535,6 +693,21 @@ def main():
             action_dict = {name: float(action_numpy[i]) for i, name in enumerate(joint_names)}
             robot.send_action(action_dict)
 
+            # 10b. Painel: só deposita os dados; o desenho roda na thread dele.
+            if painel is not None:
+                painel.define_imagens(rgb_mosaico=mosaico_como_o_modelo(obs, chaves_imagem),
+                                      depth_mm=profundidade_mm_para_painel(obs.get("head_camera_depth")))
+                painel.define_chunks(chunks_painel, passo_global, 0)
+                no_chunk = policy.config.n_action_steps - len(policy._action_queue)
+                atencao = ""
+                if massa:
+                    atencao = "  |  atencao: " + "  ".join(
+                        f"{k.replace('_camera', '')} {v:.0%}" for k, v in massa.items())
+                painel.define_cabecalho(
+                    f"pi0.5 '{task_box[0]}'  |  passo {passo_global}  |  chunk {no_chunk}/"
+                    f"{policy.config.n_action_steps}  |  infer {infer_ms:.0f} ms{atencao}")
+            passo_global += 1
+
             # 11. Limita ao fps configurado (padrão: 30Hz)
             elapsed = time.perf_counter() - start_t
             sleep_time = max(0.0, (1.0 / fps) - elapsed)
@@ -553,6 +726,8 @@ def main():
         robot.disconnect()
         if show_video:
             cv2.destroyAllWindows()
+        if painel is not None:
+            painel.destroy()
         print("✅ Encerrado com segurança.")
 
 

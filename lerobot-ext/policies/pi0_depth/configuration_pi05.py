@@ -1,137 +1,93 @@
 #!/usr/bin/env python
-
-# Copyright 2025 Physical Intelligence and The HuggingFace Inc. team. All rights reserved.
 # Licensed under the Apache License, Version 2.0.
+"""
+PI05-Depth — configuração.
+================================================================================
+**Herda de `PI05Config` do LeRobot em vez de copiá-la.** Antes este arquivo era
+uma cópia de uma versão antiga do π0.5 upstream, e a cópia envelheceu: faltavam
+`use_relative_actions`, `relative_exclude_joints` e `action_feature_names`, e a
+arquitetura correspondente não conseguia carregar o `lerobot/pi05_base` (ver o
+cabeçalho de `modeling_pi05.py` para as três divergências medidas).
 
+Aqui ficam SÓ os nossos acréscimos:
+
+| campo | para quê |
+|---|---|
+| `use_depth_3d`, `pointnet_num_points`, `camera_intrinsics` | nuvem de pontos → 1 token no prefixo |
+| `use_pressure`, `pressure_feature_dim` | tato das Dex3 → 1 token no prefixo |
+| `scene_uncertainty_threshold`, `n_samples_uncertainty` | gate de incerteza na inferência |
+| `override_task` | força um prompt fixo (só para depurar) |
+
+Tudo o mais — `chunk_size`, `max_action_dim`, presets de otimizador, RTC,
+`validate_features` — vem do upstream e acompanha as correções dele.
+"""
+
+from __future__ import annotations
+
+import warnings
 from dataclasses import dataclass, field
 
 from lerobot.configs.policies import PreTrainedConfig
-from lerobot.configs.types import FeatureType, NormalizationMode, PolicyFeature
-from lerobot.optim.optimizers import AdamWConfig
-from lerobot.optim.schedulers import CosineDecayWithWarmupSchedulerConfig
-from lerobot.policies.rtc.configuration_rtc import RTCConfig
-from lerobot.utils.constants import ACTION, OBS_IMAGES, OBS_STATE
-
-DEFAULT_IMAGE_SIZE = 224
+from lerobot.policies.pi05.configuration_pi05 import PI05Config
 
 
 @PreTrainedConfig.register_subclass("pi05depth")
 @dataclass
-class PI05DEPTHConfig(PreTrainedConfig):
-    paligemma_variant: str = "gemma_2b"
-    action_expert_variant: str = "gemma_300m"
-    dtype: str = "float32"
+class PI05DEPTHConfig(PI05Config):
+    """π0.5 do LeRobot + profundidade métrica (PointNet) + tato (Dex3)."""
 
-    override_task: str | None = None
-    
-    n_obs_steps: int = 1
-    chunk_size: int = 50
-    n_action_steps: int = 50
-
-    max_state_dim: int = 32
-    max_action_dim: int = 32
-
-    # Flow matching
-    num_inference_steps: int = 10
-    time_sampling_beta_alpha: float = 1.5
-    time_sampling_beta_beta: float = 1.0
-    time_sampling_scale: float = 0.999
-    time_sampling_offset: float = 0.001
-    min_period: float = 4e-3
-    max_period: float = 4.0
-
-    rtc_config: RTCConfig | None = None
-
-    image_resolution: tuple[int, int] = (DEFAULT_IMAGE_SIZE, DEFAULT_IMAGE_SIZE)
-    empty_cameras: int = 0
-    tokenizer_max_length: int = 200
-
-    # ── ACT-D: Geometria 3D ──────────────────────────────────────────────────
+    # ── Geometria 3D ─────────────────────────────────────────────────────────
+    # A profundidade NÃO passa pelo SigLIP: vira nuvem de pontos e depois um
+    # único token no prefixo. Ver `PI05DepthPytorch.embed_prefix`.
     use_depth_3d: bool = True
     pointnet_num_points: int = 1024
     camera_intrinsics: dict = field(
-        default_factory=lambda: {'fx': 600.0, 'fy': 600.0, 'cx': 320.0, 'cy': 240.0}
+        default_factory=lambda: {"fx": 600.0, "fy": 600.0, "cx": 320.0, "cy": 240.0}
     )
 
-    # ── ACT-D: Tato / Pressão ────────────────────────────────────────────────
+    # ── Tato / pressão ───────────────────────────────────────────────────────
+    # 33 valores por mão, concatenados: 66.
     use_pressure: bool = True
     pressure_feature_dim: int = 66
 
-    # ── Scene Uncertainty Gate ───────────────────────────────────────────────
-    # O PI05 usa Flow Matching (não VAE), então não há log_sigma.
-    # A incerteza é estimada rodando n_samples_uncertainty denoising passes com
-    # ruídos iniciais diferentes e medindo a variância entre os resultados.
-    # O prefix (VLM + SigLIP) é computado UMA vez com KV-cache; só o suffix
-    # (Gemma expert) roda n vezes — custo razoável.
-    #
-    # scene_uncertainty_threshold: limiar do std médio das ações.
-    #   0.0  → gate desligado (padrão — sem custo extra)
-    #   0.05 → ativa com incerteza baixa (mais conservador)
-    #   0.10 → boa partida para o G1
-    #   0.20 → só em cenários muito incertos
-    #
-    # n_samples_uncertainty: quantas amostras usar para estimar incerteza.
-    #   1  → sem estimativa (gate desligado mesmo que threshold > 0)
-    #   3  → bom custo-benefício (ativado automaticamente se threshold > 0)
-    #   5  → mais preciso, ~5× mais lento no suffix
+    # ── Gate de incerteza ────────────────────────────────────────────────────
+    # O π0.5 é flow matching, não VAE: não existe log_sigma para ler. A
+    # incerteza é estimada rodando `n_samples_uncertainty` denoising passes com
+    # ruídos iniciais diferentes e medindo o desvio entre os resultados. O
+    # prefixo (VLM + SigLIP) é calculado UMA vez com KV-cache; só o expert roda
+    # n vezes.
+    #   0.0  → desligado (padrão, sem custo)
+    #   0.10 → ponto de partida razoável para o G1
     scene_uncertainty_threshold: float = 0.0
-    n_samples_uncertainty: int = 1  # auto-ajustado para 3 se threshold > 0
+    n_samples_uncertainty: int = 1  # vira 3 sozinho se o threshold for > 0
 
-    normalization_mapping: dict[str, NormalizationMode] = field(
-        default_factory=lambda: {
-            "VISUAL": NormalizationMode.IDENTITY,
-            "STATE": NormalizationMode.QUANTILES,
-            "ACTION": NormalizationMode.QUANTILES,
-        }
-    )
+    # ── Checkpoint base ──────────────────────────────────────────────────────
+    # Ao partir do `lerobot/pi05_base`, o PointNet e a projeção de pressão não
+    # existem no checkpoint — nascem aleatórios, e é o esperado. Com
+    # `strict=True` (o padrão do upstream) isso vira exceção antes do passo 1.
+    # `False` aqui NÃO é esconder problema: o `from_pretrained` imprime tudo que
+    # faltou e tudo que sobrou, e reclama do que não for enxerto conhecido.
+    pretrained_strict: bool = False
 
-    gradient_checkpointing: bool = False
-    compile_model: bool = False
-    compile_mode: str = "max-autotune"
-    device: str | None = None
-
-    freeze_vision_encoder: bool = False
-    train_expert_only: bool = False
-
-    optimizer_lr: float = 2.5e-5
-    optimizer_betas: tuple[float, float] = (0.9, 0.95)
-    optimizer_eps: float = 1e-8
-    optimizer_weight_decay: float = 0.01
-    optimizer_grad_clip_norm: float = 1.0
-
-    scheduler_warmup_steps: int = 1_000
-    scheduler_decay_steps: int = 30_000
-    scheduler_decay_lr: float = 2.5e-6
+    # ── Depuração ────────────────────────────────────────────────────────────
+    # Força um prompt fixo, ignorando a `task` do dataset. DESLIGA o
+    # multi-tarefa — use só para depurar.
+    override_task: str | None = None
 
     def __post_init__(self):
         super().__post_init__()
 
-        if self.n_action_steps > self.chunk_size:
-            raise ValueError(
-                f"n_action_steps ({self.n_action_steps}) cannot be greater than chunk_size ({self.chunk_size})"
-            )
-        if self.paligemma_variant not in ["gemma_300m", "gemma_2b"]:
-            raise ValueError(f"Invalid paligemma_variant: {self.paligemma_variant}")
-        if self.action_expert_variant not in ["gemma_300m", "gemma_2b"]:
-            raise ValueError(f"Invalid action_expert_variant: {self.action_expert_variant}")
-        if self.dtype not in ["bfloat16", "float32"]:
-            raise ValueError(f"Invalid dtype: {self.dtype}")
-
-        # ── Validação de consistência depth/pressure ──────────────────────────
-        # (Mesma lógica do ACTConfig — detecta YAML inconsistente antes de treinar)
-        has_depth = any(
-            "depth" in k.lower() for k in self.input_features
-        )
+        # Detecta YAML inconsistente antes de carregar 3 B de pesos.
+        has_depth = any("depth" in k.lower() for k in self.input_features)
         if self.use_depth_3d and not has_depth:
             raise ValueError(
                 "use_depth_3d=True mas nenhuma feature com 'depth' no nome está em "
-                "input_features. Adicione a feature ou coloque use_depth_3d=False."
+                "input_features. Acrescente a feature ou coloque use_depth_3d=False."
             )
         if not self.use_depth_3d and has_depth:
-            import warnings
             warnings.warn(
                 "use_depth_3d=False mas uma feature de depth está em input_features. "
-                "A câmera será carregada mas ignorada — considere remover do YAML.",
+                "A câmera será carregada do disco e ignorada — considere tirá-la do YAML.",
                 stacklevel=2,
             )
 
@@ -144,53 +100,21 @@ class PI05DEPTHConfig(PreTrainedConfig):
                 "use_pressure=True mas as features de pressão não estão em input_features."
             )
 
-        # Auto-ajusta n_samples se threshold foi setado mas amostras esquecidas
         if self.scene_uncertainty_threshold > 0 and self.n_samples_uncertainty <= 1:
             self.n_samples_uncertainty = 3
 
-    def validate_features(self) -> None:
-        for i in range(self.empty_cameras):
-            key = OBS_IMAGES + f".empty_camera_{i}"
-            self.input_features[key] = PolicyFeature(
-                type=FeatureType.VISUAL,
-                shape=(3, *self.image_resolution),
-            )
-        if OBS_STATE not in self.input_features:
-            self.input_features[OBS_STATE] = PolicyFeature(
-                type=FeatureType.STATE,
-                shape=(self.max_state_dim,),
-            )
-        if ACTION not in self.output_features:
-            self.output_features[ACTION] = PolicyFeature(
-                type=FeatureType.ACTION,
-                shape=(self.max_action_dim,),
-            )
+    @property
+    def rgb_image_features(self) -> dict:
+        """As câmeras que vão para o SigLIP — ou seja, `image_features` menos a profundidade.
 
-    def get_optimizer_preset(self) -> AdamWConfig:
-        return AdamWConfig(
-            lr=self.optimizer_lr,
-            betas=self.optimizer_betas,
-            eps=self.optimizer_eps,
-            weight_decay=self.optimizer_weight_decay,
-            grad_clip_norm=self.optimizer_grad_clip_norm,
-        )
-
-    def get_scheduler_preset(self):
-        return CosineDecayWithWarmupSchedulerConfig(
-            peak_lr=self.optimizer_lr,
-            decay_lr=self.scheduler_decay_lr,
-            num_warmup_steps=self.scheduler_warmup_steps,
-            num_decay_steps=self.scheduler_decay_steps,
-        )
+        Existe porque o `_preprocess_images` do upstream itera `image_features` e
+        manda tudo para a torre visual. A profundidade é declarada como VISUAL no
+        YAML (é assim que o dataset a carrega e a encoda como vídeo de 1 canal),
+        mas o caminho dela no modelo é outro.
+        """
+        return {k: v for k, v in self.image_features.items() if "depth" not in k.lower()}
 
     @property
-    def observation_delta_indices(self) -> None:
-        return None
-
-    @property
-    def action_delta_indices(self) -> list:
-        return list(range(self.chunk_size))
-
-    @property
-    def reward_delta_indices(self) -> None:
-        return None
+    def depth_image_features(self) -> dict:
+        """As câmeras de profundidade — as que vão para o PointNet."""
+        return {k: v for k, v in self.image_features.items() if "depth" in k.lower()}

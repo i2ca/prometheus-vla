@@ -77,6 +77,12 @@ class UnitreeG1Dex3Config(UnitreeG1Config):
     # Quadrada e do tamanho que a torre visual consome; ver comentário abaixo.
     wrist_cam_size: int = 224
 
+    # Câmera de profundidade da cabeça. True por padrão (teleoperação e gravação
+    # usam). Com False o robô não abre o stream dela — é o que permite rodar o
+    # MuJoCo com `run_sim.py --so-rgb`: com a câmera configurada e o simulador sem
+    # publicá-la, o `connect()` ficaria esperando o primeiro quadro até o timeout.
+    use_depth_camera: bool = True
+
     def __post_init__(self):
 
         if self.use_loco:
@@ -93,7 +99,10 @@ class UnitreeG1Dex3Config(UnitreeG1Config):
 
         # LÓGICA DE RESOLUÇÃO DINÂMICA
         if self.is_simulation:
-            self.robot_ip = "127.0.0.1"
+            # Não sobrescrever o `remote_sim_ip` resolvido logo acima: com o MuJoCo
+            # em outra máquina, as câmeras ZMQ estão lá, não em localhost.
+            if not self.remote_sim_ip:
+                self.robot_ip = "127.0.0.1"
             # Simulação: Leve e rápida para não gargalar a GPU/CPU
             cam2_width = 848
             cam2_height = 480
@@ -126,10 +135,14 @@ class UnitreeG1Dex3Config(UnitreeG1Config):
                 ),
 
                 # AS 3 LENTES TÉCNICAS (Baixa Resolução para o processamento ser imediato)
-                "head_camera_depth": ZMQCameraConfig(
-                    server_address=self.robot_ip, port=5555, camera_name="head_camera_depth", width=cam2_width, height=cam2_height, warmup_s=5, timeout_ms=10000
-                )
-                ,
+                **(
+                    {
+                        "head_camera_depth": ZMQCameraConfig(
+                            server_address=self.robot_ip, port=5555, camera_name="head_camera_depth", width=cam2_width, height=cam2_height, warmup_s=5, timeout_ms=10000
+                        )
+                    }
+                    if self.use_depth_camera else {}
+                ),
                 # ── Câmera de pulso direito ────────────────────────────────
                 # 224×224 de propósito: é exatamente o que a torre visual do
                 # OpenVLA consome. Gravar maior só gasta disco, porque o
@@ -332,8 +345,10 @@ class UnitreeG1Dex3(UnitreeG1):
         # Connect body first
         super().connect(calibrate=calibrate)   
         
-        # Skip hand connection in simulation mode
-        if self.config.is_simulation:
+        # Simulação LOCAL: sobe a ponte de mão DDS↔ZMQ nesta máquina. Na remota
+        # a ponte é o `run_sim_remote.py` do PC com o MuJoCo, e os sockets de mão
+        # abaixo já apontam para lá.
+        if self.config.is_simulation and not self.config.remote_sim_ip:
             logger.info("Simulation mode: Iniciando a ponte da mão")
 
             # --- ADICIONE/AJUSTE ESTA PARTE ---

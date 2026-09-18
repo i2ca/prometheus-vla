@@ -46,13 +46,16 @@ class CapturaDebug:
         self.policy = policy
         self._grade: tuple[int, int, int] | None = None   # (T, H, W) de tokens
         self._atencao: np.ndarray | None = None           # [S_video]
+        self._cross: list[np.ndarray] = []                # por bloco, [S_video, L_texto]
         self._patchify_original = None
         self._mixed_original = None
+        self._cross_original = None
 
     # ── contexto ────────────────────────────────────────────────────────────
     def __enter__(self) -> "CapturaDebug":
         self._instala_gancho_grade()
         self._instala_gancho_atencao()
+        self._instala_gancho_cross()
         return self
 
     def __exit__(self, *_exc) -> None:
@@ -67,6 +70,11 @@ class CapturaDebug:
 
             MoTLayer._mixed_attention = self._mixed_original
             self._mixed_original = None
+        if self._cross_original is not None:
+            from lerobot.policies.fastwam.wan.video_dit import FastWAMAttentionBlock
+
+            FastWAMAttentionBlock.apply_cross_attention = self._cross_original
+            self._cross_original = None
 
     # ── ganchos ─────────────────────────────────────────────────────────────
     def _instala_gancho_grade(self) -> None:
@@ -186,3 +194,85 @@ class CapturaDebug:
         except Exception as erro:  # noqa: BLE001
             logger.warning(f"[FastWAM-D debug] profundidade não capturada: {erro}")
             return None
+
+    # ── grounding: onde o TEXTO olha ────────────────────────────────────────
+    def _instala_gancho_cross(self) -> None:
+        """Colhe a cross-attention vídeo→texto de cada bloco do expert de vídeo.
+
+        No robô real isto sai de graça: o prefill do expert de vídeo roda de
+        qualquer jeito para produzir a ação, e a única conta a mais é a matriz
+        `[patches, tokens]`, que é pequena. Ver `grounding_fastwamd.py` para o
+        raciocínio completo sobre a métrica.
+        """
+        from lerobot.policies.fastwam.wan.video_dit import FastWAMAttentionBlock
+
+        original = FastWAMAttentionBlock.apply_cross_attention
+        self._cross_original = original
+        captura = self
+
+        def cross_com_captura(self_bloco, x, context, context_mask=None):
+            captura._anota_cross(self_bloco, x, context)
+            return original(self_bloco, x, context, context_mask=context_mask)
+
+        FastWAMAttentionBlock.apply_cross_attention = cross_com_captura
+
+    def _anota_cross(self, bloco: Any, x: torch.Tensor, context: torch.Tensor) -> None:
+        """Recalcula os pesos de cross-attention deste bloco.
+
+        Recalcular é obrigatório: o `fastwam_masked_attention` chama SDPA, que
+        devolve só o resultado — a matriz de pesos nunca existe como tensor. As
+        contas abaixo são cópia fiel do `video_dit.py::apply_cross_attention`;
+        esquecer o `norm_q` daria um mapa plausível e errado.
+
+        Só o expert de VÍDEO interessa, e ele se distingue pelo comprimento da
+        consulta: a grade de patches (centenas) contra o horizonte de ação (32).
+        """
+        if self._grade is None:
+            return
+        if int(x.shape[1]) != int(np.prod(self._grade)):
+            return
+        try:
+            attn = bloco.cross_attn
+            n, d = int(attn.num_heads), int(attn.head_dim)
+            q = attn.norm_q(attn.q(x.to(attn.q.weight.dtype)))
+            k = attn.norm_k(attn.k(context.to(attn.k.weight.dtype)))
+            q = q.detach().view(q.shape[0], q.shape[1], n, d).permute(0, 2, 1, 3).float()
+            k = k.detach().view(k.shape[0], k.shape[1], n, d).permute(0, 2, 1, 3).float()
+            pesos = torch.softmax(q @ k.transpose(-1, -2) / np.sqrt(d), dim=-1)
+            self._cross.append(pesos.mean(dim=(0, 1)).cpu().numpy())
+        except Exception as erro:  # noqa: BLE001 - depuração nunca derruba a inferência
+            logger.warning(f"[FastWAM-D debug] cross-attention não capturada: {erro}")
+
+    def mapa_grounding(self, indices: list[int], n_real: int,
+                       so_primeira_camera: bool = True) -> np.ndarray | None:
+        """Onde os tokens de `indices` aterrissam na imagem, como `[h, w]`.
+
+        O valor é CONTRASTE ESPACIAL: a atenção deste patch à palavra dividida
+        pela atenção do patch médio à mesma palavra. 1,0 é "olha tanto quanto
+        qualquer outro"; acima disso é onde a palavra aterrissa.
+
+        A divisão pela média da coluna não é cosmética — é o que torna o mapa
+        legível. A atenção crua aqui tem dois sumidouros empilhados: ~87% da
+        massa vai para as posições de padding do prompt (o `encode_prompt` faz
+        `mask = torch.ones_like(mask)`, então a cross-attention enxerga as
+        posições vazias), e do resto os tokens estruturais (`</s>`, `▁the`)
+        levam metade, em TODO patch. Um sumidouro puxa massa em todo lugar,
+        então dividir pela média espacial o achata em 1,0 e ele sai sozinho.
+
+        `so_primeira_camera` recorta a fatia da câmera da cabeça: o mosaico tem
+        as duas câmeras lado a lado na largura, e devolver o mapa inteiro para
+        desenhar sobre uma imagem só desloca tudo.
+        """
+        if not self._cross or self._grade is None or not indices:
+            return None
+        pesos = np.stack(self._cross).mean(axis=0)          # [S_video, L_texto]
+        n_real = min(int(n_real), pesos.shape[1])
+        indices = [i for i in indices if i < n_real]
+        if not indices:
+            return None
+
+        reais = pesos[:, :n_real]
+        contraste = reais / np.clip(reais.mean(axis=0, keepdims=True), 1e-12, None)
+        t, h, w = self._grade
+        mapa = contraste[:, indices].mean(axis=1).reshape(t, h, w).mean(axis=0)
+        return mapa[:, : w // 2] if so_primeira_camera and w >= 2 else mapa

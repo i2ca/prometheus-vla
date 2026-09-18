@@ -53,9 +53,15 @@ def main(n_envs=1, use_async_envs: bool = False,
         # A cabeça fica maior porque o depth entra na nuvem de pontos em resolução
         # NATIVA (ali resolução importa de verdade) e o RGB da cabeça também
         # alimenta o VR.
+        #
+        # 848×480, igual à D435i do robô real, ao `UnitreeG1Dex3Config` (que
+        # espera 848×480 também em simulação) e aos datasets de simulação do
+        # `gerar_dataset_mujoco.py`. Com 640×480 a política recebia outra
+        # proporção de imagem do que viu no treino — e o `ZMQCamera` não confere
+        # tamanho, então nada acusava.
         CAMERA_RESOLUTIONS = {
-            "head_camera":        {"height": 480, "width": 640},
-            "head_camera_depth":  {"height": 480, "width": 640},
+            "head_camera":        {"height": 480, "width": 848},
+            "head_camera_depth":  {"height": 480, "width": 848},
             "right_wrist_camera": {"height": 224, "width": 224},
         }
         for cam_name in camera_list:
@@ -102,4 +108,15 @@ def main(n_envs=1, use_async_envs: bool = False,
         sim.close()
 
 if __name__ == "__main__":
-    main()
+    # --so-rgb: publica só cabeça e pulso, sem `head_camera_depth`. Para testar
+    # políticas que não usam profundidade (o π0.5 sem `use_depth_3d`) sem gastar
+    # render e banda com ela. O padrão continua com as três câmeras, porque a
+    # teleoperação no simulador grava profundidade.
+    #
+    # Do lado da política, a câmera de profundidade tem que sair também do robô
+    # (`UnitreeG1Dex3Config.use_depth_camera=False`, que o v3 já faz quando o
+    # checkpoint não usa profundidade) — senão o `connect()` espera por ela.
+    if "--so-rgb" in sys.argv:
+        main(cameras=["head_camera", "right_wrist_camera"])
+    else:
+        main()

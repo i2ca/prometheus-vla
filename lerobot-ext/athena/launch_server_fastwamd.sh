@@ -25,12 +25,28 @@ export LD_LIBRARY_PATH="$ENV/lib:${LD_LIBRARY_PATH:-}"
 # Forcar o libstdc++ do conda a ser o primeiro resolve. Teste de bancada:
 #   python -c "import zmq, torch, lerobot.policies.fastwam"   <- sem isto, segfault
 export LD_PRELOAD="$ENV/lib/libstdc++.so.6${LD_PRELOAD:+:$LD_PRELOAD}"
-export HF_HOME=/data/.cache/huggingface
+# Os DOIS caches do HuggingFace, separados — a mesma divisão do
+# `launch_fastwamd_lora.sh`, e pelo mesmo motivo. O `/data/.cache/huggingface` é
+# do `hercules` e guarda os 25 GB do Wan que ninguém quer baixar de novo, mas a
+# biblioteca também ESCREVE lá. Com outro login (o servidor de um checkpoint de
+# LoRA roda como `mrwlker`) isso vira `PermissionError` — e o erro só aparece
+# DEPOIS de carregar 6 B de pesos.
+export HF_HUB_CACHE="${HF_HUB_CACHE:-/data/.cache/huggingface/hub}"
+export HF_HOME="${HF_HOME:-$HOME/.cache/huggingface}"
 export CUDA_VISIBLE_DEVICES="$GPU"
 export OMP_NUM_THREADS=1
 
+# O log padrão fica no `/data/train_output`, que é do `hercules`: outros logins
+# não escrevem lá. Sem esta checagem o `tee` falha, o pipe leva o python junto e
+# a janela do `screen` fecha antes de imprimir por quê.
+LOG="${LOG:-/data/train_output/inferencia_server.log}"
+if ! touch "$LOG" 2>/dev/null; then
+    LOG="$HOME/inferencia_server.log"
+    echo "aviso: sem escrita no log padrão — usando $LOG"
+fi
+
 cd ~/DEV/prometheus-vla/lerobot-ext
-echo "== GPU $GPU | checkpoint $CKPT =="
+echo "== GPU $GPU | checkpoint $CKPT | log $LOG =="
 exec "$ENV/bin/python" -u init_lerobot_inference_fastwamd_server.py \
     --checkpoint="$CKPT" --port=5600 --debug \
-    2>&1 | tee -a /data/train_output/inferencia_server.log
+    2>&1 | tee -a "$LOG"

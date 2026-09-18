@@ -38,12 +38,25 @@ from pathlib import Path
 import numpy as np
 
 POLITICA = "RooibosT/Sim_pi05_expert_only_absolute_s30k"
-TAREFA = "Pick up the red cube and place it in the yellow region."
+# MEDIDO 17/09: o `meta/tasks.parquet` do dataset desta tarefa tem DUAS frases, e esta não é
+# nenhuma das duas. As 108 demonstrações aparecem rotuladas duas vezes (216 episódios), com
+# "Pick up the red cup on the table." e "Place the red wooden block into the yellow box.".
+# O π0.5 é condicionado a linguagem: mandar uma frase que ele nunca viu é entrada fora da
+# distribuição. Toda a varredura de π0.5 de 16/09 rodou com a frase errada.
+TAREFA = "Place the red wooden block into the yellow box."
 # Nome da câmera na política -> porta ZMQ do servidor de imagem do simulador.
 CAMERAS = {"cam_left_high": 55555, "cam_left_wrist": 55556, "cam_right_wrist": 55557}
 DOMINIO = 1
 JUNTAS_BRACOS = list(range(15, 29))  # as 14 juntas dos braços, na ordem do dataset
 GARRA_ABERTA, GARRA_FECHADA = 5.4, 0.0
+# Pose em que os episódios do dataset COMEÇAM (média dos 20 primeiros de
+# `unitreerobotics/G1_Dex1_PickPlaceRedBlock_Dataset_Sim`, desvio ≤ 0,16 rad em cada junta).
+# Medido em 17/09: o `rt/reset_pose/cmd` recoloca o CUBO, mas deixa o robô onde estava — 10 das
+# 16 dims partiam de outro lugar, até 1,16 rad no punho direito. Clonagem de comportamento
+# extrapola desde o primeiro quadro quando isso acontece.
+POSE_PARTIDA = [0.106, 0.023, 0.081, -0.002, -0.062, -0.424, -0.141,
+                0.280, -0.006, 0.017, -0.288, -0.146, -0.179, -0.012]
+GARRAS_PARTIDA = (0.616, 0.616)
 
 
 class CameraZMQ(threading.Thread):
@@ -148,6 +161,22 @@ def redimensiona_com_borda(rgb: np.ndarray, lado: int) -> np.ndarray:
     return tela
 
 
+def leva_a_partida(msg, crc, pub, garra_e, garra_d, estado, segundos: float = 3.0) -> float:
+    """Comanda a pose de partida do dataset e espera assentar. Devolve o maior erro medido."""
+    for k, j in enumerate(JUNTAS_BRACOS):
+        msg.motor_cmd[j].q = float(POSE_PARTIDA[k])
+    fim = time.time() + segundos
+    while time.time() < fim:
+        msg.crc = crc.Crc(msg)
+        pub.Write(msg)
+        garra_e(GARRAS_PARTIDA[0])
+        garra_d(GARRAS_PARTIDA[1])
+        time.sleep(0.02)
+    ls = estado["corpo"]
+    q = np.array([ls.motor_state[j].q for j in JUNTAS_BRACOS], dtype=np.float32)
+    return float(np.abs(q - np.array(POSE_PARTIDA, dtype=np.float32)).max())
+
+
 def carrega_politica(repo: str, device: str, passos_acao=None, ensemble=None):
     """Carrega pi05 ou act pelo que o próprio checkpoint declara."""
     import torch
@@ -167,8 +196,14 @@ def carrega_politica(repo: str, device: str, passos_acao=None, ensemble=None):
         from lerobot.policies.pi05.modeling_pi05 import PI05Policy as Classe
     elif cfg.type == "act":
         from lerobot.policies.act.modeling_act import ACTPolicy as Classe
+    elif cfg.type == "smolvla":
+        # SmolVLA tem ~450 M de parâmetros contra os 4,14 B da π0.5 — 10x menor. Medido em
+        # 17/09: com a π0.5 ligada o simulador cai de 13,8 Hz para 4,8 Hz; o tamanho do modelo
+        # é o que decide a fluidez, não a cena.
+        from lerobot.policies.smolvla.modeling_smolvla import SmolVLAPolicy as Classe
     else:
-        raise SystemExit(f"❌ tipo de política '{cfg.type}' não suportado aqui (pi05 ou act)")
+        raise SystemExit(f"❌ tipo de política '{cfg.type}' não suportado aqui "
+                         f"(pi05, act ou smolvla)")
     politica = Classe.from_pretrained(repo, config=cfg)
     politica.eval().to(device)
     pre, pos = make_pre_post_processors(policy_cfg=cfg, pretrained_path=repo)
@@ -190,6 +225,10 @@ def main() -> int:
     p.add_argument("--passos", type=int, default=0, help="0 = laço infinito, pare com Ctrl-C")
     p.add_argument("--saida", default=str(Path.home() / "g1_isaaclab"))
     p.add_argument("--espera", type=float, default=20.0, help="s para o simulador aparecer")
+    p.add_argument("--pose-inicial", action="store_true",
+                   help="antes de soltar a política (e depois de cada `reset`), leva os braços e as "
+                        "garras à pose em que os episódios do dataset começam. Sem isto o robô "
+                        "parte de onde o último comando o deixou, que a política nunca viu")
     p.add_argument("--redimensiona", type=int, default=None, metavar="LADO",
                    help="redimensiona a imagem para LADOxLADO preservando a proporção e "
                         "preenchendo o resto com preto. O `binabik-ai/act_PickPlaceRedBlock` faz "
@@ -262,6 +301,10 @@ def main() -> int:
     for sinal in (signal.SIGINT, signal.SIGTERM):
         signal.signal(sinal, lambda *_: parar.__setitem__("agora", True))
 
+    if args.pose_inicial:
+        erro = leva_a_partida(msg, crc, pub, garra_e, garra_d, estado)
+        print(f">>> pose de partida do dataset aplicada | maior erro de junta: {erro:.3f} rad")
+
     arq_comando = Path(args.comando).expanduser()
     arq_comando.write_text(args.task + "\n")
     print(f">>> comando em tempo real: escreva no arquivo {arq_comando}")
@@ -283,6 +326,10 @@ def main() -> int:
             if texto and texto != ultimo_comando:
                 if texto.lower() == "reset":
                     reset_cena()
+                    time.sleep(1.0)
+                    if args.pose_inicial:
+                        erro = leva_a_partida(msg, crc, pub, garra_e, garra_d, estado)
+                        print(f"    [{passo}] pose de partida reaplicada (erro {erro:.3f} rad)", flush=True)
                     print(f"    [{passo}] cena recolocada; instrução segue {args.task!r}", flush=True)
                     arq_comando.write_text(args.task + "\n")
                     texto = args.task

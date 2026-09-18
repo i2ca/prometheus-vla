@@ -170,3 +170,19 @@ wandb:
   enable: true
   project: prometheus_g1
   disable_artifact: true
+
+# ── Tolerância de timestamp ────────────────────────────────────────────────
+# 1e-4 (o padrão) matou a corrida no step ~4750 com
+#
+#   FrameTimestampError: ... (tensor([0.0333]) > tolerance_s=0.0001)
+#   video: .../head_camera_depth/chunk-000/file-011.mp4
+#
+# O desvio era de 0.0333 s = EXATAMENTE um quadro a 30 fps, numa emenda da
+# concatenação do `aggregate_datasets`. Não falta quadro no arquivo: a
+# contagem de pacotes bate com a duração em todos os vídeos de profundidade
+# (conferido um a um). É irregularidade de PTS na junção, não dado perdido.
+#
+# 0.04 aceita o quadro vizinho (um período de 33,3 ms mais folga) e recusa
+# qualquer coisa realmente dessincronizada. A própria mensagem do LeRobot
+# recomenda ignorar o item; aqui preferimos usar o quadro adjacente.
+tolerance_s: 0.04

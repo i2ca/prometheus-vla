@@ -22,8 +22,8 @@ Arquivos:
 | arquivo | onde roda | o que faz |
 |---|---|---|
 | `init_lerobot_inference_fastwamd_server.py` | athena | carrega o modelo, responde chunks por ZMQ |
-| `init_lerobot_inference_fastwamd_client.py` | seu PC | lê o robô, executa as ações, desenha o painel |
-| `viz_debug_fastwamd.py` | seu PC | os quatro quadrantes do painel |
+| `init_lerobot_inference_fastwamd_client.py` | seu PC **ou a athena** | lê o robô, executa as ações, desenha o painel |
+| `viz_debug_fastwamd.py` | seu PC | os quatro quadrantes do painel, em janela local (`PainelDebug`) ou por HTTP/MJPEG (`PainelWeb`) |
 | `policies/fastwam_depth/debug_inferencia.py` | athena | captura atenção e profundidade de uma inferência |
 | `avaliar_episodio_fastwamd.py` | athena | replay de um episódio gravado contra o servidor, com métricas por grupo de juntas |
 | `athena/*.sh` | athena | os launchers (ver `athena/README.md`) |
@@ -45,16 +45,166 @@ python init_lerobot_inference_fastwamd_server.py \
 ```bash
 cd lerobot-ext
 python init_lerobot_inference_fastwamd_client.py \
-    --server=10.9.8.252 --cam-robot=192.168.123.164 \
+    --server=10.9.8.252 --cam-robot=10.9.8.73 \
     --chunk=32 --lead=24 --fps=30 --v-debug --debug
 ```
 
 Para testar sem robô, acrescente `--sim` no cliente.
 
+### O robô agora tem endereço de LAN: `10.9.8.73`
+
+Era `192.168.123.164`, o IP do **cabo** — que só existe para quem está plugado
+nele. O `run_g1_server.py` (o bridge DDS↔ZMQ que roda no robô) faz `bind` em
+`0.0.0.0`, então o robô responde nas duas pontas: `10.9.8.73` vale da athena, do
+PC do Miguel e de qualquer máquina do laboratório; o do cabo, só de quem está no
+cabo. Por isso o padrão do `--robot-ip` passou a ser o da LAN.
+
+⚠️ O que **não** mudou: as configs de teleoperação por VR
+(`config/teleop/teleop_vr_real_loco.yaml`) continuam no `192.168.123.x` de
+propósito — lá o cabo é a escolha, não o acaso, porque o vídeo do headset não
+tolera o salto de latência da rede compartilhada.
+
+### Tudo na athena (servidor num screen, controle noutro)
+
+O arranjo em que a athena faz as duas pontas — o modelo de 6 B numa GPU e o loop
+de controle falando com o robô pela LAN. É o modo de rodar sem depender do PC do
+Miguel estar ligado e plugado no cabo.
+
+```bash
+# 1. NO ROBÔ, à mão — os MESMOS três processos que gravaram o dataset:
+python Scripts_Prometheus_int/dex3_g1_server_v2.py --loco   # bridge, 6000-6005
+python Scripts_Prometheus_int/full_realsenser_server.py     # cabeça RGB+depth, 5555
+python Scripts_Prometheus_int/right_arm_realsense_server.py # pulso direito, 5556
+
+# 2. NA ATHENA:
+screen -dmS infer   bash /data/train_output/launch_server_fastwamd.sh 2
+screen -dmS control bash /data/train_output/launch_client_fastwamd.sh
+
+# 3. DE QUALQUER NAVEGADOR DA LAN:
+#    http://10.9.8.252:8088/
+```
+
+O cliente aponta para `--server=127.0.0.1`: com os dois processos na mesma
+máquina, a observação nem chega a sair dela. E roda com `CUDA_VISIBLE_DEVICES=""`
+— ele não infere nada, e sem isso o torch reservaria contexto numa placa à toa,
+disputando com o servidor ao lado.
+
+Antes de subir o controle, confira da athena que o bridge está de pé:
+
+```bash
+for p in 5555 5556 6000 6001 6002 6003 6004; do
+  timeout 2 bash -c "echo > /dev/tcp/10.9.8.73/$p" && echo "$p ok" || echo "$p FECHADA"
+done
+```
+
+Todas fechadas = os servidores não estão rodando no robô, e o cliente vai subir,
+conectar sockets ZMQ que ninguém atende (o `connect` do ZMQ **não** falha com o
+outro lado ausente) e ficar mudo esperando `lowstate` para sempre.
+
+**A 6004 é a que decide o modo de controle.** É por ela que o cliente pergunta ao
+robô se ele está em `loco` (WBC ativo, comandos por `rt/arm_sdk`) ou em `debug`
+(`rt/lowcmd`) — `unitree_g1_loco.py:325`. Não há switch no cliente: ele obedece
+ao que o servidor do robô responder. Por isso o `--loco` do
+`dex3_g1_server_v2.py` tem que casar com o `use_loco: true` do
+`config/record/step1_white_cup_on_dripper.yaml` que gravou o dataset. Subir o
+bridge sem `--loco` faz o robô aceitar as ações em low level, com o tronco mole.
+
+**As câmeras seguem o `--robot-ip` sozinhas.** O `UnitreeG1Dex3Config.__post_init__`
+monta as três ZMQCamera com `server_address=self.robot_ip` — mudar o IP do robô
+já reaponta cabeça (5555), profundidade (5555) e pulso (5556). O `--cam-robot` é
+o caminho separado, do stream externo.
+
+### Máquina de controle sem tela: `--v-web`
+
+Se o cliente roda por SSH, num PC de rack, ou com o OpenCV headless do lerobot,
+troque `--v-debug` por `--v-web` e o MESMO painel é servido por HTTP:
+
+```bash
+python init_lerobot_inference_fastwamd_client.py \
+    --server=10.9.8.252 --robot-ip=10.9.8.73 --cam-robot=10.9.8.73 \
+    --chunk=32 --lead=24 --fps=15 --v-web=8088 --debug
+```
+
+O cliente imprime os endereços ao subir (`localhost` e o IP da LAN). Abra
+`http://<ip>:8088/` em qualquer navegador da rede — **inclusive o do celular**,
+que é o modo prático de acompanhar o robô real: de pé ao lado dele, com a mão
+no botão de emergência, olhando o painel.
+
+| rota | o que é |
+|---|---|
+| `/` | a página: o painel em MJPEG, com religada automática se o stream cair |
+| `/stream.mjpg` | o stream cru, para abrir noutro player |
+| `/quadro.jpg` | o último quadro, para `curl`/script |
+| `/estado.json` | cabeçalho, fps de desenho, espectadores, idade do quadro, temperaturas |
+
+Três coisas que valem saber:
+
+- **O desenho roda em thread separada**, não no ciclo de controle. Desenhar a
+  nuvem de pontos é um laço em Python sobre milhares de pontos; pagar isso a
+  30 Hz dentro do loop atrasaria o `send_action`. O loop só deposita o dado mais
+  recente e segue — um quadro perdido no painel não custa nada. `--web-fps=<N>`
+  (padrão 10) regula a cadência do painel, e não a do robô.
+- **`--v-web` e `--v-debug` podem ser usados juntos.** Fechar a janela local
+  encerra a corrida, como antes; o painel web nunca encerra nada.
+- **Sem senha e sem TLS**, de propósito: é ferramenta de bancada em LAN fechada.
+  `--web-host=127.0.0.1` deixa o painel só na máquina local; o padrão
+  (`0.0.0.0`) atende a rede inteira. Não exponha a porta para fora do
+  laboratório.
+
+Isto também é o contorno definitivo da armadilha do OpenCV headless: `imencode`
+existe no build sem GUI, `imshow` não. O painel web funciona sem X e sem
+`DISPLAY`.
+
+## O robô trava numa pose e não sai (19/08/2026)
+
+O sintoma: no robô real o modelo produz uma pose praticamente constante, com
+tremor de ±0,03 rad, e nunca sai dela. No `--replay` e no simulador com vídeo
+gravado, o mesmo checkpoint funciona.
+
+**A causa é a propriocepção, não a imagem.** Medido nos 27 episódios, todas as
+demonstrações começam na mesma pose de prontidão:
+
+```
+kLeftElbow          1.386 rad   (min 1.375, max 1.416 — apertadíssimo)
+kRightShoulderPitch -0.551
+kRightElbow          0.654
+kRightWristPitch    -0.378
+```
+
+O FastWAM é condicionado pelo estado. Um robô que começa perto de zeros entrega
+ao modelo um vetor a 1,39 rad de qualquer coisa que ele viu — e a resposta a uma
+entrada fora da distribuição é a média do que ele aprendeu, que é uma pose
+parada. O robô fica nessa pose, o estado continua fora da distribuição, e o laço
+se fecha.
+
+**Por que isso não aparece no replay:** lá o estado também vem do dataset
+(`usar_estado_gravado=True`, o padrão do `--replay`). O replay troca a imagem
+E a propriocepção — então ele nunca exercitou este caminho. É exatamente a
+diferença entre "funciona na simulação com vídeo gravado" e "trava no robô".
+
+**O conserto:** `--pose-inicial=<PATH:EP>` leva o robô à pose de partida das
+demonstrações antes de entregar o controle ao modelo, e só então o loop começa.
+Já está no `launch_client_fastwamd.sh`. O cliente imprime a distância por grupo
+de juntas antes de mover — se o "pior" do braço direito estiver acima de uns
+0,2 rad, o modelo estava operando fora da distribuição.
+
+### A cadência também estava errada
+
+`--lead=24` com inferência de ~1,06 s a 15 Hz pedia um chunk novo depois de 8
+ações (0,53 s), e três chunks ficavam vivos ao mesmo tempo. O ensembling
+temporal então media três previsões feitas com 1 s de diferença, com pesos
+quase iguais (`exp(-0,1·i)` → 0,37 / 0,33 / 0,30). Sobre um modelo que já regride
+para a média, isso vira exatamente o tremor em torno de uma pose parada.
+
+O lead certo é **quantas ações cabem numa inferência**: `1,06 s × 15 Hz ≈ 16`.
+Mudado no launcher.
+
 ## O painel de depuração (`--v-debug`)
 
 Uma janela, quatro quadrantes. É uma janela só porque o loop de controle roda a
-30 Hz e cada `imshow` extra é tempo tirado do ciclo.
+30 Hz e cada `imshow` extra é tempo tirado do ciclo. Os mesmos quatro quadrantes
+saem no `--v-web` — um `compoe()` só, dois transportes, para que "o que eu vi na
+tela" e "o que eu vi no navegador" sejam comparáveis entre corridas.
 
 **1. Atenção do DiT.** No MoT, as consultas do expert de ação atendem a
 `[K de vídeo | K de ação]` (`wan/modular.py::_forward_action_cached`). A fatia

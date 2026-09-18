@@ -324,10 +324,40 @@ class FastWAMDepthPolicy(FastWAMPolicy):
         ou (se alguém declarasse 3 canais) ele entraria como se fosse mais uma
         câmera de cor.
         """
-        if self.config.depth_mode == DEPTH_MODE_OFF:
-            return batch
-
         limpo = {k: v for k, v in batch.items() if k not in self.config.depth_feature_keys}
+
+        # No modo `off` a profundidade sai do batch do MESMO jeito, e não é
+        # detalhe: o dataset entrega toda câmera que gravou, o
+        # `set_dataset_feature_metadata` redeclara a de profundidade a partir
+        # dele, e o `_stack_video_from_images` acima varreria as três. O
+        # `torch.cat` na largura então junta um mapa de 1 canal com duas
+        # imagens de 3 e estoura no primeiro forward. O controle da ablação
+        # tem que ser FastWAM puro — a profundidade nem chega ao DiT.
+        if self.config.depth_mode == DEPTH_MODE_OFF:
+            # Confere que sobrou só câmera de cor. O `_stack_video_from_images`
+            # concatena TODA chave `observation.images.*` do batch, e um mapa de
+            # 1 canal que escape daqui estoura lá dentro com
+            #
+            #   RuntimeError: Sizes of tensors must match except in dimension 4.
+            #   Expected size 3 but got size 1 for tensor number 1
+            #
+            # — uma mensagem que não diz qual chave nem que o problema é
+            # profundidade. Aqui o erro nomeia a chave e a origem.
+            sobrando = [
+                k for k, v in limpo.items()
+                if k.startswith("observation.images.") and not k.endswith("_is_pad")
+                and hasattr(v, "shape") and len(v.shape) >= 3 and v.shape[-3] == 1
+            ]
+            if sobrando:
+                raise ValueError(
+                    f"`depth_mode=off` mas {sobrando} continua(m) no batch com 1 canal. "
+                    f"O filtro usa `config.depth_feature_keys` "
+                    f"({self.config.depth_feature_keys}), que sai de `input_features` — "
+                    f"se a chave do DATASET não estiver declarada lá, ela não é removida. "
+                    f"Chaves de imagem no batch: "
+                    f"{sorted(k for k in limpo if k.startswith('observation.images.'))}"
+                )
+            return limpo
 
         video_depth = monta_video_profundidade(batch, self.config, self.config.model_video_frames)
         if video_depth is None:
@@ -394,7 +424,7 @@ class FastWAMDepthPolicy(FastWAMPolicy):
         global com o batch inteiro dentro seria fatiado errado.
         """
         if self.config.depth_mode == DEPTH_MODE_OFF:
-            return super().predict_action_chunk(batch, **kwargs)
+            return super().predict_action_chunk(self._prepara_profundidade(batch), **kwargs)
 
         self.eval()
         limpo = self._prepara_profundidade(batch)

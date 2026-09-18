@@ -262,7 +262,48 @@ def carrega_limites_de_acao(checkpoint: str, margem: float = 0.10):
 def carrega_politica(checkpoint: str, device: torch.device):
     print(f"⏳ Carregando FastWAM-D de: {checkpoint}")
     config = FastWAMDepthConfig.from_pretrained(checkpoint)
-    politica = FastWAMDepthPolicy.from_pretrained(checkpoint, config=config)
+
+    # ── Checkpoint de LoRA ──────────────────────────────────────────────────
+    # Uma corrida com `--peft.*` NÃO grava `model.safetensors`: o que sai é um
+    # `adapter_model.safetensors` de ~65 MB ao lado de um `adapter_config.json`.
+    # O `from_pretrained` da política procura os pesos completos, não acha, e o
+    # erro que aparece é sobre arquivo ausente — não sobre o checkpoint ser de
+    # adaptador, que é a informação que faltava.
+    #
+    # A montagem tem que ser nesta ordem, e cada passo é obrigatório:
+    #   1. o `config.json` DO CHECKPOINT (depth_mode, 29 dims, image_size) —
+    #      construir a política com o config do base traria o patch_embedding
+    #      de 48 canais e a profundidade não teria onde entrar;
+    #   2. os pesos do BASE, cujo caminho está no `base_model_name_or_path` do
+    #      adaptador (aqui, `lerobot/fastwam_base`);
+    #   3. o adaptador por cima. Ele carrega tanto o LoRA quanto os
+    #      `modules_to_save` — action_encoder, head, proprio_encoder e o
+    #      patch_embedding ampliado. Sem este passo o servidor sobe redondo
+    #      servindo o modelo PRÉ-TREINADO, sem uma linha de erro: as ações
+    #      saem, são plausíveis e não têm nada a ver com o treino.
+    caminho_adapter = os.path.join(checkpoint, "adapter_config.json")
+    if os.path.isfile(caminho_adapter):
+        from peft import PeftConfig, PeftModel
+
+        cfg_peft = PeftConfig.from_pretrained(checkpoint)
+        base = cfg_peft.base_model_name_or_path
+        if not base:
+            print("❌ ERRO: o adapter_config.json não diz de qual base ele saiu.")
+            sys.exit(1)
+        print(f"🧩 Checkpoint de LoRA — base: {base}")
+        politica = FastWAMDepthPolicy.from_pretrained(base, config=config)
+        politica = PeftModel.from_pretrained(politica, checkpoint, config=cfg_peft)
+        # `merge_and_unload` funde o LoRA nos pesos e devolve a política pura,
+        # sem o wrapper do PEFT — o resto do servidor (e o `guardar_video_depth`
+        # logo abaixo) fala com a política diretamente, e o wrapper só
+        # encaminharia atributo por atributo. Fundir também tira o custo do
+        # ramo A·B de cada camada, que a inferência paga a cada uma das 10
+        # passadas de difusão.
+        politica = politica.merge_and_unload()
+        print("🧩 Adaptador fundido nos pesos do base.")
+    else:
+        politica = FastWAMDepthPolicy.from_pretrained(checkpoint, config=config)
+
     politica.to(device)
     politica.eval()
     politica.guardar_video_depth = True  # o painel de profundidade do cliente lê daqui
