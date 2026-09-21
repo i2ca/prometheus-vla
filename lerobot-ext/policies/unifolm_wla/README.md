@@ -1,17 +1,23 @@
-# `unifolm_wla` — action expert da Unitree, a nossa cópia de trabalho
+# `unifolm_wla` — CÓPIA DE LEITURA, não é daqui que se roda
 
-Copiado de `unifolm-wla/unifolm_wla/` (o submódulo na raiz, commit **f33d0e7**) em 21/09/2026.
+Copiado de `unifolm-wla/unifolm_wla/` (o submódulo na raiz, commit **f33d0e7**) em 21/09/2026,
+**apenas para leitura offline**.
 
-## Por que uma cópia, se o submódulo está ali
+## NÃO EDITE E NÃO RODE ESTA PASTA
 
-Mesma razão de `pi0_depth` ser a nossa versão do π0 e de `act_depth` ser a nossa do ACT: o
-submódulo é a **referência de upstream**, intocada, para dar `git diff` contra ela; esta pasta é
-onde a gente adapta. Mexer dentro do submódulo perderia tudo na primeira atualização.
+A decisão de 21/09 é manter o código deles o **mais puro possível**: o treino roda direto do
+submódulo `unifolm-wla/`, sem uma linha alterada. O que adaptamos é só o NOSSO lado — o dataset,
+convertido por `pontes/wla/converte_dataset_wla.py`, e os dois YAML de configuração, que são
+configuração e não código.
 
-Para ver o que já divergiu:
+A razão é simples: qualquer divergência aqui vira uma dívida a cada `git submodule update`, e
+"funciona só na nossa cópia" é o tipo de coisa que ninguém descobre até precisar da versão nova.
+
+Se um dia for preciso mesmo adaptar, aí sim esta pasta vira a nossa versão (como `pi0_depth` é
+do π0), e o diff fica visível com:
 
 ```bash
-diff -ru ../../../unifolm-wla/unifolm_wla . | head -50
+diff -ru ../../../unifolm-wla/unifolm_wla .
 ```
 
 ## O que dá para treinar hoje
@@ -27,8 +33,9 @@ huggingface-cli download unitreerobotics/UnifoLM-ER-1 --local-dir /data/mrwlker/
 #    (o padrao vem como Qwen/Qwen3-VL-4B-Instruct)
 
 # 3. treinar
-python -m policies.unifolm_wla.training.train_unifolm_wla \
-    --config_yaml policies/unifolm_wla/config/training/unifolm_wla_pretrain_multisource.yaml
+cd unifolm-wla                      # o SUBMODULO, na raiz do repositorio
+python -m unifolm_wla.training.train_unifolm_wla \
+    --config_yaml unifolm_wla/config/training/unifolm_wla_pretrain_multisource.yaml
 ```
 
 **O `--config_yaml` é obrigatório.** O padrão dele aponta para
@@ -37,6 +44,9 @@ foi publicado** — não há um único `.sh` no repositório deles, incluindo o
 `run_multi_source_train_mmdit.sh` que o guia manda rodar.
 
 ## O que falta do nosso lado: o formato da ação
+
+**O wandb já é nativo deles** — `wandb.init` em `training/train_unifolm_wla.py:172`, com
+`wandb_entity` e `wandb_project` no topo do YAML (vêm como `your_wandb_entity`). Basta preencher.
 
 O carregador é multi-fonte e lê **LeRobot nativamente** (`dataloader/multi_source_dataset/`),
 com um YAML mapeando coluna→campo. Os datasets deles e os nossos entram na mesma corrida por

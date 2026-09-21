@@ -45,7 +45,16 @@ sys.path.insert(0, "/home/mrwlker/DEV/prometheus-vla/lerobot-ext")
 # repositório não existe — o URDF está em `lerobot-ext/assets/g1`. Importar o módulo da IK só
 # para pegar a constante também arrastaria casadi e o solver inteiro, que aqui não usamos.
 from pathlib import Path
-ASSETS_DIR = Path("/home/mrwlker/DEV/prometheus-vla/lerobot-ext/assets")
+# Caminho ABSOLUTO era uma bomba: so funcionava nesta maquina e neste login. Procurar
+# `assets/g1` subindo a partir deste arquivo funciona aqui e na athena.
+def _acha_assets(inicio):
+    for d in [inicio, *inicio.parents]:
+        if (d / "assets" / "g1").is_dir():
+            return d / "assets"
+    raise SystemExit("nao achei `assets/g1` subindo a partir de " + str(inicio))
+
+
+ASSETS_DIR = _acha_assets(Path(__file__).resolve().parent)
 
 # Pose em que os 302 episódios do copo começam (média do primeiro quadro), medida
 # em 18/09 no `cotreino_completo_2026-09-11`: 14 juntas de braço + yaw do tronco.

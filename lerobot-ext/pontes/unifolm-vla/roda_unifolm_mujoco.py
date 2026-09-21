@@ -60,7 +60,19 @@ import json_numpy
 import numpy as np
 import requests
 
-RAIZ = Path(__file__).resolve().parent.parent          # .../lerobot-ext
+# A raiz do `lerobot-ext` e PROCURADA, e nao contada em `parent.parent`: em 21/09 este
+# arquivo saiu de `lerobot-ext/unifolm/` para `lerobot-ext/pontes/unifolm-vla/`, e a
+# contagem fixa passou a apontar para `pontes/`, quebrando o caminho do URDF sem que
+# nenhuma busca por texto pudesse ver — o caminho era CALCULADO. Subir ate achar
+# `assets/g1` sobrevive a proxima mudanca de pasta.
+def _acha_raiz(inicio):
+    for d in [inicio, *inicio.parents]:
+        if (d / "assets" / "g1").is_dir():
+            return d
+    return inicio.parent.parent
+
+
+RAIZ = _acha_raiz(Path(__file__).resolve().parent)
 sys.path.insert(0, str(RAIZ))
 
 # Pose em que os 302 episódios do copo começam (14 juntas de braço + yaw do tronco), a mesma
