@@ -275,14 +275,21 @@ class UnitreeG1(Robot):
         use_waist_yaw = getattr(self.config, "use_waist_yaw", False)
         commanded = {m.value for m in self.body_joint_index}
 
+        travadas = set(G1_WAIST_LOCKED_JOINTS)
+        if not use_waist_yaw:
+            travadas.add(G1_29_JointIndex.kWaistYaw.value)
+        if not getattr(self.config, "lock_waist", True):
+            travadas = set()
+
         for id in G1_29_JointIndex:
             motor_name = id.name.lower()
 
-            # ── Roll e pitch da cintura: TRAVADOS ──────────────────────────
-            # Só quando o yaw está liberado. Deixá-los com mode=0/kp=0/kd=0 faz a
-            # cintura ficar mole — nenhum controlador assume, e o tronco balança
-            # sozinho enquanto o robô anda. Ganho duro em posição neutra resolve.
-            if use_waist_yaw and id.value in G1_WAIST_LOCKED_JOINTS:
+            # ── Cintura sem dono: TRAVADA ─────────────────────────────────
+            # Roll e pitch nunca entram no vetor de ação; o yaw só entra com
+            # use_waist_yaw=True. O que sobra, se ficar com mode=0/kp=0/kd=0,
+            # fica MOLE — nenhum controlador assume, e o tronco tomba sozinho.
+            # Ganho duro em posição neutra resolve.
+            if id.value in travadas:
                 # Ganho vem da array `kp`/`kd` (grupo "waist_lock" em _GAINS),
                 # como todas as outras juntas. Um valor fixo mais fraco aqui foi
                 # a causa do tronco tombar para a frente.

@@ -399,19 +399,27 @@ class UnitreeG1(Robot):
         # observado no robô real, o tronco balança sozinho enquanto o G1 anda,
         # porque na prática nenhum controlador assume essas juntas.
         #
-        # Com use_waist_yaw=True:
-        #   • roll (13) e pitch (14) → travados com ganho duro em posição neutra
-        #   • yaw (12)               → comandado como as juntas de braço
+        #   • roll (13) e pitch (14) → SEMPRE travados: nunca entram no vetor
+        #                               de ação, então ninguém mais os comanda
+        #   • yaw (12)                → comandado como junta de braço quando
+        #                               use_waist_yaw=True; travado quando não,
+        #                               senão o tronco gira sozinho
         #
         # As pernas (0-11) continuam integralmente com o WBC — ali ele de fato
         # atua, e disputar seria brigar com o equilíbrio.
         use_waist_yaw = getattr(self.config, "use_waist_yaw", False)
         commanded = {m.value for m in self.body_joint_index}
 
+        travadas = set(G1_WAIST_LOCKED_JOINTS)
+        if not use_waist_yaw:
+            travadas.add(G1_29_JointIndex.kWaistYaw.value)
+        if not getattr(self.config, "lock_waist", True):
+            travadas = set()
+
         for id in G1_29_JointIndex:
             is_arm = ARM_IDX_MIN <= id.value <= ARM_IDX_MAX  # índices 15..28
 
-            if use_waist_yaw and id.value in G1_WAIST_LOCKED_JOINTS:
+            if id.value in travadas:
                 # Ganho vem da array `kp`/`kd` (grupo "waist_lock" em _GAINS),
                 # como todas as outras juntas. Um valor fixo mais fraco aqui foi
                 # a causa do tronco tombar para a frente.

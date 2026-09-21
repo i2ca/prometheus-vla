@@ -77,6 +77,13 @@ class UnitreeG1Config(RobotConfig):
     control_mode: str = "upper_body"
     use_waist_yaw: bool = False
 
+    # Trava as juntas da cintura que NINGUÉM comanda, em posição neutra.
+    # Independente de `use_waist_yaw`: o que aquele flag decide é se o OPERADOR
+    # dirige o yaw, não se o tronco pode tombar. Com a trava desligada as juntas
+    # saem com mode=0/kp=0/kd=0 e ficam moles — na prática o WBC não assume a
+    # cintura, e no modo debug/simulação não existe WBC nenhum.
+    lock_waist: bool = True
+
     # Os ganhos da trava de cintura NÃO são campos separados: saem de `kp`/`kd`
     # nos índices 13 e 14, via o grupo "waist_lock" de _GAINS. Para endurecer ou
     # amolecer a trava, edite lá — é o único lugar onde ganho é definido.

@@ -93,9 +93,14 @@ class G1_29_JointArmWaistIndex(IntEnum):
     kWaistYaw = 12
 
 
-# Juntas da cintura que ficam TRAVADAS em posição quando o yaw é liberado.
-# Sem isso a cintura fica mole: com mode=0/kp=0/kd=0 nenhum controlador assume o
-# roll e o pitch, e o tronco balança sozinho enquanto o robô anda.
+# Juntas da cintura que ficam SEMPRE travadas em posição: elas nunca entram no
+# vetor de ação, em nenhum modo. Sem a trava a cintura fica mole — com
+# mode=0/kp=0/kd=0 nenhum controlador assume o roll e o pitch, e o tronco balança
+# sozinho enquanto o robô anda (ou simplesmente tomba, na simulação).
+#
+# O yaw (12) NÃO está aqui porque depende do modo: com `use_waist_yaw=True` o
+# operador o comanda; com False ele entra na trava junto com os outros dois.
+# Quem monta esse conjunto é o `travadas` em `unitree_g1_loco.py`/`unitree_g1.py`.
 G1_WAIST_LOCKED_JOINTS = (13, 14)  # kWaistRoll, kWaistPitch
 
 
