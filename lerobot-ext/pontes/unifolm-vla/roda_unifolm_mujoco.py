@@ -56,9 +56,12 @@ from collections import deque
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
-import json_numpy
 import numpy as np
-import requests
+
+# `json_numpy` e `requests` entram DENTRO da `consulta`, e nao aqui: quem so quer a
+# cinemática deste arquivo — o `converte_dataset_wla.py`, por exemplo — nao deve precisar
+# do cliente HTTP. Medido em 21/09: na athena o import de topo derrubava a conversao com
+# `ModuleNotFoundError: json_numpy`, por uma dependencia que aquele caminho nem usa.
 
 # A raiz do `lerobot-ext` e PROCURADA, e nao contada em `parent.parent`: em 21/09 este
 # arquivo saiu de `lerobot-ext/unifolm/` para `lerobot-ext/pontes/unifolm-vla/`, e a
@@ -210,6 +213,7 @@ def consulta(sessao, url, cabeca, punho_esq, punho_dir, estado, instrucao, taref
         "state": np.asarray(estado, dtype=np.float32),
         "task_name": tarefa,
     }
+    import json_numpy          # ver a nota no topo
     corpo = {"encoded": json_numpy.dumps({"observations": [obs]})}
     r = sessao.post(url, json=corpo, timeout=espera)
     r.raise_for_status()
@@ -284,6 +288,7 @@ def main():
     if not args.sem_pose_inicial and not args.seco:
         leva_a_pose_de_partida(robot)
 
+    import requests           # ver a nota no topo
     sessao = requests.Session()
     piscina = ThreadPoolExecutor(max_workers=1)
     pedido, fila, ultimo_alvo = None, deque(), None
