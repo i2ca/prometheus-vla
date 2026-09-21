@@ -293,7 +293,7 @@ class UnitreeG1(Robot):
             motor_name = id.name.lower()
             
             # Se estivermos no modo upper_body, DESLIGAMOS a força das pernas e cintura
-            if self.config.control_mode == "upper_body" and ('leg' in motor_name or 'waist' in motor_name):
+            if self.config.control_mode == "upper_body" and id.value < 15:
                 self.msg.motor_cmd[id.value].mode = 0  # 0 = Motor livre para outro controlador (WBC/Joystick)
                 self.msg.motor_cmd[id.value].kp = 0.0
                 self.msg.motor_cmd[id.value].kd = 0.0
@@ -304,6 +304,18 @@ class UnitreeG1(Robot):
                 self.msg.motor_cmd[id.value].kp = self.kp[id.value]
                 self.msg.motor_cmd[id.value].kd = self.kd[id.value]
                 self.msg.motor_cmd[id.value].q = lowstate.motor_state[id.value].q
+
+            # Apply left-arm limp before the streamer publishes its first packet.
+            if left_arm_limp_enabled() and 15 <= id.value <= 21:
+                self.msg.motor_cmd[id.value].kp = 0.0
+                self.msg.motor_cmd[id.value].kd = 0.0
+                self.msg.motor_cmd[id.value].tau = 0.0
+
+        # Junta 29 (kNotUsedJoint) = flag de enable do arm_sdk no WBC (High Level):
+        # motor_cmd[29].q = 1 habilita o controle de braço pelo rt/arm_sdk.
+        # Sem isso o WBC ignora os comandos de braço (idem exemplo oficial do SDK).
+        self.msg.motor_cmd[29].mode = 1
+        self.msg.motor_cmd[29].q = 1.0
 
         # 🚀 ARM STREAMER (jeito Unitree): publica o braço a 250Hz com clip de
         # velocidade, desacoplando o controle do record loop de 30Hz. Sem isso, o
@@ -427,9 +439,21 @@ class UnitreeG1(Robot):
         obs["remote.rx"] = self.remote_controller.rx
         obs["remote.ry"] = self.remote_controller.ry
 
-        # Cameras - read images from ZMQ cameras
+        # Cameras - read images from ZMQ cameras. Tolerante a jitter de rede
+        # (WiFi): se um frame atrasar além do timeout, reutiliza o último
+        # recebido em vez de derrubar a teleoperação inteira.
         for cam_name, cam in self._cameras.items():
-            obs[cam_name] = cam.async_read()
+            try:
+                obs[cam_name] = cam.async_read(timeout_ms=200)
+            except TimeoutError:
+                latest = None
+                f_lock = getattr(cam, "frame_lock", None)
+                if f_lock is not None:
+                    with f_lock:
+                        latest = cam.latest_frame
+                if latest is None:
+                    raise
+                obs[cam_name] = latest
 
         
         return obs
@@ -683,7 +707,15 @@ class UnitreeG1(Robot):
         # No modo streamer, quem publica é a thread de 250Hz (não publicar aqui).
         if not streamer:
             self.msg.crc = self.crc.Crc(self.msg)
-            self.lowcmd_publisher.Write(self.msg)
+            try:
+                self.lowcmd_publisher.Write(self.msg)
+            except Exception as e:
+                # Com SNDTIMEO no socket (unitree_sdk2_socket.py), um consumidor
+                # morto/lento agora falha rápido em vez de travar o processo
+                # inteiro — mas send_action roda na thread principal do teleop
+                # loop (modo legado G1_ARM_STREAMER=0), então uma exceção aqui
+                # derrubaria o loop. Loga e segue; o próximo frame tenta de novo.
+                logger.warning(f"[send_action] falha ao publicar lowcmd: {type(e).__name__}: {e}")
         return action
 
     def get_gravity_orientation(self, quaternion):  # get gravity orientation from quaternion

@@ -257,6 +257,11 @@ def ChannelFactoryInitialize(domain_id: int = 0, robot_ip: str | None = None, *a
     # Body lowcmd: send robot commands
     lowcmd_sock = ctx.socket(zmq.PUSH)
     lowcmd_sock.setsockopt(zmq.CONFLATE, 1)
+    # SNDHWM baixo + SNDTIMEO curto: se o consumidor (servidor/ponte) cair, o
+    # send() falha rápido em vez de bloquear pra sempre segurando locks
+    # (ver bug do deadlock do hand-streamer: unitree_g1_dex3.py:557,574,785).
+    lowcmd_sock.setsockopt(zmq.SNDHWM, 2)
+    lowcmd_sock.setsockopt(zmq.SNDTIMEO, 100)  # ms
     lowcmd_sock.connect(f"tcp://{_robot_ip}:{LOWCMD_PORT}")
     _lowcmd_sock = lowcmd_sock
 
@@ -272,6 +277,17 @@ def ChannelFactoryInitialize(domain_id: int = 0, robot_ip: str | None = None, *a
     # CONFLATE removido: com CONFLATE=1 só 1 msg fica no buffer, então enviar esquerda+direita
     # em sequência faz o servidor receber APENAS a última (direita), descartando a esquerda.
     # Sem CONFLATE, ambas chegam. A 30Hz não há risco de fila crescer.
+    #
+    # SNDHWM baixo + SNDTIMEO curto: sem isso, se a ponte/servidor de mãos cair
+    # (ex.: ponte_mao.py morto em --sim), o PUSH enche o buffer em ~15s e o
+    # próximo send() bloqueia PARA SEMPRE dentro do `with self._hand_lock:` do
+    # _hand_streamer_worker (100Hz) — que é o MESMO lock usado por send_action()
+    # a cada frame do teleop loop. Resultado: todo o robô trava (e a câmera
+    # junto, pois divide o mesmo loop). Com timeout, o send() falha rápido,
+    # cai no except do worker (que já conta falhas e desiste após 10) e o
+    # _hand_lock é liberado normalmente.
+    handcmd_sock.setsockopt(zmq.SNDHWM, 2)
+    handcmd_sock.setsockopt(zmq.SNDTIMEO, 100)  # ms
     handcmd_sock.connect(f"tcp://{_robot_ip}:{HANDCMD_PORT}")
     _handcmd_sock = handcmd_sock
 

@@ -95,28 +95,35 @@ class UnitreeG1Dex3Config(UnitreeG1Config):
             
         # Adiciona as câmeras ZMQ ao LeRobot usando as variáveis dinâmicas
         if not self.cameras:
+            import os as _os_cam
             from lerobot.cameras.zmq.configuration_zmq import ZMQCameraConfig
-            
+
+            _emit_depth = _os_cam.environ.get("CAMERA_EMIT_DEPTH", "1") not in ("", "0", "false", "False")
+
             self.cameras = {
                 # A NOSSA ÚNICA CÂMERA RGB (HD para o VR e para a IA)
                 "head_camera": ZMQCameraConfig(
                     server_address=self.robot_ip, port=5555, camera_name="head_camera", width=cam2_width, height=cam2_height
                 ),
-                
-                "head_camera_depth": ZMQCameraConfig(
+            }
+
+            # Depth vira canal separado só quando o servidor emite (CAMERA_EMIT_DEPTH=1,
+            # default). Com depth=0 o servidor manda só RGB (~1.3MB/s, cabe 30fps no
+            # WiFi); montar o canal morto faria o async_read estourar timeout.
+            if _emit_depth:
+                self.cameras["head_camera_depth"] = ZMQCameraConfig(
                     server_address=self.robot_ip,
                     port=5555,
                     camera_name="head_camera_depth",
                     width=cam2_width,
                     height=cam2_height,
-                ),
+                )
                 #"d435i_ir_left": ZMQCameraConfig(
                 #    server_address=self.robot_ip, port=5555, camera_name="d435i_ir_left", width=cam_width, height=cam_height
                 #),
                 #"d435i_ir_right": ZMQCameraConfig(
                 #    server_address=self.robot_ip, port=5555, camera_name="d435i_ir_right", width=cam_width, height=cam_height
                 #)
-            }
 
 
 class UnitreeG1Dex3(UnitreeG1):
@@ -316,12 +323,31 @@ class UnitreeG1Dex3(UnitreeG1):
                     logger.info("[UnitreeG1] sim_backend=isaac -> usando ponte Isaac externa (sem ponte_mao do MuJoCo)")
                 else:
                     logger.info(f"[UnitreeG1] Iniciando ponte ZMQ-DDS em segundo plano: {ponte_path}")
-                    # Inicia o processo com o mesmo executável Python que o LeRobot está usando
-                    self._ponte_process = subprocess.Popen([sys.executable, ponte_path])
+                    # Inicia o processo com o mesmo executável Python que o LeRobot está usando.
+                    # start_new_session=True: isola a ponte no próprio grupo de processo/sessão,
+                    # pra ela não morrer se algum sinal (Ctrl+C, kill do grupo do shell/watchdog
+                    # de outro processo) for endereçado ao pgid do processo pai. Sem isso, a ponte
+                    # foi observada morrendo <1s depois de subir ("[Limpando] Encerrando...") e
+                    # ninguém percebia — o hand-streamer só travava minutos depois quando o PUSH
+                    # sem consumidor enchia o buffer (ver fix de SNDTIMEO em unitree_sdk2_socket.py).
+                    self._ponte_process = subprocess.Popen(
+                        [sys.executable, ponte_path], start_new_session=True
+                    )
                     logger.info(f"[UnitreeG1] Ponte iniciada com PID: {self._ponte_process.pid}")
                 
                 # Aguarda 1 segundinho para dar tempo da ponte abrir as portas ZMQ antes do código avançar
                 time.sleep(1.0)
+
+                # Checagem de saúde: se a ponte já morreu nesse 1s, avisa alto e claro
+                # em vez de deixar o hand-streamer descobrir sozinho minutos depois.
+                _ponte_proc = getattr(self, "_ponte_process", None)
+                if _ponte_proc is not None and _ponte_proc.poll() is not None:
+                    logger.error(
+                        f"[UnitreeG1] ⚠️ ponte_mao.py morreu logo após iniciar "
+                        f"(exit code={_ponte_proc.returncode}). As mãos em --sim não vão "
+                        f"responder; o hand-streamer vai falhar nos sends (agora com timeout "
+                        f"em vez de travar o robô)."
+                    )
             except Exception as e:
                 logger.error(f"[UnitreeG1] Falha ao iniciar a ponte automaticamente: {e}") 
         
@@ -631,7 +657,26 @@ class UnitreeG1Dex3(UnitreeG1):
             self.depth_sub.close()
         if hasattr(self, 'zmq_ctx') and self.zmq_ctx:
             self.zmq_ctx.term()
-        
+
+        # 🛑 3. Encerra a ponte_mao.py (--sim) se ela ainda estiver viva.
+        # Necessário porque agora ela sobe com start_new_session=True (isolada do
+        # grupo de processo do pai) para não morrer com sinais indevidos — o
+        # efeito colateral é que também não morre mais sozinha com o processo
+        # pai, então sem isso ela ficaria órfã segurando as portas 6002/6003
+        # (mesma armadilha do vrrgb_proxy.py órfão que já mordeu a gente).
+        _ponte_proc = getattr(self, "_ponte_process", None)
+        if _ponte_proc is not None and _ponte_proc.poll() is None:
+            try:
+                _ponte_proc.terminate()
+                _ponte_proc.wait(timeout=2.0)
+            except Exception:
+                try:
+                    _ponte_proc.kill()
+                    _ponte_proc.wait(timeout=2.0)
+                except Exception:
+                    logger.warning("[UnitreeG1] Não consegui encerrar a ponte_mao.py (PID %s).",
+                                    getattr(_ponte_proc, "pid", "?"))
+
         # Disconnect body (O LeRobot cuida do resto)
         super().disconnect()
 

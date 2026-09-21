@@ -2,11 +2,14 @@ import zmq
 import time
 import cv2
 import os
+import json
 import threading
 import logging
 import contextlib
 import numpy as np
+from PIL import Image, ImageDraw, ImageFont
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Any
 
 from lerobot.teleoperators.teleoperator import Teleoperator
@@ -17,8 +20,16 @@ from lerobot.processor import RobotAction
 from televuer import TeleVuerWrapper
 from teleop.robot_control.robot_arm_ik import G1_29_ArmIK
 from teleop.robot_control.hand_retargeting import HandRetargeting, HandType
+from hud_step import StepHud
 
 logger = logging.getLogger(__name__)
+
+_STEP_FILE = Path(os.environ.get(
+    "STEP_FILE",
+    os.path.expanduser("~/I2CA/prometheus-vla/lerobot-ext/step.json"),
+))
+
+_step_hud = StepHud(_STEP_FILE)
 
 
 def _left_arm_limp() -> bool:
@@ -82,6 +93,15 @@ class XRG1Arm(Teleoperator):
         # Estado atual do robô (necessário como "semente" para o cálculo do IK)
         self.current_arm_q = np.zeros(14)
         self.current_arm_dq = np.zeros(14)
+        # Só permite destravar o clutch após o 1º feedback real dos braços chegar
+        # (evita partir de FK(0)/zeros se o lowstate do robô não veio ainda).
+        self._has_arm_feedback = False
+
+        # Filtro EMA de translação do punho (wrist_filter_alpha do g1_tuning.json).
+        # O IK amplifica o jitter do Quest (usado como delta de posição), e a rotação
+        # do punho manda o braço "pular" pra alcançá-la — filtramos SÓ a translação
+        # (EMA simples), mantendo a responsividade. Alpha default 0.4.
+        self._wrist_filt_t = None  # (left_pos[3], right_pos[3]) do frame anterior
 
 
         # Modo "hand": rastreia se as mãos já foram detectadas pelo menos uma vez.
@@ -205,6 +225,7 @@ class XRG1Arm(Teleoperator):
                     self._rendered_vr_seq = self._latest_vr_seq
             if frame is not None:
                 try:
+                    frame = _step_hud.draw(frame)
                     self.tv_wrapper.render_to_xr(frame)
                 except Exception as e:
                     logger.error(f"Erro renderizando feed no VR: {e}")
@@ -256,7 +277,39 @@ class XRG1Arm(Teleoperator):
 
     def send_feedback(self, feedback: dict[str, Any]) -> None:
         if "q" in feedback:
-            self.current_arm_q = feedback["q"][:14] 
+            self.current_arm_q = np.asarray(feedback["q"], dtype=float)[:14]
+            # Sincroniza body_joints com a pose física real: enquanto TRAVADO
+            # (controller_enabled=False), o get_action retorna esses valores como
+            # alvo → o robô fica parado na pose real. Antes o body_joints nascia
+            # zerado (linha 71) e, com o caminho lowcmd funcionando, o braço era
+            # comandado para q=0 (CAINDO na mesa) logo ao iniciar o teleop.
+            try:
+                from robot.unitree_g1.g1_utils import G1_29_JointArmIndex
+                for i, motor in enumerate(G1_29_JointArmIndex):
+                    self.body_joints[f"{motor.name}.q"] = float(self.current_arm_q[i])
+                self._has_arm_feedback = True
+            except Exception:
+                pass
+        if "dq" in feedback:
+            self.current_arm_dq = np.asarray(feedback["dq"], dtype=float)[:14]
+
+    def build_feedback(self, obs: dict) -> dict | None:
+        """Converte a observação do robô em feedback dos 14 braços para o IK.
+
+        Ordem = G1_29_JointArmIndex (15→28), idêntica ao modelo reduzido do solver:
+        esquerdo (pitch,roll,yaw,elbow,wrist_roll,wrist_pitch,wrist_yaw) e direito
+        na mesma sequência. Sem isso o corrente_arm_q ficava em zeros e o clutch
+        ancorava o robô na pose FK(0) em vez da pose FÍSICA real."""
+        try:
+            from robot.unitree_g1.g1_utils import G1_29_JointArmIndex
+            q = np.array([float(obs[f"{m.name}.q"]) for m in G1_29_JointArmIndex], dtype=float)
+            dq = np.array([float(obs[f"{m.name}.dq"]) for m in G1_29_JointArmIndex], dtype=float)
+            if q.shape == (14,) and np.isfinite(q).all():
+                return {"q": q, "dq": dq}
+        except (KeyError, TypeError, ValueError):
+            # Observação ainda incompleta (ex: lowstate inicial) → sem feedback
+            pass
+        return None
 
     def _trigger_record_event(self, action_type):
         """Injeta comandos diretamente no script de gravação (se ele estiver rodando)"""
@@ -294,8 +347,17 @@ class XRG1Arm(Teleoperator):
                     pass
 
             elif action_type == "toggle_pause":
-                self.controller_enabled = not self.controller_enabled
-                self.clutch_anchored = False
+                # Destravar só é permitido com o 1º feedback real dos braços já
+                # recebido. Sem isso, clutch + IK partiriam de FK(0)/zeros e o
+                # robô seria comandado para a pose neutra (perigo de bater na mesa).
+                if self.controller_enabled or self._has_arm_feedback:
+                    self.controller_enabled = not self.controller_enabled
+                    self.clutch_anchored = False
+                else:
+                    logger.warning(
+                        "[CLUTCH] Destrave BLOQUEADO: feedback real dos braços ainda não chegou. "
+                        "Aguarde o lowstate do robô (1-2s)."
+                    )
 
                 if self.controller_enabled:
                     # Destravado: libera o gravador para seguir o VR
@@ -322,6 +384,35 @@ class XRG1Arm(Teleoperator):
             # Modo teleoperação normal - ignora silenciosamente
             pass
 
+    def _filter_wrist_translation(self, tele_data) -> None:
+        """EMA de translação nas wrist_pose (in-place) para filtrar o jitter do
+        Quest que o IK amplifica como delta de posição. Alpha vem do
+        g1_tuning.json (wrist_filter_alpha), default 0.4.
+
+        Só a TRANSLação é filtrada (rotação fica crua — espaço é pequeno e o
+        ctrl_ref/clutch continuam consistentes por usarem a mesma pose filtrada)."""
+        lw = getattr(tele_data, "left_wrist_pose", None)
+        rw = getattr(tele_data, "right_wrist_pose", None)
+        if lw is None or rw is None:
+            return
+        try:
+            import json as _json, os as _os
+            alpha = 0.4
+            _p = _os.environ.get("G1_TUNING", "lerobot-ext/config/g1_tuning.json")
+            if _os.path.exists(_p):
+                with open(_p) as _f:
+                    alpha = float(_json.load(_f).get("wrist_filter_alpha", 0.4))
+            alpha = min(max(alpha, 0.1), 0.9)
+        except Exception:
+            alpha = 0.4
+        t_prev = self._wrist_filt_t
+        t_now_l = lw[:3, 3].copy()
+        t_now_r = rw[:3, 3].copy()
+        if t_prev is not None:
+            lw[:3, 3] = alpha * t_now_l + (1.0 - alpha) * t_prev[0]
+            rw[:3, 3] = alpha * t_now_r + (1.0 - alpha) * t_prev[1]
+        self._wrist_filt_t = (t_now_l, t_now_r)
+
     def get_action(self) -> RobotAction:
         if not self._is_connected:
              raise ConnectionError("XR Teleoperator não está conectado.")
@@ -330,11 +421,28 @@ class XRG1Arm(Teleoperator):
         # 1. Pega os dados do Headset VR
         tele_data = self.tv_wrapper.get_tele_data()
 
+        # Aplica EMA de translação no punho (anti-jitter; alpha do g1_tuning.json).
+        self._filter_wrist_translation(tele_data)
+
         # =========================
         # CONTROLE ESQUERDO (X = Pause/Play | Y = Encerrar)
         # =========================
         x_pressed = getattr(tele_data, "left_ctrl_aButton", False) # Botão X físico
         y_pressed = getattr(tele_data, "left_ctrl_bButton", False) # Botão Y físico
+
+        # DIAGNÓSTICO temporário: confirma se o Quest manda dados de controle
+        # (X destrava | Y sai) e se o robô está liberado. Remove depois da sessão.
+        _now_db = time.time()
+        if getattr(self, "_last_diag_log", None) is None or (_now_db - self._last_diag_log) > 5.0:
+            self._last_diag_log = _now_db
+            _lw = getattr(tele_data, "left_wrist_pose", None)
+            _rw = getattr(tele_data, "right_wrist_pose", None)
+            _lw_t = _lw[0, 3], _lw[1, 3], _lw[2, 3] if _lw is not None else None
+            _rw_t = _rw[0, 3], _rw[1, 3], _rw[2, 3] if _rw is not None else None
+            print(f"[DIAG VR] X={x_pressed} enabled={self.controller_enabled} "
+                  f"L_wrist={('%.2f,%.2f,%.2f' % _lw_t) if _lw_t else None} "
+                  f"R_wrist={('%.2f,%.2f,%.2f' % _rw_t) if _rw_t else None}",
+                  flush=True)
 
         # Detecta clique no X (Pause/Play)
         if x_pressed and not self.last_x_state:
@@ -403,7 +511,8 @@ class XRG1Arm(Teleoperator):
             self.ctrl_ref_right = tele_data.right_wrist_pose.copy()
             # Re-ancoragem (ex: após salvar): parte da ÚLTIMA pose comandada para
             # o robô continuar de onde estava, sem salto. Na 1ª vez (sem
-            # histórico), usa a FK da config atual (q≈0, comandada no countdown).
+            # histórico), usa a FK da pose FÍSICA real, agora alimentada pelo
+            # feedback do loop (send_feedback) em vez de assumir q≈0.
             if self.last_left_target is not None:
                 self.robot_ref_left = self.last_left_target.copy()
                 self.robot_ref_right = self.last_right_target.copy()
@@ -426,13 +535,12 @@ class XRG1Arm(Teleoperator):
         self.last_left_target = left_target.copy()
         self.last_right_target = right_target.copy()
 
-        # Seed = None → o solver faz warm-start da PRÓPRIA solução anterior
-        # (self.init_data) e o custo de suavidade (var_q_last) passa a penalizar o
-        # salto desde o último frame. Antes passávamos self.current_arm_q, que NUNCA
-        # é atualizado (send_feedback não é chamado no record loop) e ficava em zeros:
-        # isso resetava o seed pra zero todo frame e anulava o smooth cost → o IPOPT
-        # caía em soluções ligeiramente diferentes a cada frame (cotovelo "pulando") → tremor.
-        sol_q, _ = self.arm_ik.solve_ik(left_target, right_target, None, None)
+        # Seed = q real (via feedback do loop) → o solver faz warm-start da pose
+        # física e o custo de suavidade (var_q_last) penaliza o salto desde ela.
+        # Antes passávamos self.current_arm_q, que NUNCA era atualizado (send_feedback
+        # não era chamado no loop) e ficava em zeros: seed zerado a cada frame anulava
+        # o smooth cost → IPOPT caía em soluções ligeiramente diferentes (tremor).
+        sol_q, _ = self.arm_ik.solve_ik(left_target, right_target, self.current_arm_q, self.current_arm_dq)
 
         # Mapeia os 14 ângulos para o dicionário do LeRobot
         # Esquerdo (índices 0 a 6)
@@ -442,7 +550,7 @@ class XRG1Arm(Teleoperator):
         self.body_joints["kLeftElbow.q"]         = sol_q[3]
         self.body_joints["kLeftWristRoll.q"]     = sol_q[4]
         self.body_joints["kLeftWristPitch.q"]    = sol_q[5]
-        self.body_joints["kLeftWristYaw.q"]      = sol_q[6]
+        self.body_joints["kLeftWristyaw.q"]     = sol_q[6]
 
         # Direito (índices 7 a 13)
         self.body_joints["kRightShoulderPitch.q"] = sol_q[7]
