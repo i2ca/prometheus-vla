@@ -239,11 +239,46 @@
 
 
           <body name="torso_link" pos="0 0 0.019">
-            <camera name="head_camera" pos="0.06 0.0 0.45" euler="0 -0.55 -1.57" fovy="58"/>
+            <!-- ── D435i da cabeca ──────────────────────────────────────────────
+                 Pose COPIADA do robo, nao chutada: o `d435_joint` do
+                 `g1_body29_hand14.urdf` monta o modulo no `torso_link` em
+                 xyz="0.0576235 0.01753 0.42987" rpy="0 0.8307767 0" — 47,6 graus
+                 para baixo. O IsaacLab da Unitree poe a camera exatamente ai, sem
+                 deslocamento nenhum (`d435_link/front_cam`, pos=(0,0,0),
+                 rot=(0.5,-0.5,0.5,-0.5) em convencao ROS), e e essa a imagem dos
+                 datasets deles.
 
-            <camera name="head_camera_depth"    pos="0.06 0.0175 0.45" euler="0 -0.55 -1.57" fovy="58" />
-            <camera name="d435i_ir_left"  pos="0.06 0.032 0.45" euler="0 -0.8 -1.57" fovy="58" />
-            <camera name="d435i_ir_right" pos="0.06 -0.0175 0.45" euler="0 -0.8 -1.57" fovy="58" />
+                 z = 0.42987 - 0.010 porque o frame do `torso_link` deste MJCF esta
+                 1 cm ACIMA do frame do URDF (confira: o `head_joint` do URDF esta
+                 em -0.044 e o geom da cabeca aqui esta em -0.054).
+
+                 `xyaxes` em vez de `euler` de proposito: a camera do MuJoCo olha
+                 para -Z com +X a direita e +Y para cima, entao as duas colunas sao
+                 direita = -Y do d435_link e cima = +Z do d435_link. Assim nao ha
+                 convencao de Euler para errar.
+
+                 Os quatro sensores sao o MESMO corpo rigido: mesma orientacao,
+                 so muda o y. Linha de base estereo de 50 mm entre os dois IR; o
+                 RGB fica 15 mm a direita do IR esquerdo. O `head_camera_depth`
+                 coincide com o RGB porque o que a RealSense entrega no robo real
+                 e profundidade ALINHADA a cor.
+
+                 fovy=58 e o campo vertical real da D435i. O IsaacLab usa uma lente
+                 bem mais aberta (focal 7.6, abertura 20 -> fovy 89.2); se algum dia
+                 for preciso casar com o simulador deles em vez de com o robo, e so
+                 trocar o 58 por 89.2 nas quatro. -->
+            <camera name="head_camera"       pos="0.0576235  0.01753 0.41987" xyaxes="0 -1 0  0.738455 0 0.674302" fovy="58"/>
+            <camera name="head_camera_depth" pos="0.0576235  0.01753 0.41987" xyaxes="0 -1 0  0.738455 0 0.674302" fovy="58"/>
+            <camera name="d435i_ir_left"     pos="0.0576235  0.03253 0.41987" xyaxes="0 -1 0  0.738455 0 0.674302" fovy="58"/>
+            <camera name="d435i_ir_right"    pos="0.0576235 -0.01747 0.41987" xyaxes="0 -1 0  0.738455 0 0.674302" fovy="58"/>
+
+            <!-- A pose ERRADA que valeu ate 21/09/2026: 3 cm alta, 1,75 cm fora do
+                 eixo e 10,9 graus a mais para baixo. Fica aqui porque o dataset
+                 `nosso_sim_pega` (1.828 episodios, 798 mil quadros) foi gravado
+                 com ela — qualquer politica treinada naqueles quadros so ve a
+                 cena certa por esta camera. Para reproduzir aquele enquadramento,
+                 troque o nome desta com o da `head_camera` acima. -->
+            <camera name="head_camera_antiga" pos="0.06 0.0 0.45" euler="0 -0.55 -1.57" fovy="58"/>
 
 
             <inertial pos="0.00331658 0.000261533 0.179856"
@@ -337,6 +372,8 @@
                             mesh="left_hand_palm_link" />
                           <geom pos="0.0415 0.003 0" quat="1 0 0 0" type="mesh" rgba="0.0 0.0 0.0 1"
                             mesh="left_hand_palm_link" />
+                          <!-- Espelho da direita; a explicacao esta la. -->
+                          <camera name="left_wrist_camera" pos="0.001381 -0.071418 0.157108" xyaxes="0.480094 0.078426 0.873702  -0.067471 0.996337 -0.052359" fovy="64"/>
                           <body name="left_hand_thumb_0_link" pos="0.067 0.003 0">
                             <inertial pos="-0.000884246 -0.00863407 0.000944293"
                               quat="0.462991 0.643965 -0.460173 0.398986" mass="0.0862366"
@@ -488,12 +525,22 @@
                             mesh="right_hand_palm_link" />
                           <geom pos="0.0415 -0.003 0" quat="1 0 0 0" type="mesh"
                             rgba="0.0 0.0 0.0 1" mesh="right_hand_palm_link" />
-                          <!-- Camera de pulso direito. Montada no dorso da mao, olhando
-                               na direcao da preensao, para enxergar o objeto quando ele
-                               sai do campo da camera da cabeca. fovy alto porque a
-                               distancia de trabalho e curta (dezenas de cm). -->
-                          <camera name="right_wrist_camera" pos="0.035 0.03 0.06"
-                            euler="0 -1.2 -1.57" fovy="70" />
+                          <!-- ── Camera de pulso ──────────────────────────────────────
+                               Pose do IsaacSim da Unitree, montada em duas partes:
+                               o `*_hand_camera_base_link` do USD deles
+                               (g1_29dof_with_dex3_base_fix.usd), que fica em
+                               (0.041501, +-0.002992, 0) do `*_wrist_yaw_link` com
+                               rotacao identidade — exatamente onde este MJCF ja
+                               poe o geom da palma — mais o deslocamento da camera
+                               de `camera_configs.py` deles:
+                               pos=(-0.04012, -+0.07441, 0.15711),
+                               rot=(0.00539, 0.86024, 0.0424, 0.50809) em ROS.
+                               A rotacao e a MESMA nos dois lados; so o y espelha.
+                               fovy=64 vem de focal 12 com abertura vertical 15
+                               (= 20 * 480/640), que e a lente que eles usam.
+                               Confira: o `d435_link` do mesmo USD bate com o
+                               `d435_joint` do nosso URDF ate a sexta casa. -->
+                          <camera name="right_wrist_camera" pos="0.001381 0.071418 0.157108" xyaxes="0.480094 0.078426 0.873702  -0.067471 0.996337 -0.052359" fovy="64"/>
                           <body name="right_hand_thumb_0_link" pos="0.067 -0.003 0">
                               <inertial pos="-0.000884246 0.00863407 0.000944293"
                                 quat="0.643965 0.462991 -0.398986 0.460173" mass="0.0862366"

@@ -237,7 +237,9 @@
           <geom type="mesh" contype="0" conaffinity="0" group="1" density="0" rgba="0.7 0.7 0.7 1"
             mesh="waist_roll_link" />
           <body name="torso_link" pos="0 0 0.019">
-            <camera name="head_camera" pos="0.06 0.0 0.45" euler="0 -0.8 -1.57"/>
+            <!-- Mesma D435i do `g1_29dof_with_hand.xml`, que tem a explicacao
+                 completa da origem destes numeros (vem do `d435_joint` do URDF). -->
+            <camera name="head_camera" pos="0.0576235 0.01753 0.41987" xyaxes="0 -1 0  0.738455 0 0.674302" fovy="58"/>
             <inertial pos="0.00331658 0.000261533 0.179856"
               quat="0.999831 0.000376204 0.0179895 -0.00377704" mass="9.598"
               diaginertia="0.12407 0.111951 0.0325382" />
