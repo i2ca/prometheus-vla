@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python -c \"import zmq; print\\(zmq.zmq_version\\(\\), zmq.__version__\\)\")",
+      "Bash(ulimit -n)",
+      "Bash(git submodule *)"
+    ]
+  }
+}

@@ -37,7 +37,17 @@
     <site name="com_marker" pos="0.1 0 0" size="0.05" rgba="1 0 0 1" type="sphere"/>
 
     <body name="mesa" pos="0.48 0 0.88">
-      <geom name="geometria_mesa" type="box" size="0.40 0.8 0.02" rgba="0.565 0.569 0.549 1" friction="1 0.005 0.0001"/>
+      <!-- COR DO TAMPO, 18/09: era 0.565/0.569/0.549, um cinza claro que RENDERIZA QUASE
+           BRANCO — a mesma cor do copo. Nas capturas da inferencia a mesa ocupa 75% do
+           quadro em pixels quase brancos, e o copo branco em cima dela quase nao tem
+           borda. O robo ia ao coador fechando a mao no ar, como quem pega um copo
+           imaginario. Marrom escuro da contraste sem virar uma cor impossivel para uma
+           mesa.
+           ATENCAO: isto tira a cena da distribuicao de treino. Os 302 episodios da
+           xicara foram gravados com o tampo CLARO, entao o modelo nunca viu uma mesa
+           marrom. Se piorar, o culpado e este, e o backup esta em
+           `scene_43dof.xml.antes_cor`. -->
+      <geom name="geometria_mesa" type="box" size="0.40 0.8 0.02" rgba="0.36 0.25 0.17 1" friction="1 0.005 0.0001"/>
 
       <!-- <body name="corpo_botao" pos="0 0.3 0.02">
         <joint name="junta_botao" type="slide" axis="0 0 1" range="-0.015 0" springref="0" stiffness="100" damping="5"/>

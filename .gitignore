@@ -13,6 +13,9 @@ dist/
 
 # Logs / outputs
 logs/
+# Log solto na raiz de um modulo: os 10 que estavam em `lerobot-ext/` foram para
+# `lerobot-ext/logs/` em 21/09. A regra abaixo evita que voltem.
+*.log
 outputs/
 train/log/
 train/output/
@@ -34,6 +37,18 @@ g1_29_model_cache*.pkl
 MUJOCO_LOG.TXT
 .pytest_cache/
 .deps/
+
+# Copias de seguranca feitas a mao antes de editar (`.antes_pose`, `.antes_cor`,
+# `.antes_coador_fixo`, ...). Elas servem para desfazer DURANTE a sessao; quem guarda
+# historico e o git, entao nao entram no repositorio. Ficam no disco de quem as criou.
+*.antes_*
+*.original
+
+# Video de avaliacao. Um mp4 entra no historico e NUNCA sai — os tres de
+# `resultados/unifolm_2026-09-13/` somavam 16 MB. O que vale versionar e o
+# RESUMO (md, png, json); o video fica no disco de quem o gerou.
+lerobot-ext/resultados/**/*.mp4
+lerobot-ext/videos/
 
 # IDE
 .vscode/

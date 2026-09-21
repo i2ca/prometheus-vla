@@ -26,7 +26,7 @@ Arquivos:
 | `viz_debug_fastwamd.py` | seu PC | os quatro quadrantes do painel, em janela local (`PainelDebug`) ou por HTTP/MJPEG (`PainelWeb`) |
 | `policies/fastwam_depth/debug_inferencia.py` | athena | captura atenção e profundidade de uma inferência |
 | `avaliar_episodio_fastwamd.py` | athena | replay de um episódio gravado contra o servidor, com métricas por grupo de juntas |
-| `athena/*.sh` | athena | os launchers (ver `athena/README.md`) |
+| `maquinas/athena/*.sh` | athena | os launchers (ver `maquinas/athena/README.md`) |
 
 ## Como rodar
 

@@ -1,0 +1,240 @@
+# ==========================================================
+# π0.5 SEM PROFUNDIDADE — mesma tarefa e mesmo held-out das corridas FastWAM-D
+#
+# Existe para responder UMA pergunta: a arquitetura muda o resultado?
+#
+# O que veio antes (02/09): o FastWAM-D com LoRA chegou a eval 0,3301 no step
+# 4250 e, no laço fechado, TRAVA. No robô real, com a pose de partida correta,
+# a primeira ação é boa e as seguintes convergem para a média — cada ação leva o
+# corpo um pouco para fora do que foi demonstrado, o estado seguinte fica mais
+# fora, e o modelo não tem comportamento de recuperação. Medido: a MESMA imagem
+# com estado zerado dá 566 de 928 valores fora da faixa; com a pose gravada, 2.
+#
+# Isso é erro que se acumula, e é uma propriedade de clonagem de comportamento
+# com 21 demonstrações — não é específico do FastWAM. O π0.5 pode se sair
+# melhor (é pré-treinado em muito mais dado de robô e o flow matching costuma
+# ser mais estável fora da trajetória), mas isso é hipótese, não previsão.
+#
+# ── O que foi mantido igual de propósito ──────────────────────────────────
+# Episódios de treino e de validação são EXATAMENTE os das corridas do
+# FastWAM-D (21 / 3, held-out = 22, 23, 24). Sem isso o número que sair daqui
+# não pode ser comparado com o 0,3301, e a corrida perde o sentido.
+#
+# ── O que MUDA e não dá para comparar direto ──────────────────────────────
+# O `val_loss` do π0.5 é flow matching; o `eval_loss` do FastWAM-D é outro
+# objetivo. Os números NÃO são comparáveis entre si. O que compara é o
+# comportamento no robô: quanto tempo até travar, e se trava.
+# ==========================================================
+
+# ==========================================================
+# 1. DATASET DE TREINAMENTO
+# ==========================================================
+dataset:
+  repo_id: Mrwlker/cotreino_copo_sim_real_2026-09-03
+  root: /data/mrwlker/meu_dataset/cotreino_copo_sim_real_2026-09-03
+  # Dataset agregado por `juntar_sim_real.py`: real nos índices 0-26 (mesmos da
+  # origem, por ter sido o PRIMEIRO da lista no `aggregate_datasets`) e sim em
+  # 27-301. Fora do treino: 0/25/26 (demonstrações ruins e tomada abortada) e o
+  # que vai para a validação abaixo.
+  # 21 reais + 263 sim.
+  episodes: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 27, 28,
+              29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48,
+              49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68,
+              69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88,
+              89, 90, 91, 92, 93, 94, 95, 96, 97, 98, 99, 100, 101, 102, 103, 104, 105, 106,
+              107, 108, 109, 110, 111, 112, 113, 114, 115, 116, 117, 118, 119, 120, 121, 122,
+              123, 124, 125, 126, 127, 128, 129, 130, 131, 132, 133, 134, 135, 136, 137, 138,
+              139, 140, 141, 142, 143, 144, 145, 146, 147, 148, 149, 150, 151, 152, 153, 154,
+              155, 156, 157, 158, 159, 160, 161, 162, 163, 164, 165, 166, 167, 168, 169, 170,
+              171, 172, 173, 174, 175, 176, 177, 178, 179, 180, 181, 182, 183, 184, 185, 186,
+              187, 188, 189, 190, 191, 192, 193, 194, 195, 196, 197, 198, 199, 200, 201, 202,
+              203, 204, 205, 206, 207, 208, 209, 210, 211, 212, 213, 214, 215, 216, 217, 218,
+              219, 220, 221, 222, 223, 224, 225, 226, 227, 228, 229, 230, 231, 232, 233, 234,
+              235, 236, 237, 238, 239, 240, 241, 242, 243, 244, 245, 246, 247, 248, 249, 250,
+              251, 252, 253, 254, 255, 256, 257, 258, 259, 260, 261, 262, 263, 264, 265, 266,
+              267, 268, 269, 270, 271, 272, 273, 274, 275, 276, 277, 278, 279, 280, 281, 282,
+              283, 284, 285, 286, 287, 288, 289]
+
+  # A augmentation fica em ColorJitter e só. As quatro transformações novas
+  # (MotionBlur, GaussianNoise, RandomShadow, GammaCorrection) NÃO RODAM sobre
+  # uint8: elas têm guarda `is_floating_point()` e devolvem a imagem intacta, em
+  # silêncio, e o dataset de treino é construído com `return_uint8=True`.
+  # Descoberto em 02/09 analisando por que duas corridas com augmentation
+  # diferente deram curvas idênticas. Enquanto isso não for consertado,
+  # declarar as outras aqui só faria o ColorJitter cair em menos amostras.
+  image_transforms:
+    enable: true
+    max_num_transforms: 1
+    tfs:
+      ColorJitter:
+        type: ColorJitter
+        weight: 1.0
+        kwargs:
+          brightness: [0.8, 1.2]
+          contrast: [0.8, 1.2]
+          saturation: [0.5, 1.5]
+          hue: [-0.05, 0.05]
+
+# ==========================================================
+# 2. DATASET DE VALIDAÇÃO
+# ==========================================================
+# Este trainer usa `val_dataset` + `eval_freq`, e NÃO o `eval_split` do
+# LeRobot — são dois mecanismos diferentes no mesmo repo. Os episódios aqui são
+# os mesmos três que o `eval_split: 0.12` separa nas corridas do FastWAM-D
+# (ele pega os últimos ceil(24 * 0,12) = 3 da lista).
+val_dataset:
+  repo_id: Mrwlker/cotreino_copo_sim_real_2026-09-03
+  root: /data/mrwlker/meu_dataset/cotreino_copo_sim_real_2026-09-03
+  # 3 REAIS + 12 sim. Os reais aqui são deliberados: na corrida do FastWAM-D o
+  # `eval_split: 0.12` pegou os últimos da ordenação, e como o sim vem depois do
+  # real o held-out saiu TODO do simulador — o eval_loss de lá mede
+  # generalização dentro do MuJoCo, não transferência. Aqui, com `val_dataset`
+  # explícito, dá pra manter real na validação sem custo nenhum.
+  episodes: [22, 23, 24, 290, 291, 292, 293, 294, 295, 296, 297, 298, 299, 300, 301]
+
+# ==========================================================
+# 3. ARQUITETURA
+# ==========================================================
+policy:
+  type: pi05depth
+  push_to_hub: false
+
+  # Sem profundidade: é o ponto da corrida. Com `false`, a chave de
+  # profundidade some das `input_features` abaixo e o PointNet nem é montado.
+  use_depth_3d: false
+
+  # O dataset TEM os sensores de pressão (`observation.left_hand_pressure` e
+  # `right_hand_pressure`, 33 valores cada), mas eles ficam de fora: o objetivo
+  # da corrida é comparar arquitetura com as mesmas entradas do FastWAM-D, e
+  # ligar a pressão aqui acrescentaria uma segunda variável a explicar. O padrão
+  # do config é `true`, e sem as features declaradas ele levanta
+  # "use_pressure=True mas as features de pressão não estão em input_features".
+  use_pressure: false
+
+  paligemma_variant: "gemma_2b"
+  action_expert_variant: "gemma_300m"
+  image_resolution: [224, 224]
+  max_state_dim: 32
+
+  # A frase da tarefa é a MESMA string do dataset (`meta/tasks.parquet`, índice
+  # 0). Não traduzir: o dataset tem uma tarefa só, e trocar o texto aqui faria o
+  # modelo condicionar numa frase que nunca apareceu no treino.
+  override_task: "place the white cup on the dripper"
+
+  # Gate de incerteza desligado — ligar antes de saber se o treino básico
+  # converge só adiciona uma variável a mais para explicar um resultado ruim.
+  scene_uncertainty_threshold: 0.0
+  n_samples_uncertainty: 1
+
+  # As DUAS câmeras de cor, como nas corridas do FastWAM-D. A da cabeça é
+  # 848x480 no dataset; a de pulso é 224x224 e é ela que mostra a xícara de
+  # perto no momento da pega.
+  input_features:
+    observation.images.head_camera:
+      type: VISUAL
+      shape: [3, 480, 848]
+    observation.images.right_wrist_camera:
+      type: VISUAL
+      shape: [3, 224, 224]
+    observation.state:
+      type: STATE
+      shape: [29]
+
+  output_features:
+    action:
+      type: ACTION
+      shape: [29]
+
+  # 50 ações por chunk contra as 32 do FastWAM-D — é o horizonte nativo do
+  # π0.5 e não há motivo para encurtar.
+  chunk_size: 50
+  n_action_steps: 50
+  n_obs_steps: 1
+
+  optimizer_lr: 2.5e-5
+  optimizer_weight_decay: 0.01
+  scheduler_warmup_steps: 1000
+  scheduler_decay_steps: 40000
+
+  train_expert_only: false
+  freeze_vision_encoder: false
+
+  # ── Memória ────────────────────────────────────────────────────────────
+  # A primeira tentativa estourou os 79 GB da A100 no primeiro forward. O
+  # config antigo do π0.5 rodava com UMA câmera; aqui são duas, e o padrão
+  # desta política é `dtype: float32` com `gradient_checkpointing: false` —
+  # o oposto do que o FastWAM-D usa (`torch_dtype: bfloat16` e
+  # `use_gradient_checkpointing: true`).
+  #
+  # Ligar os dois não é só conveniência: deixa as duas corridas na MESMA
+  # precisão e com a mesma troca memória/computação, que é o que torna a
+  # comparação de arquitetura honesta.
+  dtype: bfloat16
+  gradient_checkpointing: true
+
+# ==========================================================
+# 4. TREINAMENTO
+# ==========================================================
+output_dir: "/data/mrwlker/train_output/pi05_cotreino_sim_real"
+job_name: pi05_cotreino_sim_real
+# 20 mil, e não os 100 mil do config antigo: são 10.783 quadros. Com batch 8
+# isso é ~15 épocas, e o FastWAM-D já achava o fundo em 1,5. O ponto é ter
+# espaço para o mínimo aparecer, não rodar até o fim.
+steps: 20000
+# batch 4, e não os 8 das corridas antigas: dividindo a GPU 2 com o FastWAM-D
+# (que segura ~30 GB), sobram ~50 GB, e o π0.5 com batch 8 pediu 49,6 GB e
+# estourou no passo do Adam — `torch.OutOfMemoryError` tentando alocar 18 MiB
+# com 10 MiB livres. O custo fixo (pesos 3 B + estados do Adam + gradientes)
+# não cabe cortar; o que escala com o batch são as ativações.
+# Efeito colateral BOM: o FastWAM-D também roda com batch 4, então a
+# comparação entre os dois fica mais justa do que era com 8.
+batch_size: 4
+num_workers: 8
+
+log_freq: 100
+# 2000, e não 500: cada checkpoint do π0.5 tem 13,9 GB. A cada 500 steps seriam
+# 40 checkpoints e ~556 GB no /data, que é disco compartilhado do laboratório.
+# A cada 2000 são 10, e o `best_val_checkpoint` — que é o que interessa — é
+# salvo à parte, sempre que a validação melhora.
+save_freq: 2000
+save_checkpoint: true
+# Salva em `output_dir/best_val_checkpoint/` sempre que o val_loss melhora.
+save_best_checkpoint: true
+neutral_position_loss_weight: 0.0
+
+# ==========================================================
+# 5. VALIDAÇÃO E LOGS
+# ==========================================================
+# 250 para casar com o `eval_steps` das corridas do FastWAM-D — a curva fica
+# com a mesma resolução e dá para comparar o formato, ainda que não o valor.
+eval_freq: 250
+
+wandb:
+  enable: true
+  project: prometheus_g1
+  # SÓ TELEMETRIA. Sem isto o wandb sobe cada checkpoint como artefato, e o
+  # caminho dele passa por uma CÓPIA em `~/.local/share/wandb/artifacts/staging`
+  # — no home, que fica no disco de sistema da athena, o que vive perto de 100%.
+  # O checkpoint do π0.5 tem 13,9 GB: em 02/09 isso encheu o disco no step 500 e
+  # matou o treino com `OSError: [Errno 28] No space left on device`, depois de
+  # o checkpoint já ter sido salvo com sucesso no /data. O erro aponta para o
+  # wandb, não para o treino, e é fácil ler como falha de disco do dataset.
+  #
+  # O que interessa comparar são as curvas, e elas continuam subindo normalmente.
+  disable_artifact: true
+
+# ── Tolerância de timestamp ────────────────────────────────────────────────
+# 1e-4 (o padrão) matou a corrida no step ~4750 com
+#
+#   FrameTimestampError: ... (tensor([0.0333]) > tolerance_s=0.0001)
+#   video: .../head_camera_depth/chunk-000/file-011.mp4
+#
+# O desvio era de 0.0333 s = EXATAMENTE um quadro a 30 fps, numa emenda da
+# concatenação do `aggregate_datasets`. Não falta quadro no arquivo: a
+# contagem de pacotes bate com a duração em todos os vídeos de profundidade
+# (conferido um a um). É irregularidade de PTS na junção, não dado perdido.
+#
+# 0.04 aceita o quadro vizinho (um período de 33,3 ms mais folga) e recusa
+# qualquer coisa realmente dessincronizada. A própria mensagem do LeRobot
+# recomenda ignorar o item; aqui preferimos usar o quadro adjacente.
+tolerance_s: 0.04

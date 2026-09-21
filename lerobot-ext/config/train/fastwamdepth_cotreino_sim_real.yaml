@@ -1,10 +1,10 @@
 # ==========================================================
 # TREINO — FastWAM-D, LoRA, co-treino sim (MuJoCo) + real (white_cup_on_dripper)
 #
-# Roda pelo `athena/launch_fastwamd_lora.sh`:
+# Roda pelo `maquinas/athena/launch_fastwamd_lora.sh`:
 #
 #   CONFIG=config/train/fastwamdepth_cotreino_sim_real.yaml \
-#   bash athena/launch_fastwamd_lora.sh 2
+#   bash maquinas/athena/launch_fastwamd_lora.sh 2
 #
 # ── O que muda em relação ao `fastwamdepth_lora_aug.yaml` ──────────────────
 # Só o `dataset`. Augmentation, PEFT, dimensões do robô e o resto de `policy`

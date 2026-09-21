@@ -1,0 +1,139 @@
+<mujoco model="g1_43dof torradeira">
+  <!-- ===================================================================
+       CENA `toasted bread`, RECONSTRUÍDA DA GRAVAÇÃO — 18/09/2026
+
+       Não é uma cena inventada. Cada número aqui saiu de duas fontes que se
+       confirmam:
+
+       1. A TRAJETÓRIA gravada. Os 418 episódios de `toasted bread` estão no
+          `cotreino_completo_2026-09-11` (índices 1024..1441). Passando as juntas
+          do episódio 1024 pela cinemática direta (`unifolm/roda_unifolm_mujoco.py`),
+          a linha do tempo da mão DIREITA é:
+
+            t= 6 s  garra FECHA em (0.314, -0.208, 0.093)   <- pega o pão na bandeja
+            t= 8 s  levanta       (0.391, -0.210, 0.375)
+            t=10 s  leva ao centro(0.413, -0.106, 0.306)
+            t=12 s  garra ABRE em (0.418, -0.133, 0.302)    <- solta na fenda
+
+       2. O VÍDEO da mesma gravação. Aos 5 s o pão está na bandeja azul, à
+          direita; aos 14 s ele está de pé dentro da torradeira branca, ao centro.
+
+       Daí: bandeja em (0.31, -0.21) e torradeira em (0.415, -0.12), as duas sobre
+       o tampo. As coordenadas são do PELVIS com a cintura em zero — e a cintura é
+       0.000 em TODOS os 828 mil quadros externos, porque a Unitree gravou com o
+       tronco fixo. Como o pelvis está em (0, 0, 0.793), x e y valem direto no mundo.
+
+       A ALTURA FECHA SOZINHA, e é o que dá confiança no resto: a mão solta o pão a
+       0.302 do pelvis = 1.095 no mundo, 19,5 cm acima do tampo (0.90). Uma
+       torradeira de 17 cm põe a boca da fenda em 1.07 — 2,5 cm abaixo da mão que
+       larga. É exatamente a folga de quem deixa cair o pão na fenda.
+
+       O QUE É DIFERENTE DA NOSSA CENA DO CAFÉ
+         · a mesa aqui é BRANCA. No vídeo real ela é branca, e a nossa é cinza
+           (0.565). Para um modelo treinado naquelas imagens, isso não é detalhe;
+         · o chão é liso e neutro, sem o xadrez azul. O fundo do laboratório deles
+           é uma sala com mesas e caixas — não dá para reproduzir, mas o xadrez
+           infinito é pior do que cinza liso;
+         · sem xícara, sem coador.
+
+       O QUE ESTA CENA NÃO TEM: a segunda metade da tarefa, que é ENTREGAR a torrada
+       a uma pessoa. Não há pessoa. Um modelo que chegue a inserir o pão já responde
+       à pergunta que motivou tudo isto.
+       =================================================================== -->
+  <include file="g1_29dof_with_hand.xml"/>
+  <statistic center="0 0 0.5" extent="2.0"/>
+
+  <visual>
+    <headlight diffuse="0.6 0.6 0.6" ambient="0.35 0.35 0.35" specular="0 0 0"/>
+    <rgba haze="0.6 0.6 0.62 1"/>
+    <global azimuth="-130" elevation="-20" offwidth="848" offheight="480"/>
+  </visual>
+
+  <asset>
+    <!-- Céu e chão NEUTROS. O xadrez azul da cena do café ocupa metade do quadro da
+         `head_camera` e não existe em nenhuma imagem que este modelo viu. -->
+    <texture type="skybox" builtin="flat" rgb1="0.55 0.57 0.60" rgb2="0.55 0.57 0.60" width="512" height="512"/>
+    <material name="chao" rgba="0.42 0.42 0.44 1" reflectance="0.05"/>
+    <material name="branco_mesa"  rgba="0.90 0.90 0.88 1" specular="0.15" shininess="0.2"/>
+    <material name="branco_torra" rgba="0.93 0.93 0.91 1" specular="0.35" shininess="0.4"/>
+    <material name="metal_torra"  rgba="0.22 0.22 0.24 1" specular="0.7"  shininess="0.8"/>
+    <material name="azul_bandeja" rgba="0.13 0.35 0.45 1" specular="0.5"  shininess="0.5"/>
+    <material name="pao"          rgba="0.82 0.68 0.45 1" specular="0.05" shininess="0.1"/>
+  </asset>
+
+  <worldbody>
+    <light pos="0 0 1.9" dir="0 0 -1" directional="true" diffuse="0.5 0.5 0.5"/>
+    <light pos="0.6 -0.5 1.7" dir="-0.3 0.3 -1" diffuse="0.35 0.35 0.35"/>
+    <geom name="floor" size="0 0 0.05" type="plane" material="chao"/>
+
+    <!-- MESA. Mesma posição e tamanho da cena do café (tampo em 0.90), mas BRANCA. -->
+    <body name="mesa" pos="0.48 0 0.88">
+      <geom name="geometria_mesa" type="box" size="0.40 0.8 0.02"
+            material="branco_mesa" friction="1 0.005 0.0001"/>
+    </body>
+
+    <!-- ── TORRADEIRA ──────────────────────────────────────────────────────
+         Estática de propósito: é um eletrodoméstico, ninguém a levanta, e com
+         `freejoint` ela sairia do lugar ao primeiro encosto do antebraço.
+         17 cm de altura (tampo 0.90 -> boca em 1.07), 26 cm de largura ao longo
+         de y e 13 cm de profundidade em x, como no vídeo.
+         Construída como CASCA e não como bloco maciço: quatro paredes e um fundo,
+         deixando uma fenda de 3 cm em x por onde o pão entra de verdade. Um bloco
+         com uma fenda só pintada deixaria o pão parado no ar em cima dela. -->
+    <body name="torradeira" pos="0.415 -0.12 0.90">
+      <geom name="torra_frente" type="box" pos="-0.0475 0 0.085" size="0.0175 0.13 0.085" material="branco_torra"/>
+      <geom name="torra_tras"   type="box" pos=" 0.0475 0 0.085" size="0.0175 0.13 0.085" material="branco_torra"/>
+      <geom name="torra_esq"    type="box" pos="0 -0.1175 0.085" size="0.065 0.0125 0.085" material="branco_torra"/>
+      <geom name="torra_dir"    type="box" pos="0  0.1175 0.085" size="0.065 0.0125 0.085" material="branco_torra"/>
+      <geom name="torra_fundo"  type="box" pos="0 0 0.012"       size="0.065 0.105 0.012" material="metal_torra"/>
+      <!-- Aro escuro da boca, só visual: é o que aparece como a faixa preta no topo
+           da torradeira no vídeo, e ajuda o modelo a achar a fenda. -->
+      <geom name="torra_aro_f" type="box" pos="-0.032 0 0.171" size="0.0025 0.105 0.002"
+            material="metal_torra" contype="0" conaffinity="0"/>
+      <geom name="torra_aro_t" type="box" pos=" 0.032 0 0.171" size="0.0025 0.105 0.002"
+            material="metal_torra" contype="0" conaffinity="0"/>
+      <!-- Alavanca lateral, o detalhe que mais identifica uma torradeira de perfil. -->
+      <geom name="torra_alavanca" type="box" pos="-0.067 -0.09 0.12" size="0.004 0.012 0.03"
+            material="metal_torra"/>
+    </body>
+
+    <!-- ── BANDEJA ─────────────────────────────────────────────────────────
+         Onde a mão fecha, aos 6 s: (0.31, -0.21). Azul-petróleo como no vídeo,
+         20 x 15 cm, com borda de 1 cm para o pão não escorregar. Também estática:
+         no vídeo ela nunca sai do lugar. -->
+    <body name="bandeja" pos="0.31 -0.21 0.90">
+      <geom name="bandeja_base" type="box" pos="0 0 0.006" size="0.10 0.075 0.006" material="azul_bandeja"/>
+      <geom name="bandeja_b1" type="box" pos=" 0.095 0 0.016" size="0.005 0.075 0.01" material="azul_bandeja"/>
+      <geom name="bandeja_b2" type="box" pos="-0.095 0 0.016" size="0.005 0.075 0.01" material="azul_bandeja"/>
+      <geom name="bandeja_b3" type="box" pos="0  0.070 0.016" size="0.10 0.005 0.01" material="azul_bandeja"/>
+      <geom name="bandeja_b4" type="box" pos="0 -0.070 0.016" size="0.10 0.005 0.01" material="azul_bandeja"/>
+    </body>
+
+    <!-- ── PÃO ─────────────────────────────────────────────────────────────
+         O ÚNICO corpo livre da cena. Fatia de 10 x 11 cm e 1,4 cm de espessura,
+         DE PÉ sobre a bandeja (é assim que ela aparece no vídeo, encostada na
+         borda), porque é nessa orientação que ela entra na fenda sem girar.
+         `condim=4` e atrito alto: uma fatia fina escorrega entre os dedos da Dex3
+         com o atrito padrão.
+         Nome `objeto_customizado` de propósito — é o nome que o resto do código da
+         simulação procura quando quer mexer no objeto da tarefa. -->
+    <body name="objeto_customizado" pos="0.31 -0.21 0.975">
+      <freejoint name="junta_livre_bloco"/>
+      <geom name="geometria_pao" type="box" size="0.007 0.05 0.055" material="pao"
+            mass="0.04" condim="4" friction="1.4 0.1 0.005"
+            solimp="0.99 0.99 0.01" solref="0.01 1"/>
+    </body>
+
+    <!-- Alvo do mocap, herdado da cena do café: alguns scripts o procuram pelo nome. -->
+    <body name="marca_alvo" mocap="true" pos="0.415 -0.12 1.10">
+      <geom name="geometria_marca" type="sphere" size="0.01" rgba="1 0 0 0"
+            contype="0" conaffinity="0"/>
+    </body>
+
+    <camera name="global_view" pos="2.910 -5.040 3.860" xyaxes="0.866 0.500 0.000 -0.250 0.433 0.866" fovy="45"/>
+  </worldbody>
+
+  <default>
+    <geom friction="1.0"/>
+  </default>
+</mujoco>

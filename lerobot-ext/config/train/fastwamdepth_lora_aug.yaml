@@ -1,12 +1,12 @@
 # ==========================================================
 # TREINO — FastWAM-D com LoRA e augmentation de câmera
 #
-# Roda pelo `athena/launch_fastwamd_lora.sh`, que é quem passa os argumentos do
+# Roda pelo `maquinas/athena/launch_fastwamd_lora.sh`, que é quem passa os argumentos do
 # PEFT (o alvo dos adaptadores é uma regex que não cabe bem em YAML, e o
 # comentário de por que ele é aquele mora lá).
 #
 #   CONFIG=config/train/fastwamdepth_lora_aug.yaml \
-#   bash athena/launch_fastwamd_lora.sh 2
+#   bash maquinas/athena/launch_fastwamd_lora.sh 2
 #
 # ── O que muda em relação ao `fastwamdepth_white_cup_on_dripper.yaml` ──────
 #

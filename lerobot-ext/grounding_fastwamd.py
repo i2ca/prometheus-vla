@@ -59,9 +59,9 @@ USO (na athena, GPU com ~28 GB livres)
 ---------------------------------------
 Pelo launcher, que já resolve as armadilhas de ambiente (os DOIS caches do
 HuggingFace separados, o python por caminho absoluto do home de quem rodou, a
-GPU, o `OMP_NUM_THREADS`) — ver `athena/README.md`:
+GPU, o `OMP_NUM_THREADS`) — ver `maquinas/athena/README.md`:
 
-    bash athena/launch_grounding.sh 2 --frases="white cup,dripper,robot"
+    bash maquinas/athena/launch_grounding.sh 2 --frases="white cup,dripper,robot"
 
 À mão, se precisar. Note `HF_HUB_CACHE` (leitura dos 25 GB de pesos, comum a
 todos) separado de `HF_HOME` (escrita: locks do `datasets`) — apontar os dois

@@ -122,7 +122,7 @@ Exemplo:
       --server=10.9.8.252 --robot-ip=10.9.8.73 --cam-robot=10.9.8.73 \\
       --chunk=32 --lead=24 --fps=15 --v-web=8088 --debug
 
-  Tudo na athena (servidor num screen, controle noutro) — ver `athena/README.md`:
+  Tudo na athena (servidor num screen, controle noutro) — ver `maquinas/athena/README.md`:
   screen -dmS infer   bash /data/train_output/launch_server_fastwamd.sh 2
   screen -dmS control bash /data/train_output/launch_client_fastwamd.sh
 """

@@ -197,7 +197,7 @@ def _depth_to_tensor(depth: "np.ndarray", device=None) -> "torch.Tensor":
 # errado. Depois da normalização por quantis do π0.5, o punho esquerdo entra em **-5,02** num
 # espaço onde o modelo só viu [-1, +1]. A primeira observação já está fora da distribuição e a
 # política extrapola a partir do primeiro quadro — é o mesmo bug que o `--pose-inicial` do
-# `pgx/roda_politica_g1_isaaclab.py` corrige no IsaacLab.
+# `maquinas/pgx/roda_politica_g1_isaaclab.py` corrige no IsaacLab.
 #
 # São 15 valores: as 14 juntas dos braços e o yaw do tronco, na ordem do `info.json`. As 14
 # dimensões das mãos ficam em zero porque no dado do copo elas SÃO zero (desvio 0,000).

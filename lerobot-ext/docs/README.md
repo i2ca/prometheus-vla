@@ -21,6 +21,7 @@ Na ordem em que você vai precisar:
 | [PI05_BASE.md](PI05_BASE.md) | Por que o π0.5 treinava do zero, as três divergências que impediam carregar o `lerobot/pi05_base` (657 de 812 tensores) e o enxerto por herança que resolveu. **Leia antes de treinar π0.5.** |
 | [MIGRACAO_CODIGO_061.md](MIGRACAO_CODIGO_061.md) | O que quebrou no nosso código na subida para a 0.6.1: símbolos que mudaram de módulo, `eval_freq`/`vcodec` que sumiram dos configs, o índice do sampler, e os monkeypatches que viraram comportamento nativo. |
 | [SIM_REMOTO.md](SIM_REMOTO.md) | MuJoCo no seu PC, modelo de 7B na atena. Portas, IPs, e por que testar condicionamento por linguagem no simulador e não no robô. |
+| [UNIFOLM_WLA.md](UNIFOLM_WLA.md) | O `unifolm-wla` que a Unitree publicou em 09/2026. Os pesos do WLA-1.0 (6 B) **não** saíram, mas o caminho que interessa saiu: treinar um *action expert* do zero sobre o UnifoLM-ER-1/ER-Flow, com carregador multi-fonte que come LeRobot nativamente — os datasets deles e os nossos na mesma corrida. Traz o layout de 54/60 dims, o que falta converter no nosso dado, e as três armadilhas de ARM. |
 | [INFERENCIA_COMANDO_TEXTO.md](INFERENCIA_COMANDO_TEXTO.md) | Rodar o robô mandando o comando em texto. `--task`, troca de comando em tempo de execução, e o teste que revela se o modelo está mesmo lendo o prompt. |
 
 ## Ferramentas

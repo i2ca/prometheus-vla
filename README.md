@@ -2,6 +2,13 @@
 
 VR teleoperation, training, and deployment for the Unitree G1 humanoid robot with Dex3 hands.
 
+## Onde cada coisa mora
+
+Código de terceiros entra como **submódulo na raiz** (`lerobot`, `unitree_sdk2_python`,
+`unifolm-wma`, `unifolm-wla`). O nosso código fica em **`lerobot-ext/`**, e é lá que se
+trabalha. Ver [docs/ORGANIZACAO.md](docs/ORGANIZACAO.md) e o índice da documentação em
+[lerobot-ext/docs/README.md](lerobot-ext/docs/README.md).
+
 ## Quick Start
 
 ```bash
