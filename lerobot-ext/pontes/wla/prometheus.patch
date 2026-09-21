@@ -1,0 +1,52 @@
+diff --git a/unifolm_wla/model/modules/action_model/DiT_modules/mmdit.py b/unifolm_wla/model/modules/action_model/DiT_modules/mmdit.py
+index d7df858..0fe8bcf 100644
+--- a/unifolm_wla/model/modules/action_model/DiT_modules/mmdit.py
++++ b/unifolm_wla/model/modules/action_model/DiT_modules/mmdit.py
+@@ -1,3 +1,4 @@
++import os as _os                      # ver o PATCH PROMETHEUS abaixo
+ from typing import Optional, List, Dict, Any, Tuple, Union
+ import torch
+ import torch.nn.functional as F
+@@ -172,7 +173,24 @@ class QwenDoubleStreamAttnProcessor2_0:
+     implements joint attention computation where text and image streams are processed together.
+     """
+ 
+-    _attention_backend = None
++    # PATCH PROMETHEUS 21/09/2026 — opt-in, o padrao continua identico ao deles.
++    #
++    # `None` faz o `forward` escolher FLASH/FLASH_VARLEN, e o despachante do diffusers
++    # chama `flash_attn_varlen_func`, que e `None` quando o flash-attn nao carrega. Na
++    # athena ele NAO carrega: o binario exige GLIBC 2.32 e a maquina tem 2.31 (Ubuntu
++    # 20.04). Compilar da fonte nao resolveu — o pip entrega o wheel pre-compilado.
++    #
++    # Com `WLA_ATTN_BACKEND=native` o DiT usa a atencao nativa do PyTorch (SDPA), que e
++    # matematicamente equivalente e apenas mais lenta. O proprio codigo deles ja preve
++    # esse caminho: o comentario do `forward` diz "NATIVE runs in whatever dtype the
++    # module is already in", e o `QWen3.py` deles faz exatamente esse desvio para o VLM —
++    # a cabeca DiT e que nao tinha a mesma protecao.
++    #
++    # SEM a variavel, o comportamento e byte a byte o original.
++    _attention_backend = (
++        AttentionBackendName(_os.environ["WLA_ATTN_BACKEND"])
++        if _os.environ.get("WLA_ATTN_BACKEND") else None
++    )
+     _parallel_config = None
+ 
+     def __init__(self):
+diff --git a/unifolm_wla/training/train_unifolm_wla.py b/unifolm_wla/training/train_unifolm_wla.py
+index 2349bf1..28a4323 100644
+--- a/unifolm_wla/training/train_unifolm_wla.py
++++ b/unifolm_wla/training/train_unifolm_wla.py
+@@ -175,7 +175,11 @@ class VLATrainer(TrainerUtils):
+                 project=self.config.wandb_project,
+                 entity=self.config.wandb_entity,
+                 group="vla-train",
+-                mode="offline"
++                # PATCH PROMETHEUS 21/09/2026 — opt-in, o padrao continua "offline".
++                # Estava fixo em "offline", e argumento explicito vence WANDB_MODE do
++                # ambiente, entao nao havia como ligar a sincronizacao sem mexer aqui.
++                # Com WANDB_MODE=online no ambiente, a corrida aparece no painel.
++                mode=os.environ.get("WANDB_MODE", "offline"),
+             )
+ 
+     def _save_initial_configs(self):

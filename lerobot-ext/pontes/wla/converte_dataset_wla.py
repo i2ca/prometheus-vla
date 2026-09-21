@@ -145,8 +145,12 @@ def main() -> int:
         for pref, d in (("action", saida), ("observation.state", saida_st)):
             df[f"{pref}.left_ee_pose_gripper_base"] = list(d["left_ee"])
             df[f"{pref}.right_ee_pose_gripper_base"] = list(d["right_ee"])
-            df[f"{pref}.left_gripper"] = list(d["left_gripper"])
-            df[f"{pref}.right_gripper"] = list(d["right_gripper"])
+            # ESCALAR, e não vetor de um elemento. MEDIDO em 21/09 contra o parquet deles:
+            # `action.left_gripper` é `float32` 4.5, não `[4.5]`. Com o vetor, o carregador
+            # morre em `TypeError: Couldn't cast array of type list<element: float> to float`
+            # lá dentro do pyarrow, longe da causa. O `info.json` declara shape [1] nos dois.
+            df[f"{pref}.left_gripper"] = d["left_gripper"][:, 0].astype("float32")
+            df[f"{pref}.right_gripper"] = d["right_gripper"][:, 0].astype("float32")
         df["action.waist_action_joint"] = list(saida["waist"])
         df["observation.state.waist_state_joint"] = list(saida_st["waist"])
         df.to_parquet(arq, index=False)
