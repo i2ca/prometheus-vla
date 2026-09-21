@@ -41,8 +41,8 @@ datasets:
   vla_data:
     dataset_py: multi_source_datasets
     data_config_path: unifolm_wla/dataloader/multi_source_dataset/configs/dados_prometheus.yaml
-    per_device_batch_size: 2
-    num_workers: 4
+    per_device_batch_size: 24
+    num_workers: 8
 trainer:
   max_train_steps: 20000
   num_warmup_steps: 1000
@@ -58,7 +58,7 @@ trainer:
     min_lr: 1.0e-06
   freeze_modules: qwen_vl_interface
   gradient_clipping: 1.0
-  gradient_accumulation_steps: 16
+  gradient_accumulation_steps: 1
   logging_frequency: 10
   optimizer:
     name: AdamW

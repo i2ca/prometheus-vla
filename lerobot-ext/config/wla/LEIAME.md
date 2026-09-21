@@ -49,6 +49,25 @@ whatever dtype the module is already in") e que o `QWen3.py` deles já faz para 
 **wandb (`train_unifolm_wla.py`).** Estava fixo em `mode="offline"`, e argumento explícito vence
 `WANDB_MODE` do ambiente — não havia como ligar a sincronização sem tocar nisto.
 
+## Lote e VRAM — medido em 21/09 numa A100 de 80 GB
+
+| lote × acúmulo | VRAM | por passo | amostras/s |
+|---|---|---|---|
+| 2 × 16 | 21 GB | 7,16 s | 4,5 |
+| 6 × 5 | 32 GB | 3,12 s | 9,6 |
+| 16 × 2 | 58 GB | 3,05 s | 10,5 |
+| 24 × 2 | 79 GB | 5,37 s | 8,9 |
+| **24 × 1** | **78,6 GB** | **2,13 s** | **11,3** |
+
+Duas lições. A primeira: **o acúmulo importa mais que o lote**. De 24×2 para 24×1 a VRAM não
+mudou e a vazão subiu 27%, porque cada passo virou uma passagem só em vez de duas. A segunda: o
+ganho do lote **satura** — de 6 para 16 a VRAM quase dobrou e a vazão subiu 9%. De lote 2 para 6
+o ganho é grande porque ali a GPU passava mais tempo sincronizando gradiente que calculando.
+
+A 96% da VRAM a corrida fica exposta: qualquer variação — um lote com vídeos mais longos,
+fragmentação acumulada — pode derrubá-la no meio. O `PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True`
+reduz o risco sem eliminá-lo, e o `save_interval` garante retomar do último checkpoint.
+
 ## O que os nossos dados perdem na conversão
 
 O canal `fig6d`, 6 dims por mão, fica vazio: a Dex3 tem 3 dedos e 7 juntas, e o formato deles
