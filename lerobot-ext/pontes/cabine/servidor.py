@@ -318,7 +318,7 @@ async function tique() {
     const velho = idades.length ? Math.max(...idades) : 99;
     document.getElementById('luz').className = velho > 2 ? 'off' : 'on';
     document.getElementById('meta').textContent =
-      `tarefa: ${e.tarefa || '—'} · ${e.clientes} espectador(es)`;
+      `tarefa: ${e.tarefa || '—'} · ${e.fluxos_abertos} fluxo(s) de vídeo`;
     document.getElementById('estado').textContent = JSON.stringify(e, null, 2);
   } catch (_) { document.getElementById('luz').className = 'off'; }
 }
