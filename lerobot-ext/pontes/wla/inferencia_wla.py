@@ -192,10 +192,239 @@ def desnormaliza(esc: Escalas, acao_norm: np.ndarray, T_esq, T_dir) -> dict:
             T_atual @ pose_to_se3(r[:3], rotvec_to_matrix(r[3:])) for r in rel
         ])
         saida[f"pose_{lado}"] = poses
-        saida[f"garra_{lado}"] = esc.desfaz(a[:, fatia_g], esc.acao[f"garra_{lado[0]}sq"
-                                            if lado == "esq" else "garra_dir"])[:, 0]
+        saida[f"garra_{lado}"] = esc.desfaz(a[:, fatia_g], esc.acao[f"garra_{lado}"])[:, 0]
     saida["cintura"] = esc.desfaz(a[:, SLICES["waist_joint"]], esc.acao["cintura"])
     return saida
+
+
+# ══════════════════════════════════════════════════════════════════════════
+# O modelo
+# ══════════════════════════════════════════════════════════════════════════
+# Tudo aqui imita o que o dataloader deles entregou no treino. Cada número tem
+# origem no `config.yaml` salvo na pasta do treino ou no `dados_prometheus.yaml`:
+#   · `image_size: [336, 448]` é (altura, largura) — o `TF.resize` do dataloader
+#     recebe [target_h, target_w]. O pulso do nosso dataset é 224x224 e VIRA
+#     336x448 no treino, esticado; a inferência estica igual.
+#   · papéis na ordem do `image_roles` do YAML, que é a ordem das tags no prompt.
+#   · `robot_type: "unitree"` escolhe o embedding de corpo (`embodiment_types`).
+#   · `arm_type: "dual"` escolhe o texto de modo de controle "só braços" no prompt.
+IMG_HW = (336, 448)
+PAPEIS = ("head_left", "cam_wrist_right")
+TAREFA_TREINO = "pick up the white cup"     # a do `nosso_sim_pega`, 97% dos quadros
+
+
+class PoliticaWLA:
+    """A UnifoLM-WLA treinada, com a mesma entrada e a mesma saída do treino.
+
+    `age()` recebe o que o robô vê e o que ele está fazendo, e devolve o
+    pedaço de trajetória (30 passos, `action_horizon`) em pose ABSOLUTA da mão.
+    A IK fica de fora de propósito: quem chama decide quantos passos executar
+    antes de perguntar de novo.
+    """
+
+    def __init__(self, pasta_modelo: Path, base_vlm: Path, dispositivo: str = "cuda",
+                 pesos: str = "final_model/model.safetensors"):
+        import os
+        # O DiT deles despacha a atenção para `flash_varlen` por padrão, e o
+        # flash_attn não existe no aarch64 da GB10 (nem roda na athena, GLIBC
+        # 2.31): a chamada vira `'NoneType' object is not callable` no meio da
+        # primeira predição. O `prometheus.patch` deixa escolher o backend por
+        # esta variável; `native` é o SDPA do PyTorch. Tem que estar definida
+        # ANTES do import do `mmdit`, que lê na carga do módulo.
+        os.environ.setdefault("WLA_ATTN_BACKEND", "native")
+        import torch
+        from omegaconf import OmegaConf
+        from safetensors.torch import load_file
+
+        sys.path.insert(0, str(RAIZ / "unifolm-wla"))
+        from unifolm_wla.model.framework.base_framework import build_framework
+        from unifolm_wla.model.framework.share_tools import apply_config_compat
+
+        pasta_modelo = Path(pasta_modelo)
+        cfg = OmegaConf.load(pasta_modelo / "config.yaml")
+        cfg.framework.qwenvl.base_vlm = str(base_vlm)
+        # O treino usou flash_attention_2, que não existe para o aarch64 da GB10.
+        # SDPA é a mesma conta com outro kernel; muda o tempo, não o resultado.
+        cfg.framework.qwenvl.attn_implementation = "sdpa"
+        cfg = apply_config_compat(cfg)
+
+        self.torch = torch
+        self.vla = build_framework(cfg)
+        estado = load_file(str(pasta_modelo / pesos))
+        faltou, sobrou = self.vla.load_state_dict(estado, strict=False)
+        # O checkpoint é o state_dict INTEIRO, VLM congelado incluído. Chave
+        # faltando no action_model quer dizer pesos aleatórios na cabeça de ação
+        # — o modelo roda e cospe lixo. Melhor morrer aqui.
+        ruins = [k for k in faltou if "action_model" in k]
+        if ruins:
+            raise RuntimeError(f"{len(ruins)} pesos do action_model não carregaram, ex.: {ruins[:3]}")
+        self.carga = {"faltou": len(faltou), "sobrou": len(sobrou), "total": len(estado)}
+        del estado
+        self.vla.to(dispositivo).eval()       # eval: sem o ruído de estado do treino
+        self.esc = Escalas()
+        self.espiao = EspiaoAtencao(self.vla)
+
+    def age(self, imagens: dict, texto: str, T_esq, T_dir, garra_esq, garra_dir,
+            cintura3) -> dict:
+        from PIL import Image
+
+        h, w = IMG_HW
+        fotos = [Image.fromarray(np.asarray(imagens[p], np.uint8)).resize((w, h), Image.BILINEAR)
+                 for p in PAPEIS]
+        exemplo = {
+            "image": fotos,
+            "image_roles": list(PAPEIS),
+            "lang": texto,
+            "state": monta_estado(self.esc, T_esq, T_dir, garra_esq, garra_dir, cintura3),
+            "state_mask": mascara_estado(T_esq is not None).astype(np.float32),
+            "action_mask": mascara_acao(T_esq is not None).astype(np.float32),
+            "arm_type": "dual",
+            "robot_type": "unitree",
+        }
+        self.espiao.comeca()
+        with self.torch.no_grad():
+            saida = self.vla.predict_action([exemplo])
+        mapas = self.espiao.mapas()
+        norm = np.asarray(saida["normalized_actions"])[0]          # (30, 54)
+        out = desnormaliza(self.esc, norm, T_esq, T_dir)
+        # As imagens exatamente como entraram no modelo (336x448), com o mapa.
+        out["atencao"] = {
+            papel: sobrepoe(np.asarray(foto), mapa)
+            for papel, foto, mapa in zip(PAPEIS, fotos, mapas)
+        }
+        return out
+
+
+# ══════════════════════════════════════════════════════════════════════════
+# Atenção — para OLHAR, não para mudar o resultado
+# ══════════════════════════════════════════════════════════════════════════
+class EspiaoAtencao:
+    """Para onde a cabeça de ação olhou, pedaço a pedaço de cada imagem.
+
+    QUAL atenção: a do DiT (a cabeça de ação), e não a do VLM. No MMDiT deles os
+    30 tokens de ação e os ~centenas de tokens do VLM entram numa atenção
+    CONJUNTA; a linha "ação → token de imagem" é literalmente o quanto cada passo
+    da trajetória consultou cada pedaço de imagem. É a atenção que decide o
+    movimento. A do VLM diria o que o modelo de linguagem achou relevante, o que
+    é outra pergunta.
+
+    COMO, sem mexer no código deles: o processador chama `dispatch_attention_fn`
+    pelo nome importado no módulo `mmdit`. Troco esse nome por um invólucro que,
+    quando ligado, calcula softmax(QKᵀ/√d) com a MESMA máscara e guarda só as
+    linhas de ação contra as colunas de texto/imagem — e depois chama a função
+    original, com as mesmas entradas. A saída do modelo não muda: o cálculo extra
+    é jogado fora depois de promediado. Custa uns milissegundos por camada.
+
+    O que se guarda: média sobre cabeças, sobre os 30 passos de ação e sobre as
+    16 camadas do ÚLTIMO passo de difusão (o que produz a ação entregue; os três
+    anteriores ainda operam sobre ação quase toda ruído).
+    """
+
+    CAMADAS = 16
+
+    def __init__(self, vla):
+        import math
+        import torch
+        from unifolm_wla.model.modules.action_model.DiT_modules import mmdit as mm
+
+        self.torch, self.mm, self.vla = torch, mm, vla
+        self.ligado = False
+        self._pesos = []
+        self._seq_acao = None
+        self._chamada = 0
+        passos = int(getattr(vla.action_model, "num_inference_timesteps", 4) or 4)
+        self._pula = self.CAMADAS * (passos - 1)
+        self._entradas = None
+        espiao = self
+
+        call_orig = mm.QwenDoubleStreamAttnProcessor2_0.__call__
+        disp_orig = mm.dispatch_attention_fn
+
+        # `functools.wraps` NÃO é enfeite. O `Attention.forward` do diffusers lê a
+        # ASSINATURA do `__call__` do processador para decidir quais kwargs
+        # repassar, e joga fora o resto com um aviso. Sem o `wraps`, a assinatura
+        # vista era `(attn, hidden_states, *a, **k)` e ele descartava o
+        # `image_rotary_emb` e o `encoder_hidden_states_mask` em TODAS as 384
+        # chamadas: a rede rodava sem RoPE. Medido em 22/09: o deslocamento
+        # previsto em 30 passos caiu de 1,6 cm para 0,2 cm — o robô "lento que
+        # não chega". O `wraps` põe `__wrapped__`, e o `inspect.signature` segue.
+        import functools
+
+        @functools.wraps(call_orig)
+        def call(proc, attn, hidden_states, *a, **k):
+            espiao._seq_acao = hidden_states.shape[1]
+            return call_orig(proc, attn, hidden_states, *a, **k)
+
+        @functools.wraps(disp_orig)
+        def dispatch(q, k, v, *a, **kw):
+            espiao._chamada += 1
+            # Só o ÚLTIMO passo de difusão. As chamadas dos passos anteriores
+            # não entram na média, então nem se calcula: isso é o grosso do
+            # custo (4 passos x 16 camadas de einsum extra).
+            if espiao.ligado and espiao._seq_acao and espiao._chamada > espiao._pula:
+                with torch.no_grad():
+                    sa = espiao._seq_acao
+                    w = torch.einsum("bshd,bthd->bhst", q[:, :sa].float(), k.float())
+                    w = w / math.sqrt(q.shape[-1])
+                    m = kw.get("attn_mask")
+                    if m is not None:
+                        w = w.masked_fill(~m.bool(), float("-inf"))
+                    w = w.softmax(-1)[..., sa:]              # ação → texto/imagem
+                    espiao._pesos.append(w.mean(dim=(1, 2))[0].cpu())
+            return disp_orig(q, k, v, *a, **kw)
+
+        mm.QwenDoubleStreamAttnProcessor2_0.__call__ = call
+        mm.dispatch_attention_fn = dispatch
+
+        # O que o VLM recebeu: precisamos do `input_ids` (onde estão os tokens de
+        # imagem) e do `image_grid_thw` (a grade de cada imagem).
+        interface = vla.qwen_vl_interface
+        build_orig = interface.build_qwenvl_inputs
+
+        def build(*a, **k):
+            r = build_orig(*a, **k)
+            espiao._entradas = r
+            return r
+
+        interface.build_qwenvl_inputs = build
+        cfg = interface.model.config
+        self.id_imagem = getattr(cfg, "image_token_id", None)
+        self.funde = getattr(getattr(cfg, "vision_config", cfg), "spatial_merge_size", 2)
+
+    def comeca(self):
+        self._pesos.clear()
+        self._chamada = 0
+        self.ligado = True
+
+    def mapas(self) -> list:
+        """Um mapa (h, w) normalizado para [0, 1] por imagem, na ordem dos papéis."""
+        self.ligado = False
+        if not self._pesos or self._entradas is None:
+            return []
+        w = self.torch.stack(self._pesos[-self.CAMADAS:]).mean(0).numpy()   # (L_txt,)
+        ids = self._entradas["input_ids"][0].cpu().numpy()
+        pos = np.flatnonzero(ids == self.id_imagem)
+        grades = self._entradas["image_grid_thw"].cpu().numpy()
+        saida, i = [], 0
+        for t, h, ww in grades:
+            h2, w2 = int(h) // self.funde, int(ww) // self.funde
+            n = int(t) * h2 * w2
+            m = w[pos[i:i + n]].reshape(int(t), h2, w2).mean(0)
+            i += n
+            m = m - m.min()
+            saida.append(m / (m.max() + 1e-12))
+        return saida
+
+
+def sobrepoe(img: np.ndarray, mapa: np.ndarray, alfa: float = 0.55) -> np.ndarray:
+    """Mapa de calor por cima da imagem que o modelo viu (já no tamanho do treino)."""
+    from PIL import Image
+    import matplotlib.cm as cm
+
+    h, w = img.shape[:2]
+    m = np.asarray(Image.fromarray((mapa * 255).astype(np.uint8)).resize((w, h), Image.BILINEAR)) / 255.0
+    cor = (cm.inferno(m)[..., :3] * 255).astype(np.float32)
+    return (img.astype(np.float32) * (1 - alfa) + cor * alfa).clip(0, 255).astype(np.uint8)
 
 
 # ══════════════════════════════════════════════════════════════════════════

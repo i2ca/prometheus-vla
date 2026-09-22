@@ -1,0 +1,106 @@
+# ── Treino sobre o UnifoLM-ER-Flow (22/09/2026) ───────────────────────────
+# Diferenças para o `wla_prometheus.yaml`, que foi a corrida de 21/09:
+#   · base ER-Flow em vez de ER-1;
+#   · projetor de estado do robô LIGADO;
+#   · só o Qwen congelado, não o projetor;
+#   · 10 fontes de dados balanceadas por peso (precisa de WLA_PESOS=1);
+#   · 30 mil passos em vez de 20 mil.
+run_id: wla_prometheus_erflow
+run_root_dir: /data/mrwlker/wla_treino
+seed: 42
+wandb_entity: prometheus-lcad
+wandb_project: prometheus_g1
+is_debug: false
+framework:
+  name: QwenMMDiT
+  qwenvl:
+    # ER-FLOW, e não o ER-1: é a SEGUNDA etapa deles, o mesmo Qwen3-VL (2560,
+    # 36 camadas) já treinado com tokens de ação discretos e predição de região
+    # dinâmica (fluxo óptico + VQ-VAE). Nada disso está no código publicado,
+    # então herdar os pesos é a única forma de ter esse pedaço. O
+    # `UnifoLM-WLA-Base` (ER-Flow + especialista de ação) NÃO foi publicado —
+    # por isso o especialista nós treinamos do zero.
+    #
+    # O vocabulário difere do ER-1 (152.960 contra 153.088), então o tokenizador
+    # TEM que vir desta pasta.
+    base_vlm: /data/mrwlker/UnifoLM-ER-Flow
+    attn_implementation: flash_attention_2
+    vl_hidden_dim: 2048
+  # O ER-Flow declara `robot_state_dim: 120` e o token `<|robot_state|>`, e traz
+  # os pesos do projetor. 120 é exatamente o vetor que o carregador deles monta:
+  # 60 de estado ⊕ 60 de máscara. Com isto ligado o estado entra pelo VLM e a
+  # cabeça de ação perde o token de estado próprio (o código põe
+  # `action_model.state_dim = 0` sozinho) — que é como eles pré-treinaram.
+  robot_state_projector:
+    enabled: true
+    input_dim: 120
+    projector_hidden_size: null
+    load_from: null           # null = usa o `base_vlm`
+
+  action_model:
+    action_model_type: DiT-B
+    action_hidden_dim: 1024
+    hidden_size: 1024
+    add_pos_embed: true
+    max_seq_len: 1024
+    action_dim: 54
+    state_dim: 60
+    action_horizon: 30
+    embodiment_types:
+    - unitree
+    repeated_diffusion_steps: 8
+    noise_beta_alpha: 1.5
+    noise_beta_beta: 1.0
+    noise_s: 0.999
+    num_timestep_buckets: 1000
+    num_inference_timesteps: 4
+    num_target_vision_tokens: 32
+    diffusion_model_cfg:
+      cross_attention_dim: 2048
+      dropout: 0.2
+      final_dropout: true
+      interleave_self_attention: true
+      norm_type: ada_norm
+      num_layers: 16
+      output_dim: 1024
+      positional_embeddings: null
+datasets:
+  vla_data:
+    dataset_py: multi_source_datasets
+    data_config_path: unifolm_wla/dataloader/multi_source_dataset/configs/dados_prometheus.yaml
+    # 16 e não 24: com 24 a corrida de 21/09 ficou a 96% da VRAM, e agora o
+    # projetor entra no grafo. 16x2 deu 58 GB e 10,5 amostras/s.
+    per_device_batch_size: 16
+    num_workers: 8
+trainer:
+  # 30 mil e não 20 mil: agora são 10 fontes e ~3,5 milhões de quadros, contra
+  # 900 mil em 21/09. A ~3 s por passo, cerca de 25 h.
+  max_train_steps: 30000
+  num_warmup_steps: 1000
+  save_interval: 2000
+  eval_interval: 500
+  learning_rate:
+    base: 0.0001
+    qwen_vl_interface: 1.0e-05
+    action_model: 0.0001
+    omnivggt_fusion: 0.0001
+  lr_scheduler_type: cosine_with_min_lr
+  scheduler_specific_kwargs:
+    min_lr: 1.0e-06
+  # Congela o Qwen (memória) e deixa o PROJETOR treinando: ele mora em
+  # `qwen_vl_interface.model.robot_state_projector`, fora dos dois caminhos
+  # abaixo. Congelar `qwen_vl_interface` inteiro, como em 21/09, congelaria o
+  # projetor junto — e ele é a peça que liga o nosso estado ao que o ER-Flow
+  # aprendeu.
+  freeze_modules: qwen_vl_interface.model.model, qwen_vl_interface.model.lm_head
+  gradient_clipping: 1.0
+  gradient_accumulation_steps: 2
+  logging_frequency: 10
+  optimizer:
+    name: AdamW
+    betas:
+    - 0.9
+    - 0.95
+    eps: 1.0e-08
+    weight_decay: 1.0e-08
+  save_format: safetensors

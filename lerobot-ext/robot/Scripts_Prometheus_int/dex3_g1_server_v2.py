@@ -18,10 +18,18 @@
 DDS-to-ZMQ bridge server for Unitree G1 robot with Dex3 hands.
 
 Startup:
-    python dex3_g1_server_v2.py           # Low Level (rt/lowcmd)
-    python dex3_g1_server_v2.py --loco    # High Level / Loco (rt/arm_sdk)
+    python dex3_g1_server_v2.py            # High Level / Loco (rt/arm_sdk) — PADRÃO
+    python dex3_g1_server_v2.py --debug    # Low Level (rt/lowcmd) — robô SUSPENSO
 
-O modo é decidido UMA VEZ no startup via flag --loco.
+O padrão é LOCO desde 22/09/2026. Antes era debug, e o loco dependia de alguém
+lembrar do `--loco` — que vinha do `USE_LOCO` do `init_prometheus-vla.sh`. Essa
+variável foi trocada para `false` no robô em 28/08 sem ninguém perceber, e o
+servidor passou a matar a IA na subida. Com o robô em pé, isso é o robô no chão.
+O modo perigoso agora é o que exige ser pedido.
+
+`--loco` continua aceito (não faz nada) para não quebrar quem ainda o passa.
+
+O modo é decidido UMA VEZ no startup.
 O servidor NÃO troca de modo durante a operação — isso evita quedas acidentais.
 
 Portas ZMQ:
@@ -343,15 +351,21 @@ def loco_cmd_loop(loco_sock, loco_client, shutdown_event):
 
 def main():
     parser = argparse.ArgumentParser(description="G1 ZMQ Bridge Server")
-    parser.add_argument(
+    modo = parser.add_mutually_exclusive_group()
+    modo.add_argument(
+        "--debug",
+        action="store_true",
+        help="Low Level (Debug Mode, rt/lowcmd): MATA a IA da Unitree. Só com o robô "
+             "suspenso ou apoiado — em pé, ele cai.",
+    )
+    modo.add_argument(
         "--loco",
         action="store_true",
-        default=False,
-        help="Ativa o modo High Level (Loco/WBC). Sem esta flag, usa Low Level (Debug Mode).",
+        help="High Level (Loco/WBC). Já é o padrão; aceito só por compatibilidade.",
     )
     args = parser.parse_args()
 
-    use_loco = args.loco
+    use_loco = not args.debug
     active_mode = "loco" if use_loco else "debug"
 
     print("=========================================================")

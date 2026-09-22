@@ -45,7 +45,8 @@ if [ "$USE_LOCO" = "true" ]; then
     python $PROJECT_DIR/dex3_g1_server_v2.py --loco &
     echo "   [!!] Modo HIGH LEVEL / LOCO — WBC da Unitree assume as pernas"
 else
-    python $PROJECT_DIR/dex3_g1_server_v2.py &
+    # Sem flag o servidor sobe em LOCO; o debug agora precisa ser pedido.
+    python $PROJECT_DIR/dex3_g1_server_v2.py --debug &
     echo "   [!!] Modo LOW LEVEL / DEBUG — robô precisa estar suspenso/apoiado"
 fi
 PID_DEX=$!

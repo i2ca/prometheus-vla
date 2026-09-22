@@ -138,7 +138,7 @@ teleop:
   #
   # O robô tem watchdog de 0.4 s: se estes comandos pararem de chegar — rede
   # caiu, teleop travou, você tirou o óculos — ele para os pés sozinho.
-  enable_locomotion: true
+  enable_locomotion: false
   loco_port: 6005
   # Vazio = usa o img_server_ip acima (mesmo robô).
   loco_ip: ""
