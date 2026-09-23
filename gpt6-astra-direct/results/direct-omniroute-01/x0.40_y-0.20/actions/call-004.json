@@ -1,0 +1,44 @@
+{
+  "accepted": true,
+  "action": {
+    "reason": "The gripper is now nearly fully closed (closure 0.979), and the white mug remains aligned within the hand with no reported table contact or collision. Begin a straight vertical lift while keeping the mug upright and the grasp closed.",
+    "steps": 5,
+    "target": {
+      "position": [
+        0.18715,
+        -0.15133,
+        0.94144
+      ],
+      "quaternion_wxyz": [
+        0.987008,
+        -0.152629,
+        0.010743,
+        -0.049034
+      ],
+      "gripper": "closed"
+    }
+  },
+  "executed": {
+    "status": "executed",
+    "frames": 30,
+    "requested_position": [
+      0.18715,
+      -0.15133,
+      0.94144
+    ],
+    "reached_position": [
+      0.1872,
+      -0.15116,
+      0.94111
+    ],
+    "position_gap_m": 0.0004,
+    "rotation_gap_rad": 0.1135,
+    "hand_table_contact": [],
+    "self_collision": [],
+    "ik_at_request": {
+      "position_error_m": 0.0002980459513118611,
+      "orientation_error_rad": 0.0012387390618786374,
+      "iterations": 19
+    }
+  }
+}

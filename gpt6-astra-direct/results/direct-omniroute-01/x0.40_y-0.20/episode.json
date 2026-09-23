@@ -1,0 +1,72 @@
+{
+  "case": {
+    "home_shoulder_roll_rad": -0.35,
+    "left_arm_pose": [
+      0.3,
+      0.15,
+      0.0,
+      0.7,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "hand_kp": 8,
+    "offset": [
+      -0.02,
+      -0.02,
+      -0.02
+    ],
+    "gain": 1.5,
+    "cup_yaw_deg": 90.0,
+    "instruction": "Pegue a caneca branca da mesa com a mao direita, levante-a pelo menos 8 cm mantendo-a em pe, e segure por 2 segundos.",
+    "cup_xy": [
+      0.4,
+      -0.2
+    ],
+    "home_arm_pose": [
+      0.06409163773059845,
+      -0.3499999940395355,
+      -0.0632048025727272,
+      -0.09522665292024612,
+      -0.0020852552261203527,
+      0.13248226046562195,
+      -0.013721458613872528
+    ]
+  },
+  "scene": "scene_grasp.xml",
+  "max_calls": 40,
+  "max_sim_seconds": 40.0,
+  "video": true,
+  "fps": 30,
+  "step_seconds": 0.2,
+  "hand_open": [
+    -0.0450708232820034,
+    -0.06435875594615936,
+    -0.06325916200876236,
+    0.029303444549441338,
+    0.036779142916202545,
+    0.05189113691449165,
+    0.04266977310180664
+  ],
+  "hand_close": [
+    -0.04506239295005798,
+    -0.2869790196418762,
+    -0.7255648374557495,
+    0.5860313177108765,
+    1.297844648361206,
+    0.7173755764961243,
+    0.9146603345870972
+  ],
+  "limits": {
+    "max_target_distance_m": 0.05,
+    "max_target_rotation_rad": 0.35,
+    "max_steps_per_call": 5,
+    "ik_tolerance_m": 0.03,
+    "ik_tolerance_rad": 0.15,
+    "max_joint_speed_deg_s": 240.0
+  },
+  "calls": 4,
+  "frames": 143,
+  "aborted": null,
+  "policy_model": "cx/gpt-5.6-sol-high via OmniRoute"
+}
