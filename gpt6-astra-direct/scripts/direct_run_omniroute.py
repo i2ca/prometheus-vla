@@ -8,7 +8,7 @@ Uso:
 Cada chamada fica em <ep>/policy-calls/call-NNN.json e uma linha em <ep>/policy-log.jsonl:
 id da resposta do gateway, uso de tokens, texto e tool call do modelo, e o que o arnes fez.
 """
-import argparse, base64, json, os, sys, time, urllib.request
+import argparse, base64, datetime, hashlib, json, os, sys, time, urllib.request
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent))
 from direct_env import DirectEpisode
@@ -23,23 +23,26 @@ current measured palm pose, then look at the next observation. Frame: x forward,
 Keep the hand above the table in transit, approach the mug from the side at mid height, open before
 contact, close only when the mug is between thumb and fingers, then lift. Touching the table with the
 hand or the robot body aborts the episode. If a command is rejected, read the error and fix it.
-Put your visible evidence and immediate purpose in `reason` (one or two sentences).
+In `what_i_see`, describe what each camera shows right now (mug, hand, fingers, table) before deciding.
+Put your immediate purpose in `reason` (one or two sentences).
 Call finish_episode when the mug is lifted and held, or if continuing is unsafe."""
 
 TOOLS = [
     {"name": "actuate", "description": "Execute one bounded Cartesian command for the right palm.",
      "input_schema": {"type": "object", "additionalProperties": False, "properties": {
+         "what_i_see": {"type": "string", "description": "what each camera shows now"},
          "reason": {"type": "string"},
          "steps": {"type": "integer", "minimum": 1, "maximum": 5, "description": "1 step = 0.2 s"},
          "position": {"type": "array", "items": {"type": "number"}, "minItems": 3, "maxItems": 3},
          "quaternion_wxyz": {"type": "array", "items": {"type": "number"}, "minItems": 4, "maxItems": 4},
          "gripper": {"type": "string", "enum": ["keep", "open", "closed"]}},
-         "required": ["reason", "steps", "position", "quaternion_wxyz", "gripper"]}},
+         "required": ["what_i_see", "reason", "steps", "position", "quaternion_wxyz", "gripper"]}},
     {"name": "finish_episode", "description": "Stop: task complete, or unsafe/impossible to continue.",
      "input_schema": {"type": "object", "additionalProperties": False, "properties": {
+         "what_i_see": {"type": "string", "description": "what each camera shows now"},
          "reason": {"type": "string"},
          "outcome": {"type": "string", "enum": ["complete", "blocked", "unsafe"]}},
-         "required": ["reason", "outcome"]}},
+         "required": ["what_i_see", "reason", "outcome"]}},
 ]
 
 
@@ -93,10 +96,16 @@ def main():
     n = 0
     while not obs["finished"]:
         n += 1
+        sent_at = datetime.datetime.now(datetime.timezone.utc).isoformat(timespec="milliseconds")
+        images = [{"camera": im["camera"], "file": str(Path(im["path"]).relative_to(ep_dir.resolve())),
+                   "sha256": hashlib.sha256(Path(im["path"]).read_bytes()).hexdigest()} for im in obs["images"]]
         resp, latency = ask(a.model, obs)
         uses = [c for c in resp.get("content", []) if c.get("type") == "tool_use"]
         text = " ".join(c.get("text", "") for c in resp.get("content", []) if c.get("type") == "text").strip()
         call = {"call": n, "step_id": obs["step_id"], "model": resp.get("model"), "response_id": resp.get("id"),
+                "sent_at": sent_at,
+                "received_at": datetime.datetime.now(datetime.timezone.utc).isoformat(timespec="milliseconds"),
+                "sim_time_s": obs["elapsed_sim_seconds"], "images_sent": images,
                 "latency_s": latency, "usage": resp.get("usage"), "model_text": text,
                 "observed": {"palm": obs["current_palm"], "arm_joints_rad": obs["arm_joints_rad"],
                              "waist_yaw_rad": obs["waist_yaw_rad"], "gripper_closure": obs["gripper_closure"]}}
@@ -105,7 +114,7 @@ def main():
             obs = DirectEpisode(ep_dir).load().act({"reason": "", "steps": 1, "target": {}})  # conta como rejeicao
         else:
             tool, args = uses[0]["name"], uses[0]["input"]
-            call.update(tool=tool, arguments=args)
+            call.update(tool=tool, what_i_see=args.get("what_i_see"), arguments=args)
             if tool == "finish_episode":
                 (ep_dir / "policy-finish.json").write_text(json.dumps(args, indent=2) + "\n")
                 call["result"] = {"status": "finished_by_policy"}
