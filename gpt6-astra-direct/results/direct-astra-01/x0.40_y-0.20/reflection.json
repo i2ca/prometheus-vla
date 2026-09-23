@@ -1,0 +1,46 @@
+{
+  "episode": "results/direct-astra-01/x0.40_y-0.20",
+  "at": "2026-09-23T14:15:36+00:00",
+  "critic_model": "gpt-6-astra-xhigh",
+  "response_id": "chatcmpl-resp_0fe6021e29060a5a016ab3dec2e8b087d2aa255815b46fe945",
+  "usage": {
+    "input_tokens": 4143,
+    "output_tokens": 2197
+  },
+  "accepted": false,
+  "diagnosis": "The episode failed before a grasp was established. Repeated open-hand translations at nearly constant palm height did not establish three-dimensional grasp alignment. Simulator truth shows middle-finger contact beginning at step 3, followed by mug tilt reaching 27.6 degrees while it remained supported by the table. Accurate palm tracking and the absence of reported hand–table contact did not make the finger trajectory safe. As the target became increasingly occluded, the policy held its pose and then declared itself blocked instead of recovering visibility and replanning. The gripper never closed; the evaluator recorded only 1.89 cm of lift, no upright grasp, and no two-second retention.",
+  "failure_mode": "Unverified open-hand approach caused unintended pushing and tipping, followed by premature termination when visibility deteriorated.",
+  "lessons": [
+    {
+      "lesson": "Before advancing an open hand toward the target, assess clearance for the whole hand and whether the target can enter the grasp opening; palm height and image overlap alone are insufficient. If a leading fingertip would contact the target before opposing grasp surfaces are aligned, reposition and reorient through visible free space, then resume with smaller approach motions.",
+      "evidence_steps": [
+        1,
+        2,
+        3,
+        4
+      ],
+      "why": "The policy repeatedly preserved what it considered a safe palm height without confirming finger enclosure. The palm tracked its commands accurately, but the middle finger contacted the mug at step 3 and continued contacting it at step 4, producing increasing tilt without a grasp."
+    },
+    {
+      "lesson": "During a grasp approach, treat unexpected target displacement or tilt as evidence of unintended contact rather than improved alignment. Replace further advance with a gentle motion away from the apparent contact along a visually clear path, then reassess the target's current pose and choose a revised approach.",
+      "evidence_steps": [
+        3,
+        4,
+        5
+      ],
+      "why": "Hidden truth records tilt increasing from 16.0 degrees to 27.6 degrees during successive advances, with contact persisting during the subsequent hold. The changing target appearance was a reason to reassess, not evidence that enclosure was improving. Holding the same pose did not remove the contact."
+    },
+    {
+      "lesson": "When the target or intended contact region becomes clipped, occluded, or ambiguous, actively recover a useful view instead of repeating the approach or waiting at the same pose. Move away from ambiguous contact along a previously observed clear path while preserving any established grasp, then reposition or reorient the hand to expose the target in an available camera. Use the changed views together with measured hand motion to update relative alignment before continuing.",
+      "evidence_steps": [
+        2,
+        3,
+        4,
+        5,
+        6
+      ],
+      "why": "The right-wrist view progressively lost the target, while the left-wrist view offered little useful information and head-view overlap did not establish grasp geometry. The policy correctly avoided blind closure, but its stationary observation did not resolve the occlusion, and it terminated without trying an active visibility-recovery maneuver."
+    }
+  ],
+  "rejected_lessons": []
+}

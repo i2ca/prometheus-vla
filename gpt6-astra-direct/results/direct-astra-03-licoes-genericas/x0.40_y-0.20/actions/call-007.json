@@ -1,0 +1,49 @@
+{
+  "accepted": true,
+  "action": {
+    "reason": "Withdraw slightly backward and upward through the retreat direction to separate the fingertips from the rim and recover a clearer view before attempting a side approach. Keep the fingers open; do not grasp with the contact region ambiguous.",
+    "steps": 3,
+    "target": {
+      "position": [
+        0.0387,
+        -0.22376,
+        1.04435
+      ],
+      "quaternion_wxyz": [
+        0.978879,
+        -0.169319,
+        0.024134,
+        0.111998
+      ],
+      "gripper": "open"
+    }
+  },
+  "executed": {
+    "status": "aborted_on_contact",
+    "frames": 18,
+    "requested_position": [
+      0.0387,
+      -0.22376,
+      1.04435
+    ],
+    "reached_position": [
+      0.04416,
+      -0.22485,
+      1.04204
+    ],
+    "position_gap_m": 0.006,
+    "rotation_gap_rad": 0.0435,
+    "hand_table_contact": [],
+    "self_collision": [
+      [
+        "right_hand_thumb_2_link",
+        "torso_link"
+      ]
+    ],
+    "ik_at_request": {
+      "position_error_m": 0.0002847278523522849,
+      "orientation_error_rad": 0.00125390702255803,
+      "iterations": 17
+    }
+  }
+}

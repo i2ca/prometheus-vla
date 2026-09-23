@@ -56,8 +56,8 @@ def content_of(obs):
     return blocks
 
 
-def ask(model, obs, retries=3):
-    body = {"model": model, "max_tokens": 2000, "system": SYSTEM, "tools": TOOLS,
+def ask(model, obs, system=SYSTEM, retries=3):
+    body = {"model": model, "max_tokens": 2000, "system": system, "tools": TOOLS,
             "tool_choice": {"type": "any"}, "messages": [{"role": "user", "content": content_of(obs)}]}
     req = urllib.request.Request(f"{GATEWAY}/v1/messages", json.dumps(body).encode(),
                                  {"content-type": "application/json", "anthropic-version": "2023-06-01",
@@ -81,7 +81,15 @@ def main():
     ap.add_argument("--model", default="cx/gpt-5.6-sol-high")
     ap.add_argument("--max-calls", type=int, default=60)
     ap.add_argument("--no-video", action="store_true")
+    ap.add_argument("--lessons", help="memoria de licoes do direct_reflect.py, injetada no system prompt")
     a = ap.parse_args()
+
+    system = SYSTEM
+    if a.lessons:
+        from direct_reflect import lessons_text
+        block = lessons_text(a.lessons)
+        if block:
+            system = SYSTEM + "\n\nLessons from your previous attempts (follow them):\n" + block
 
     ep_dir = Path(a.episode_dir)
     x, y = (float(v) for v in a.cup.split(","))
@@ -89,6 +97,8 @@ def main():
                                       max_calls=a.max_calls, video=not a.no_video)
     meta = json.loads((ep_dir / "episode.json").read_text())
     meta["policy_model"] = f"{a.model} via OmniRoute"
+    meta["system_prompt"] = system
+    meta["lessons_file"] = a.lessons
     (ep_dir / "episode.json").write_text(json.dumps(meta, indent=2) + "\n")
     (ep_dir / "policy-calls").mkdir()
     log = open(ep_dir / "policy-log.jsonl", "a")
@@ -99,7 +109,7 @@ def main():
         sent_at = datetime.datetime.now(datetime.timezone.utc).isoformat(timespec="milliseconds")
         images = [{"camera": im["camera"], "file": str(Path(im["path"]).relative_to(ep_dir.resolve())),
                    "sha256": hashlib.sha256(Path(im["path"]).read_bytes()).hexdigest()} for im in obs["images"]]
-        resp, latency = ask(a.model, obs)
+        resp, latency = ask(a.model, obs, system)
         uses = [c for c in resp.get("content", []) if c.get("type") == "tool_use"]
         text = " ".join(c.get("text", "") for c in resp.get("content", []) if c.get("type") == "text").strip()
         call = {"call": n, "step_id": obs["step_id"], "model": resp.get("model"), "response_id": resp.get("id"),

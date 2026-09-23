@@ -1,0 +1,56 @@
+{
+  "episode": "results/direct-astra-01/x0.40_y-0.20",
+  "at": "2026-09-23T14:12:06+00:00",
+  "critic_model": "gpt-6-astra-xhigh",
+  "response_id": "chatcmpl-resp_0b92eda98126f0cd016ab3de007ca887d2859619366355fdca",
+  "usage": {
+    "input_tokens": 4046,
+    "output_tokens": 1749
+  },
+  "accepted": false,
+  "diagnosis": "The episode failed because the approach produced one-sided contact rather than a grasp, and the policy stopped without attempting visual recovery. Repeated open-hand translations at nearly unchanged height continued while the mug became clipped or obscured in the wrist view. Simulator truth shows that only the middle finger contacted the mug, tipping it while it remained table-supported. Holding the same pose did not remove that contact or restore visibility. The hand never closed, and no upright lift or sustained hold was achieved. Motion tracking was accurate and no hand-table collision was recorded, so the main problem was perception-guided approach and recovery, not actuator execution. Refusing to close blindly was appropriate, but it happened after the mug had already been disturbed.",
+  "failure_mode": "Occlusion-blind approach causing unilateral finger contact and mug tipping, followed by termination without re-establishing a usable view or grasp geometry.",
+  "lessons": [
+    {
+      "lesson": "Gate further approach on visible grasp geometry, not apparent hand–mug overlap. If the mug becomes clipped or hidden, stop advancing and use a small, bounded retreat of the open hand toward the last clearly observed pose to reveal it. Compare whichever cameras actually show the mug and grasping surfaces before resuming.",
+      "evidence_steps": [
+        2,
+        3,
+        4,
+        5,
+        6
+      ],
+      "why": "The wrist view progressively lost the mug while the head view showed ambiguous overlap. Further approach did not establish enclosure, and waiting at the same pose did not resolve the ambiguity."
+    },
+    {
+      "lesson": "During an open-hand approach, treat mug motion, apparent tipping, or an uncertain upright silhouette as possible unintended contact. Stop pushing, gently reverse the recent approach while checking table clearance, and let the mug settle before replanning. Do not assume that an open gripper or stationary palm means contact-free operation.",
+      "evidence_steps": [
+        3,
+        4,
+        5
+      ],
+      "why": "The middle finger contacted and tipped the mug even though the gripper remained open. Contact persisted during the stationary observation step."
+    },
+    {
+      "lesson": "Align the grasping aperture with the mug body rather than steering only the palm toward its image. Before the final approach, use visible finger placement to arrange the thumb and opposing fingers on opposite sides of the body at a useful grasp height, with tabletop clearance. Adjust height or orientation in free space when needed instead of repeatedly translating at the same height.",
+      "evidence_steps": [
+        1,
+        2,
+        3,
+        4
+      ],
+      "why": "The policy preserved its initial height without confirming opposing-finger placement. The resulting contact involved only one finger rather than an enclosing grasp."
+    },
+    {
+      "lesson": "Once the upright mug is visibly positioned between opposing grasping surfaces, close and verify in stages. Check measured closure together with the images, then make a small test lift and confirm that the mug follows the hand, separates from the table, and stays upright. If it does not, lower as needed, reopen, and realign; only continue to the requested lift and hold after this check succeeds.",
+      "evidence_steps": [
+        3,
+        4,
+        5,
+        6
+      ],
+      "why": "The mug moved under incidental finger contact, but the hand never closed and no retained upright grasp resulted. Object motion or visual overlap alone was not evidence of a successful pickup."
+    }
+  ],
+  "rejected_lessons": []
+}

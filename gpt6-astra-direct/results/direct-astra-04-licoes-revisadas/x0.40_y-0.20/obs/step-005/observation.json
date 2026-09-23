@@ -1,0 +1,80 @@
+{
+  "episode": "x0.40_y-0.20",
+  "step_id": 5,
+  "remaining_calls": 35,
+  "elapsed_sim_seconds": 3.23,
+  "remaining_sim_seconds": 36.77,
+  "task": "Pegue a caneca branca da mesa com a mao direita, levante-a pelo menos 8 cm mantendo-a em pe, e segure por 2 segundos.",
+  "images": [
+    {
+      "camera": "head_camera",
+      "path": "/home/luiz-aumo/I2CA/robotics-lab/g1-cup-grasp/results/direct-astra-04-licoes-revisadas/x0.40_y-0.20/obs/step-005/head_camera.png"
+    },
+    {
+      "camera": "left_wrist_camera",
+      "path": "/home/luiz-aumo/I2CA/robotics-lab/g1-cup-grasp/results/direct-astra-04-licoes-revisadas/x0.40_y-0.20/obs/step-005/left_wrist_camera.png"
+    },
+    {
+      "camera": "right_wrist_camera",
+      "path": "/home/luiz-aumo/I2CA/robotics-lab/g1-cup-grasp/results/direct-astra-04-licoes-revisadas/x0.40_y-0.20/obs/step-005/right_wrist_camera.png"
+    }
+  ],
+  "current_palm": {
+    "position": [
+      0.22122,
+      -0.2069,
+      0.91172
+    ],
+    "quaternion_wxyz": [
+      0.982895,
+      -0.166364,
+      0.05515,
+      -0.056568
+    ]
+  },
+  "arm_joints_rad": [
+    -0.05898,
+    -0.31415,
+    -0.05976,
+    -0.03639,
+    -0.02189,
+    0.23878,
+    -0.07672
+  ],
+  "waist_yaw_rad": 0.04971,
+  "gripper_closure": 0.0,
+  "previous_reason": "Move a small distance laterally away from the mug visible on the left, keeping the hand open and at its present height, to relieve possible side contact and obtain a new alignment observation rather than advancing or closing on a tilted mug.",
+  "previous_execution": {
+    "status": "executed",
+    "frames": 6,
+    "requested_position": [
+      0.22134,
+      -0.20658,
+      0.91196
+    ],
+    "reached_position": [
+      0.22122,
+      -0.2069,
+      0.91172
+    ],
+    "position_gap_m": 0.0004,
+    "rotation_gap_rad": 0.0121,
+    "hand_table_contact": [],
+    "self_collision": [],
+    "ik_at_request": {
+      "position_error_m": 0.00010509584231172132,
+      "orientation_error_rad": 0.00034727054256783094,
+      "iterations": 3
+    }
+  },
+  "limits": {
+    "max_target_distance_m": 0.05,
+    "max_target_rotation_rad": 0.35,
+    "max_steps_per_call": 5,
+    "ik_tolerance_m": 0.03,
+    "ik_tolerance_rad": 0.15,
+    "max_joint_speed_deg_s": 240.0
+  },
+  "finished": false,
+  "next_call": "scripts/direct_act.py results/direct-astra-04-licoes-revisadas/x0.40_y-0.20 --action <arquivo.json>"
+}

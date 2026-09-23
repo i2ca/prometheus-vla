@@ -1,0 +1,74 @@
+{
+  "case": {
+    "home_shoulder_roll_rad": -0.35,
+    "left_arm_pose": [
+      0.3,
+      0.15,
+      0.0,
+      0.7,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "hand_kp": 8,
+    "offset": [
+      -0.02,
+      -0.02,
+      -0.02
+    ],
+    "gain": 1.5,
+    "cup_yaw_deg": 90.0,
+    "instruction": "Pegue a caneca branca da mesa com a mao direita, levante-a pelo menos 8 cm mantendo-a em pe, e segure por 2 segundos.",
+    "cup_xy": [
+      0.4,
+      -0.2
+    ],
+    "home_arm_pose": [
+      0.06409163773059845,
+      -0.3499999940395355,
+      -0.0632048025727272,
+      -0.09522665292024612,
+      -0.0020852552261203527,
+      0.13248226046562195,
+      -0.013721458613872528
+    ]
+  },
+  "scene": "scene_grasp.xml",
+  "max_calls": 40,
+  "max_sim_seconds": 40.0,
+  "video": true,
+  "fps": 30,
+  "step_seconds": 0.2,
+  "hand_open": [
+    -0.0450708232820034,
+    -0.06435875594615936,
+    -0.06325916200876236,
+    0.029303444549441338,
+    0.036779142916202545,
+    0.05189113691449165,
+    0.04266977310180664
+  ],
+  "hand_close": [
+    -0.04506239295005798,
+    -0.2869790196418762,
+    -0.7255648374557495,
+    0.5860313177108765,
+    1.297844648361206,
+    0.7173755764961243,
+    0.9146603345870972
+  ],
+  "limits": {
+    "max_target_distance_m": 0.05,
+    "max_target_rotation_rad": 0.35,
+    "max_steps_per_call": 5,
+    "ik_tolerance_m": 0.03,
+    "ik_tolerance_rad": 0.15,
+    "max_joint_speed_deg_s": 240.0
+  },
+  "calls": 7,
+  "frames": 125,
+  "aborted": null,
+  "policy_model": "cx/gpt-6-astra via OmniRoute",
+  "system_prompt": "You are the visuomotor policy for a Unitree G1 humanoid in MuJoCo, right arm, Dex3 hand.\nUse only the RGB images and measured proprioception in this message. You do not know the cup pose.\nEach call: choose ONE absolute target pose for the right palm, within 5 cm and 0.35 rad of the\ncurrent measured palm pose, then look at the next observation. Frame: x forward, y left, z up (meters).\nKeep the hand above the table in transit, approach the mug from the side at mid height, open before\ncontact, close only when the mug is between thumb and fingers, then lift. Touching the table with the\nhand or the robot body aborts the episode. If a command is rejected, read the error and fix it.\nIn `what_i_see`, describe what each camera shows right now (mug, hand, fingers, table) before deciding.\nPut your immediate purpose in `reason` (one or two sentences).\nCall finish_episode when the mug is lifted and held, or if continuing is unsafe.\n\nLessons from your previous attempts (follow them):\n- Treat view recovery as a feedback-guided action, not a default retreat. After a viewing motion, compare the new images with the measured hand motion to determine whether target visibility or relative alignment improved. If it did not, change the viewing direction through a clearance-checked reorientation or lateral motion rather than repeating the same withdrawal. Use whichever available camera provides useful task geometry to guide progress; absence from a wrist view alone does not require retreat. Preserve any established grasp during view recovery.\n- Distinguish free-space alignment from final contact. Use available images and the observed effect of measured hand motions to make incremental progress along a visibly clear path; do not require the target to already be between opposing grasp surfaces before beginning alignment. As contact becomes imminent, reduce motion size, align the intended contact surfaces, and assess whole-hand clearance rather than relying on palm position or image overlap. If the contact geometry is unsuitable, reposition or reorient in free space and resume.\n- Assess clearance for every retreat, viewing motion, and reorientation, including the space swept by the fingers, hand, and arm relative to the robot's body and surrounding surfaces. Use visible geometry together with the measured palm pose and joint configuration; a previously clear path segment does not establish clearance farther along it. If the proposed motion would crowd the body or an obstacle, redirect through currently visible free space and choose a different approach or viewing orientation.\n- During an approach, treat unexpected target displacement or tilt as evidence of unintended contact rather than improved alignment. Replace further advance with a gentle motion that relieves the apparent contact along a currently visible clear path. Then reassess the target's pose, revise the intended contact alignment, and resume with smaller motions.",
+  "lessons_file": "results/direct-lessons.json"
+}

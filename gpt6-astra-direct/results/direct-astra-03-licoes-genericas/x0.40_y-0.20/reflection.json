@@ -1,0 +1,81 @@
+{
+  "episode": "results/direct-astra-03-licoes-genericas/x0.40_y-0.20",
+  "at": "2026-09-23T14:21:04+00:00",
+  "critic_model": "gpt-6-astra-xhigh",
+  "response_id": "chatcmpl-resp_09d1a11fd07a5118016ab3dfe6ee6087d28ca8edf8bd533973",
+  "usage": {
+    "input_tokens": 4970,
+    "output_tokens": 3431
+  },
+  "accepted": false,
+  "diagnosis": "The episode failed before establishing a grasp. The hand remained open throughout, never contacted the mug, and produced no lift. Repeated backward and upward motions were intended to recover visibility, but the right-wrist view deteriorated from a clipped target to no target while the head camera continued to show it. Instead of changing the viewing strategy or beginning a clearance-checked alignment, the policy continued retreating. Simulator truth shows horizontal palm-to-target separation increasing from 21.4 cm after step 1 to 35.7 cm after step 7. The final retreat caused a thumb–torso collision and aborted the episode. The target remained upright on the table; this was not a failed closure, slip, or tipping event.",
+  "failure_mode": "Perception-driven retreat loop: final grasp visibility was treated as a prerequisite for free-space progress, ineffective view-recovery motions were repeated without checking their benefit, and retreat clearance relative to the robot's own body was not reassessed.",
+  "lessons_review": [
+    {
+      "lesson": "Before advancing an open hand toward the target, assess clearance for the whole hand and whether the target can enter the grasp opening; palm height and image overlap alone are insufficient. If a leading fingertip would contact the target before opposing grasp surfaces are aligned, reposition and reorient through visible free space, then resume with smaller approach motions.",
+      "verdict": "hurt",
+      "why": "The clearance principle was sound, but its application became an all-or-nothing gate on progress. In steps 2–7, unresolved opposing-surface alignment repeatedly justified withdrawal even though simulator truth showed no target contact and increasing separation. The revision distinguishes free-space alignment from the stricter checks needed immediately before contact."
+    },
+    {
+      "lesson": "During a grasp approach, treat unexpected target displacement or tilt as evidence of unintended contact rather than improved alignment. Replace further advance with a gentle motion away from the apparent contact along a visually clear path, then reassess the target's current pose and choose a revised approach.",
+      "verdict": "neutral",
+      "why": "The triggering event did not occur: throughout steps 1–7, the target remained stationary and upright, with no finger contact. Retain this as a conditional contact-recovery safeguard, while requiring a currently clear escape path rather than allowing uncertainty alone to trigger withdrawal."
+    },
+    {
+      "lesson": "When the target or intended contact region becomes clipped, occluded, or ambiguous, actively recover a useful view instead of repeating the approach or waiting at the same pose. Move away from ambiguous contact along a previously observed clear path while preserving any established grasp, then reposition or reorient the hand to expose the target in an available camera. Use the changed views together with measured hand motion to update relative alignment before continuing.",
+      "verdict": "hurt",
+      "why": "Steps 2–7 repeatedly invoked view recovery, but retreat continued after the right-wrist target became fully absent in step 4. Small orientation changes did not recover it, and there was no effective switch of strategy. Continuing beyond the previously clear withdrawal segment ultimately caused the self-collision in step 7. The revision requires checking whether a viewing motion helped and considering body clearance for every new segment."
+    }
+  ],
+  "lessons": [
+    {
+      "lesson": "Treat view recovery as a feedback-guided action, not a default retreat. After a viewing motion, compare the new images with the measured hand motion to determine whether target visibility or relative alignment improved. If it did not, change the viewing direction through a clearance-checked reorientation or lateral motion rather than repeating the same withdrawal. Use whichever available camera provides useful task geometry to guide progress; absence from a wrist view alone does not require retreat. Preserve any established grasp during view recovery.",
+      "evidence_steps": [
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ],
+      "why": "The target went from clipped to absent in the right-wrist view, yet the same backward/upward strategy continued while the head view remained available. Evaluating the outcome of each viewing action would have prompted a different strategy before the retreat reached the torso."
+    },
+    {
+      "lesson": "Distinguish free-space alignment from final contact. Use available images and the observed effect of measured hand motions to make incremental progress along a visibly clear path; do not require the target to already be between opposing grasp surfaces before beginning alignment. As contact becomes imminent, reduce motion size, align the intended contact surfaces, and assess whole-hand clearance rather than relying on palm position or image overlap. If the contact geometry is unsuitable, reposition or reorient in free space and resume.",
+      "evidence_steps": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ],
+      "why": "The policy repeatedly demanded resolved opposing-finger clearance while moving farther from the target. No contact or closure occurred. Phase-appropriate checks retain the useful whole-hand safety constraint without preventing the approach needed to establish grasp alignment."
+    },
+    {
+      "lesson": "Assess clearance for every retreat, viewing motion, and reorientation, including the space swept by the fingers, hand, and arm relative to the robot's body and surrounding surfaces. Use visible geometry together with the measured palm pose and joint configuration; a previously clear path segment does not establish clearance farther along it. If the proposed motion would crowd the body or an obstacle, redirect through currently visible free space and choose a different approach or viewing orientation.",
+      "evidence_steps": [
+        4,
+        5,
+        6,
+        7
+      ],
+      "why": "Successive retreats brought the hand toward the torso. Step 7 aborted on thumb–torso contact despite having no table or target contact. Avoiding the target was therefore insufficient to make the withdrawal safe."
+    },
+    {
+      "lesson": "During an approach, treat unexpected target displacement or tilt as evidence of unintended contact rather than improved alignment. Replace further advance with a gentle motion that relieves the apparent contact along a currently visible clear path. Then reassess the target's pose, revise the intended contact alignment, and resume with smaller motions.",
+      "evidence_steps": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ],
+      "why": "This safeguard was not triggered because the target never moved or tilted. It remains useful for future interactions, but its trigger must be observable target disturbance, not merely an incomplete view; the other revised rules address visibility uncertainty without unnecessary retreat."
+    }
+  ],
+  "rejected_lessons": []
+}

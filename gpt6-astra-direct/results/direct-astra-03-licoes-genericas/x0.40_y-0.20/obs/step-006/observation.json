@@ -1,0 +1,80 @@
+{
+  "episode": "x0.40_y-0.20",
+  "step_id": 6,
+  "remaining_calls": 34,
+  "elapsed_sim_seconds": 5.97,
+  "remaining_sim_seconds": 34.03,
+  "task": "Pegue a caneca branca da mesa com a mao direita, levante-a pelo menos 8 cm mantendo-a em pe, e segure por 2 segundos.",
+  "images": [
+    {
+      "camera": "head_camera",
+      "path": "/home/luiz-aumo/I2CA/robotics-lab/g1-cup-grasp/results/direct-astra-03-licoes-genericas/x0.40_y-0.20/obs/step-006/head_camera.png"
+    },
+    {
+      "camera": "left_wrist_camera",
+      "path": "/home/luiz-aumo/I2CA/robotics-lab/g1-cup-grasp/results/direct-astra-03-licoes-genericas/x0.40_y-0.20/obs/step-006/left_wrist_camera.png"
+    },
+    {
+      "camera": "right_wrist_camera",
+      "path": "/home/luiz-aumo/I2CA/robotics-lab/g1-cup-grasp/results/direct-astra-03-licoes-genericas/x0.40_y-0.20/obs/step-006/right_wrist_camera.png"
+    }
+  ],
+  "current_palm": {
+    "position": [
+      0.0637,
+      -0.22376,
+      1.02935
+    ],
+    "quaternion_wxyz": [
+      0.978879,
+      -0.169319,
+      0.024134,
+      0.111998
+    ]
+  },
+  "arm_joints_rad": [
+    -0.14019,
+    -0.79811,
+    0.07225,
+    -0.97632,
+    0.65206,
+    0.82019,
+    0.05653
+  ],
+  "waist_yaw_rad": -0.43647,
+  "gripper_closure": 0.0,
+  "previous_reason": "Back away slightly and turn the open wrist in free space to recover a view of the mug and grasp opening. Do not advance or close while whole-hand clearance is ambiguous.",
+  "previous_execution": {
+    "status": "executed",
+    "frames": 12,
+    "requested_position": [
+      0.06158,
+      -0.22374,
+      1.02862
+    ],
+    "reached_position": [
+      0.0637,
+      -0.22376,
+      1.02935
+    ],
+    "position_gap_m": 0.0022,
+    "rotation_gap_rad": 0.0439,
+    "hand_table_contact": [],
+    "self_collision": [],
+    "ik_at_request": {
+      "position_error_m": 0.0017551758858865678,
+      "orientation_error_rad": 0.010091440513347403,
+      "iterations": 200
+    }
+  },
+  "limits": {
+    "max_target_distance_m": 0.05,
+    "max_target_rotation_rad": 0.35,
+    "max_steps_per_call": 5,
+    "ik_tolerance_m": 0.03,
+    "ik_tolerance_rad": 0.15,
+    "max_joint_speed_deg_s": 240.0
+  },
+  "finished": false,
+  "next_call": "scripts/direct_act.py results/direct-astra-03-licoes-genericas/x0.40_y-0.20 --action <arquivo.json>"
+}

@@ -1,0 +1,58 @@
+{
+  "episode": "x0.40_y-0.20",
+  "step_id": 0,
+  "remaining_calls": 40,
+  "elapsed_sim_seconds": 0.5,
+  "remaining_sim_seconds": 39.5,
+  "task": "Pegue a caneca branca da mesa com a mao direita, levante-a pelo menos 8 cm mantendo-a em pe, e segure por 2 segundos.",
+  "images": [
+    {
+      "camera": "head_camera",
+      "path": "/home/luiz-aumo/I2CA/robotics-lab/g1-cup-grasp/results/direct-astra-02-licoes/x0.40_y-0.20/obs/step-000/head_camera.png"
+    },
+    {
+      "camera": "left_wrist_camera",
+      "path": "/home/luiz-aumo/I2CA/robotics-lab/g1-cup-grasp/results/direct-astra-02-licoes/x0.40_y-0.20/obs/step-000/left_wrist_camera.png"
+    },
+    {
+      "camera": "right_wrist_camera",
+      "path": "/home/luiz-aumo/I2CA/robotics-lab/g1-cup-grasp/results/direct-astra-02-licoes/x0.40_y-0.20/obs/step-000/right_wrist_camera.png"
+    }
+  ],
+  "current_palm": {
+    "position": [
+      0.18672,
+      -0.22595,
+      0.90596
+    ],
+    "quaternion_wxyz": [
+      0.982492,
+      -0.175626,
+      0.043489,
+      -0.044417
+    ]
+  },
+  "arm_joints_rad": [
+    0.06409,
+    -0.35,
+    -0.0632,
+    -0.09523,
+    -0.00209,
+    0.13248,
+    -0.01372
+  ],
+  "waist_yaw_rad": 0.0,
+  "gripper_closure": 0.0,
+  "previous_reason": null,
+  "previous_execution": null,
+  "limits": {
+    "max_target_distance_m": 0.05,
+    "max_target_rotation_rad": 0.35,
+    "max_steps_per_call": 5,
+    "ik_tolerance_m": 0.03,
+    "ik_tolerance_rad": 0.15,
+    "max_joint_speed_deg_s": 240.0
+  },
+  "finished": false,
+  "next_call": "scripts/direct_act.py results/direct-astra-02-licoes/x0.40_y-0.20 --action <arquivo.json>"
+}

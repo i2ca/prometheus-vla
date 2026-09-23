@@ -1,0 +1,74 @@
+{
+  "case": {
+    "home_shoulder_roll_rad": -0.35,
+    "left_arm_pose": [
+      0.3,
+      0.15,
+      0.0,
+      0.7,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "hand_kp": 8,
+    "offset": [
+      -0.02,
+      -0.02,
+      -0.02
+    ],
+    "gain": 1.5,
+    "cup_yaw_deg": 90.0,
+    "instruction": "Pegue a caneca branca da mesa com a mao direita, levante-a pelo menos 8 cm mantendo-a em pe, e segure por 2 segundos.",
+    "cup_xy": [
+      0.4,
+      -0.2
+    ],
+    "home_arm_pose": [
+      0.06409163773059845,
+      -0.3499999940395355,
+      -0.0632048025727272,
+      -0.09522665292024612,
+      -0.0020852552261203527,
+      0.13248226046562195,
+      -0.013721458613872528
+    ]
+  },
+  "scene": "scene_grasp.xml",
+  "max_calls": 40,
+  "max_sim_seconds": 40.0,
+  "video": true,
+  "fps": 30,
+  "step_seconds": 0.2,
+  "hand_open": [
+    -0.0450708232820034,
+    -0.06435875594615936,
+    -0.06325916200876236,
+    0.029303444549441338,
+    0.036779142916202545,
+    0.05189113691449165,
+    0.04266977310180664
+  ],
+  "hand_close": [
+    -0.04506239295005798,
+    -0.2869790196418762,
+    -0.7255648374557495,
+    0.5860313177108765,
+    1.297844648361206,
+    0.7173755764961243,
+    0.9146603345870972
+  ],
+  "limits": {
+    "max_target_distance_m": 0.05,
+    "max_target_rotation_rad": 0.35,
+    "max_steps_per_call": 5,
+    "ik_tolerance_m": 0.03,
+    "ik_tolerance_rad": 0.15,
+    "max_joint_speed_deg_s": 240.0
+  },
+  "calls": 3,
+  "frames": 69,
+  "aborted": null,
+  "policy_model": "cx/gpt-6-astra via OmniRoute",
+  "system_prompt": "You are the visuomotor policy for a Unitree G1 humanoid in MuJoCo, right arm, Dex3 hand.\nUse only the RGB images and measured proprioception in this message. You do not know the cup pose.\nEach call: choose ONE absolute target pose for the right palm, within 5 cm and 0.35 rad of the\ncurrent measured palm pose, then look at the next observation. Frame: x forward, y left, z up (meters).\nKeep the hand above the table in transit, approach the mug from the side at mid height, open before\ncontact, close only when the mug is between thumb and fingers, then lift. Touching the table with the\nhand or the robot body aborts the episode. If a command is rejected, read the error and fix it.\nIn `what_i_see`, describe what each camera shows right now (mug, hand, fingers, table) before deciding.\nPut your immediate purpose in `reason` (one or two sentences).\nCall finish_episode when the mug is lifted and held, or if continuing is unsafe.\n\nLessons from your previous attempts (follow them):\n- Gate further approach on visible grasp geometry, not apparent hand\u2013mug overlap. If the mug becomes clipped or hidden, stop advancing and use a small, bounded retreat of the open hand toward the last clearly observed pose to reveal it. Compare whichever cameras actually show the mug and grasping surfaces before resuming.\n- During an open-hand approach, treat mug motion, apparent tipping, or an uncertain upright silhouette as possible unintended contact. Stop pushing, gently reverse the recent approach while checking table clearance, and let the mug settle before replanning. Do not assume that an open gripper or stationary palm means contact-free operation.\n- Align the grasping aperture with the mug body rather than steering only the palm toward its image. Before the final approach, use visible finger placement to arrange the thumb and opposing fingers on opposite sides of the body at a useful grasp height, with tabletop clearance. Adjust height or orientation in free space when needed instead of repeatedly translating at the same height.\n- Once the upright mug is visibly positioned between opposing grasping surfaces, close and verify in stages. Check measured closure together with the images, then make a small test lift and confirm that the mug follows the hand, separates from the table, and stays upright. If it does not, lower as needed, reopen, and realign; only continue to the requested lift and hold after this check succeeds.",
+  "lessons_file": "results/direct-lessons.json"
+}

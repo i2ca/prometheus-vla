@@ -1,0 +1,707 @@
+[
+  {
+    "call": 1,
+    "step_id": 0,
+    "model": "gpt-6-astra",
+    "response_id": "chatcmpl-resp_007cf9bd5823528b016ab3df18901c87d2b580c2c6ae23ddbc",
+    "sent_at": "2026-09-23T14:15:51.947+00:00",
+    "received_at": "2026-09-23T14:15:58.723+00:00",
+    "sim_time_s": 0.5,
+    "images_sent": [
+      {
+        "camera": "head_camera",
+        "file": "obs/step-000/head_camera.png",
+        "sha256": "806cb9ccd907d0ba574f6140917656b51d614ec7d0dfe2b32db338cbe03fb6d7"
+      },
+      {
+        "camera": "left_wrist_camera",
+        "file": "obs/step-000/left_wrist_camera.png",
+        "sha256": "c44e79b28358a74e52cf67b68c73b5dd96db71c5f870b78f7d46597942954acd"
+      },
+      {
+        "camera": "right_wrist_camera",
+        "file": "obs/step-000/right_wrist_camera.png",
+        "sha256": "c2a2b5e29c7e6d58bf10ac86187c7ae7bd3ca69bd1b38bb3c6bace30c08be731"
+      }
+    ],
+    "latency_s": 6.78,
+    "usage": {
+      "input_tokens": 1297,
+      "output_tokens": 157
+    },
+    "model_text": "(empty response)",
+    "observed": {
+      "palm": {
+        "position": [
+          0.18672,
+          -0.22595,
+          0.90596
+        ],
+        "quaternion_wxyz": [
+          0.982492,
+          -0.175626,
+          0.043489,
+          -0.044417
+        ]
+      },
+      "arm_joints_rad": [
+        0.06409,
+        -0.35,
+        -0.0632,
+        -0.09523,
+        -0.00209,
+        0.13248,
+        -0.01372
+      ],
+      "waist_yaw_rad": 0.0,
+      "gripper_closure": 0.0
+    },
+    "tool": "actuate",
+    "what_i_see": "Head view shows the white mug to the left of the open right hand over the gray marked table; its uprightness is ambiguous. Left wrist shows torso and floor, not the target. Right wrist shows the mug at lower left beside the open fingers and table below; opposing-surface clearance is not yet established.",
+    "arguments": {
+      "what_i_see": "Head view shows the white mug to the left of the open right hand over the gray marked table; its uprightness is ambiguous. Left wrist shows torso and floor, not the target. Right wrist shows the mug at lower left beside the open fingers and table below; opposing-surface clearance is not yet established.",
+      "reason": "Raise the open hand through free space to improve clearance and obtain a less ambiguous approach view before advancing toward the mug.",
+      "steps": 3,
+      "position": [
+        0.18672,
+        -0.22595,
+        0.94596
+      ],
+      "quaternion_wxyz": [
+        0.982492,
+        -0.175626,
+        0.043489,
+        -0.044417
+      ],
+      "gripper": "open"
+    },
+    "result": {
+      "status": "executed",
+      "frames": 18,
+      "requested_position": [
+        0.18672,
+        -0.22595,
+        0.94596
+      ],
+      "reached_position": [
+        0.18724,
+        -0.22519,
+        0.94594
+      ],
+      "position_gap_m": 0.0009,
+      "rotation_gap_rad": 0.1013,
+      "hand_table_contact": [],
+      "self_collision": [],
+      "ik_at_request": {
+        "position_error_m": 0.00029881073164575916,
+        "orientation_error_rad": 0.0010200715890259534,
+        "iterations": 13
+      }
+    }
+  },
+  {
+    "call": 2,
+    "step_id": 1,
+    "model": "gpt-6-astra",
+    "response_id": "chatcmpl-resp_00dd5bbe083668af016ab3df2c09f487d2afaa7861293b7d5e",
+    "sent_at": "2026-09-23T14:16:01.801+00:00",
+    "received_at": "2026-09-23T14:16:20.582+00:00",
+    "sim_time_s": 1.37,
+    "images_sent": [
+      {
+        "camera": "head_camera",
+        "file": "obs/step-001/head_camera.png",
+        "sha256": "b7a73e7377b9a1a1e24597d450121b12e00e1536d62a0be4f9db0f3ab3b1a46b"
+      },
+      {
+        "camera": "left_wrist_camera",
+        "file": "obs/step-001/left_wrist_camera.png",
+        "sha256": "021b0109bb2ba98d36250565622d36490f083a731977417b505a5034a43ccc09"
+      },
+      {
+        "camera": "right_wrist_camera",
+        "file": "obs/step-001/right_wrist_camera.png",
+        "sha256": "c531ab1ae8e1b8958164ee8dd34a1b2022c655fe4cc5acc4c0d50c41e1b526cf"
+      }
+    ],
+    "latency_s": 18.78,
+    "usage": {
+      "input_tokens": 1261,
+      "output_tokens": 194
+    },
+    "model_text": "(empty response)",
+    "observed": {
+      "palm": {
+        "position": [
+          0.18724,
+          -0.22519,
+          0.94594
+        ],
+        "quaternion_wxyz": [
+          0.981642,
+          -0.187101,
+          -0.005229,
+          -0.036671
+        ]
+      },
+      "arm_joints_rad": [
+        0.01412,
+        -0.38994,
+        -0.06922,
+        -0.28953,
+        0.0151,
+        0.26868,
+        0.01751
+      ],
+      "waist_yaw_rad": -0.03033,
+      "gripper_closure": 0.0
+    },
+    "tool": "actuate",
+    "what_i_see": "The head view shows the upright white mug on the table beside the open right hand, but does not establish that the mug is between opposing fingers. The left wrist view shows the arm, table edge, and floor without a discernible mug. The right wrist view shows the hand and only a clipped portion of the mug at the lower left, leaving fingertip clearance ambiguous.",
+    "arguments": {
+      "what_i_see": "The head view shows the upright white mug on the table beside the open right hand, but does not establish that the mug is between opposing fingers. The left wrist view shows the arm, table edge, and floor without a discernible mug. The right wrist view shows the hand and only a clipped portion of the mug at the lower left, leaving fingertip clearance ambiguous.",
+      "reason": "Withdraw slightly along the approach direction while staying above the table to expose the mug and grasp opening before attempting contact.",
+      "steps": 2,
+      "position": [
+        0.15724,
+        -0.22519,
+        0.95594
+      ],
+      "quaternion_wxyz": [
+        0.981642,
+        -0.187101,
+        -0.005229,
+        -0.036671
+      ],
+      "gripper": "open"
+    },
+    "result": {
+      "status": "executed",
+      "frames": 12,
+      "requested_position": [
+        0.15724,
+        -0.22519,
+        0.95594
+      ],
+      "reached_position": [
+        0.15813,
+        -0.22484,
+        0.95581
+      ],
+      "position_gap_m": 0.001,
+      "rotation_gap_rad": 0.0957,
+      "hand_table_contact": [],
+      "self_collision": [],
+      "ik_at_request": {
+        "position_error_m": 0.0002975225228104342,
+        "orientation_error_rad": 0.0010832620860431505,
+        "iterations": 20
+      }
+    }
+  },
+  {
+    "call": 3,
+    "step_id": 2,
+    "model": "gpt-6-astra",
+    "response_id": "chatcmpl-resp_054401f7087978e3016ab3df42091887d2810a5e224e8a6a6c",
+    "sent_at": "2026-09-23T14:16:22.623+00:00",
+    "received_at": "2026-09-23T14:16:41.413+00:00",
+    "sim_time_s": 2.03,
+    "images_sent": [
+      {
+        "camera": "head_camera",
+        "file": "obs/step-002/head_camera.png",
+        "sha256": "23741db670bd674869e86cb31be1bd416a45b1a666567b67e27a91408849f58a"
+      },
+      {
+        "camera": "left_wrist_camera",
+        "file": "obs/step-002/left_wrist_camera.png",
+        "sha256": "0caacb03418dad90697fd51bed8e16f61808840ed4a75e3dd30526814a27a927"
+      },
+      {
+        "camera": "right_wrist_camera",
+        "file": "obs/step-002/right_wrist_camera.png",
+        "sha256": "76924c4329b00c997d85c46cc06e78b68fc52de5a6df037344547d1a37410cfe"
+      }
+    ],
+    "latency_s": 18.79,
+    "usage": {
+      "input_tokens": 1249,
+      "output_tokens": 182
+    },
+    "model_text": "(empty response)",
+    "observed": {
+      "palm": {
+        "position": [
+          0.15813,
+          -0.22484,
+          0.95581
+        ],
+        "quaternion_wxyz": [
+          0.979872,
+          -0.189899,
+          -0.05273,
+          -0.031752
+        ]
+      },
+      "arm_joints_rad": [
+        0.09399,
+        -0.39094,
+        -0.05721,
+        -0.43269,
+        0.01892,
+        0.21639,
+        0.03495
+      ],
+      "waist_yaw_rad": -0.08331,
+      "gripper_closure": 0.0
+    },
+    "tool": "actuate",
+    "what_i_see": "Head view reports an upright white mug on the table, handle left, with the right hand nearby and no grasp. Left wrist view reports the hand and two light upright container-like shapes, making target alignment uncertain. Right wrist view has the hand over the table but only a small clipped portion of the mug at the bottom; fingers and opposing contact clearance cannot yet be assessed.",
+    "arguments": {
+      "what_i_see": "Head view reports an upright white mug on the table, handle left, with the right hand nearby and no grasp. Left wrist view reports the hand and two light upright container-like shapes, making target alignment uncertain. Right wrist view has the hand over the table but only a small clipped portion of the mug at the bottom; fingers and opposing contact clearance cannot yet be assessed.",
+      "reason": "Retract through the previously used withdrawal direction to recover a view of the mug and the whole grasp opening before contact. Keep the hand open and at its current height above the table.",
+      "steps": 2,
+      "position": [
+        0.12813,
+        -0.22484,
+        0.95581
+      ],
+      "quaternion_wxyz": [
+        0.979872,
+        -0.189899,
+        -0.05273,
+        -0.031752
+      ],
+      "gripper": "open"
+    },
+    "result": {
+      "status": "executed",
+      "frames": 12,
+      "requested_position": [
+        0.12813,
+        -0.22484,
+        0.95581
+      ],
+      "reached_position": [
+        0.12965,
+        -0.22414,
+        0.95549
+      ],
+      "position_gap_m": 0.0017,
+      "rotation_gap_rad": 0.0647,
+      "hand_table_contact": [],
+      "self_collision": [],
+      "ik_at_request": {
+        "position_error_m": 0.0002919904785634941,
+        "orientation_error_rad": 0.0011279937903431753,
+        "iterations": 14
+      }
+    }
+  },
+  {
+    "call": 4,
+    "step_id": 3,
+    "model": "gpt-6-astra",
+    "response_id": "chatcmpl-resp_0fec6aa2d748ede4016ab3df5b954087d2b62d00dcd16311b9",
+    "sent_at": "2026-09-23T14:16:44.564+00:00",
+    "received_at": "2026-09-23T14:17:07.913+00:00",
+    "sim_time_s": 2.7,
+    "images_sent": [
+      {
+        "camera": "head_camera",
+        "file": "obs/step-003/head_camera.png",
+        "sha256": "b50f5b22fbacede0baf255c8502d0df92b9ee4804d560193b0fc2b7d62c7082d"
+      },
+      {
+        "camera": "left_wrist_camera",
+        "file": "obs/step-003/left_wrist_camera.png",
+        "sha256": "b1738a80fefebee2c68b181cbad936158cdb240330d3c067b730905445db6571"
+      },
+      {
+        "camera": "right_wrist_camera",
+        "file": "obs/step-003/right_wrist_camera.png",
+        "sha256": "c7267ccc62bd1d6bf2137d56a7c5584afcdaabbde7675aa418c5e3780524a7ab"
+      }
+    ],
+    "latency_s": 23.35,
+    "usage": {
+      "input_tokens": 1251,
+      "output_tokens": 215
+    },
+    "model_text": "(empty response)",
+    "observed": {
+      "palm": {
+        "position": [
+          0.12965,
+          -0.22414,
+          0.95549
+        ],
+        "quaternion_wxyz": [
+          0.977921,
+          -0.191263,
+          -0.082146,
+          -0.018487
+        ]
+      },
+      "arm_joints_rad": [
+        0.19577,
+        -0.39235,
+        -0.04266,
+        -0.51633,
+        0.02326,
+        0.11875,
+        0.06193
+      ],
+      "waist_yaw_rad": -0.12588,
+      "gripper_closure": 0.0
+    },
+    "tool": "actuate",
+    "what_i_see": "The head camera shows an upright white mug with its handle left on the gray table and the open right hand to its right, without an established grasp. The left wrist camera shows dark robot limbs, floor, and table edge but no clear mug. The right wrist camera shows the gripper and gray checkered surface but no mug; opposing finger clearance around the mug is not yet clear.",
+    "arguments": {
+      "what_i_see": "The head camera shows an upright white mug with its handle left on the gray table and the open right hand to its right, without an established grasp. The left wrist camera shows dark robot limbs, floor, and table edge but no clear mug. The right wrist camera shows the gripper and gray checkered surface but no mug; opposing finger clearance around the mug is not yet clear.",
+      "reason": "Move slightly back and up through free space to improve the view and whole-hand clearance before aligning a side approach. Keep the fingers open rather than advancing toward an ambiguous contact region.",
+      "steps": 3,
+      "position": [
+        0.10965,
+        -0.22414,
+        0.98549
+      ],
+      "quaternion_wxyz": [
+        0.977921,
+        -0.191263,
+        -0.082146,
+        -0.018487
+      ],
+      "gripper": "open"
+    },
+    "result": {
+      "status": "executed",
+      "frames": 18,
+      "requested_position": [
+        0.10965,
+        -0.22414,
+        0.98549
+      ],
+      "reached_position": [
+        0.11047,
+        -0.22407,
+        0.98467
+      ],
+      "position_gap_m": 0.0012,
+      "rotation_gap_rad": 0.0136,
+      "hand_table_contact": [],
+      "self_collision": [],
+      "ik_at_request": {
+        "position_error_m": 0.0002948609945128575,
+        "orientation_error_rad": 0.0011820714076280132,
+        "iterations": 11
+      }
+    }
+  },
+  {
+    "call": 5,
+    "step_id": 4,
+    "model": "gpt-6-astra",
+    "response_id": "chatcmpl-resp_0d1067a80cfc087d016ab3df72c8d887d28d0da8f2ecc5b9ea",
+    "sent_at": "2026-09-23T14:17:12.494+00:00",
+    "received_at": "2026-09-23T14:17:32.373+00:00",
+    "sim_time_s": 3.83,
+    "images_sent": [
+      {
+        "camera": "head_camera",
+        "file": "obs/step-004/head_camera.png",
+        "sha256": "07b5c817f0f8f0eec8b9e2156d80b60e9e7745f6013186377c80d17296776d54"
+      },
+      {
+        "camera": "left_wrist_camera",
+        "file": "obs/step-004/left_wrist_camera.png",
+        "sha256": "a6bd6983c2e1e535afe83744cbb7737d598bd2243a315310a1a933fc4b9f6fe5"
+      },
+      {
+        "camera": "right_wrist_camera",
+        "file": "obs/step-004/right_wrist_camera.png",
+        "sha256": "b41c55c9e9ccf573d8ed0be562ea80de18e272276479526496596efa332aa7e1"
+      }
+    ],
+    "latency_s": 19.88,
+    "usage": {
+      "input_tokens": 1248,
+      "output_tokens": 252
+    },
+    "model_text": "(empty response)",
+    "observed": {
+      "palm": {
+        "position": [
+          0.11047,
+          -0.22407,
+          0.98467
+        ],
+        "quaternion_wxyz": [
+          0.978457,
+          -0.190061,
+          -0.079667,
+          -0.012297
+        ]
+      },
+      "arm_joints_rad": [
+        0.21218,
+        -0.44318,
+        -0.0848,
+        -0.74324,
+        0.09631,
+        0.32085,
+        0.08989
+      ],
+      "waist_yaw_rad": -0.1564,
+      "gripper_closure": 0.0
+    },
+    "tool": "actuate",
+    "what_i_see": "The head camera shows the white mug upright near the table center, handle left, with the open right hand on its right. The left wrist camera shows the tabletop and part of the arm at lower right but no clear mug. The right wrist camera shows the open hand above the checkered table near a white edge, but not the mug; fingertip-to-mug clearance cannot yet be assessed.",
+    "arguments": {
+      "what_i_see": "The head camera shows the white mug upright near the table center, handle left, with the open right hand on its right. The left wrist camera shows the tabletop and part of the arm at lower right but no clear mug. The right wrist camera shows the open hand above the checkered table near a white edge, but not the mug; fingertip-to-mug clearance cannot yet be assessed.",
+      "reason": "Recover a clearer view before approaching: retract slightly and raise the open hand through the previously clear space, with a small orientation change. Do not advance toward the mug while the grasp opening and opposing contact surfaces are ambiguous.",
+      "steps": 2,
+      "position": [
+        0.09047,
+        -0.22407,
+        1.00967
+      ],
+      "quaternion_wxyz": [
+        0.976631,
+        -0.183557,
+        -0.093685,
+        0.061053
+      ],
+      "gripper": "open"
+    },
+    "result": {
+      "status": "executed",
+      "frames": 12,
+      "requested_position": [
+        0.09047,
+        -0.22407,
+        1.00967
+      ],
+      "reached_position": [
+        0.09158,
+        -0.22374,
+        1.00862
+      ],
+      "position_gap_m": 0.0016,
+      "rotation_gap_rad": 0.0153,
+      "hand_table_contact": [],
+      "self_collision": [],
+      "ik_at_request": {
+        "position_error_m": 0.00026362808456494935,
+        "orientation_error_rad": 0.0010902302963203211,
+        "iterations": 11
+      }
+    }
+  },
+  {
+    "call": 6,
+    "step_id": 5,
+    "model": "gpt-6-astra",
+    "response_id": "chatcmpl-resp_075ae5e02395319b016ab3df89cec487d2b2e774170f32aad0",
+    "sent_at": "2026-09-23T14:17:35.844+00:00",
+    "received_at": "2026-09-23T14:17:56.768+00:00",
+    "sim_time_s": 4.77,
+    "images_sent": [
+      {
+        "camera": "head_camera",
+        "file": "obs/step-005/head_camera.png",
+        "sha256": "68346baa71443bfe39598f0c21dcdf1de88d452bce748a0f2f22e4b92b2cd1f4"
+      },
+      {
+        "camera": "left_wrist_camera",
+        "file": "obs/step-005/left_wrist_camera.png",
+        "sha256": "c4fefb5d9d4c91888fa465f25dfcd296dd351448841de3c4662ecfd3c3b624ed"
+      },
+      {
+        "camera": "right_wrist_camera",
+        "file": "obs/step-005/right_wrist_camera.png",
+        "sha256": "8412fbdf7a85f369d27cc5ab8d241893006a20d3c5faa2b69c4bd593b2cdac46"
+      }
+    ],
+    "latency_s": 20.92,
+    "usage": {
+      "input_tokens": 1260,
+      "output_tokens": 276
+    },
+    "model_text": "(empty response)",
+    "observed": {
+      "palm": {
+        "position": [
+          0.09158,
+          -0.22374,
+          1.00862
+        ],
+        "quaternion_wxyz": [
+          0.976351,
+          -0.182047,
+          -0.094369,
+          0.068497
+        ]
+      },
+      "arm_joints_rad": [
+        0.2307,
+        -0.53267,
+        -0.14508,
+        -0.91188,
+        0.25841,
+        0.40535,
+        0.18926
+      ],
+      "waist_yaw_rad": -0.1807,
+      "gripper_closure": 0.0
+    },
+    "tool": "actuate",
+    "what_i_see": "Head camera: the white mug is upright on the gray table, beside the open right hand approaching from the right; the opposing finger clearances are not resolved. Left wrist camera: the arm and gripper obscure the foreground, with table supports visible; the mug is not clearly visible. Right wrist camera: the hand is over the checkered tabletop, but the mug and intended contact region are outside the view.",
+    "arguments": {
+      "what_i_see": "Head camera: the white mug is upright on the gray table, beside the open right hand approaching from the right; the opposing finger clearances are not resolved. Left wrist camera: the arm and gripper obscure the foreground, with table supports visible; the mug is not clearly visible. Right wrist camera: the hand is over the checkered tabletop, but the mug and intended contact region are outside the view.",
+      "reason": "Back away slightly and turn the open wrist in free space to recover a view of the mug and grasp opening. Do not advance or close while whole-hand clearance is ambiguous.",
+      "steps": 2,
+      "position": [
+        0.06158,
+        -0.22374,
+        1.02862
+      ],
+      "quaternion_wxyz": [
+        0.980492,
+        -0.172085,
+        0.028096,
+        0.090659
+      ],
+      "gripper": "open"
+    },
+    "result": {
+      "status": "executed",
+      "frames": 12,
+      "requested_position": [
+        0.06158,
+        -0.22374,
+        1.02862
+      ],
+      "reached_position": [
+        0.0637,
+        -0.22376,
+        1.02935
+      ],
+      "position_gap_m": 0.0022,
+      "rotation_gap_rad": 0.0439,
+      "hand_table_contact": [],
+      "self_collision": [],
+      "ik_at_request": {
+        "position_error_m": 0.0017551758858865678,
+        "orientation_error_rad": 0.010091440513347403,
+        "iterations": 200
+      }
+    }
+  },
+  {
+    "call": 7,
+    "step_id": 6,
+    "model": "gpt-6-astra",
+    "response_id": "chatcmpl-resp_0de0bfa947f2c10f016ab3dfa9145087d2a4ad30da073f399b",
+    "sent_at": "2026-09-23T14:18:00.467+00:00",
+    "received_at": "2026-09-23T14:18:25.508+00:00",
+    "sim_time_s": 5.97,
+    "images_sent": [
+      {
+        "camera": "head_camera",
+        "file": "obs/step-006/head_camera.png",
+        "sha256": "b1c325edcb598b68aadfb46089976a325ffde1c78120aac28d596f0553ff0adc"
+      },
+      {
+        "camera": "left_wrist_camera",
+        "file": "obs/step-006/left_wrist_camera.png",
+        "sha256": "d4e17c4a15e273bc24ed4c910be062655ad3d90f8eaf3ab3014de12d762cd9fe"
+      },
+      {
+        "camera": "right_wrist_camera",
+        "file": "obs/step-006/right_wrist_camera.png",
+        "sha256": "7e6eb7e8a38a4c44b803bc4a242e775b79c7526d403a802ab1e8843687c5e15c"
+      }
+    ],
+    "latency_s": 25.04,
+    "usage": {
+      "input_tokens": 1256,
+      "output_tokens": 242
+    },
+    "model_text": "(empty response)",
+    "observed": {
+      "palm": {
+        "position": [
+          0.0637,
+          -0.22376,
+          1.02935
+        ],
+        "quaternion_wxyz": [
+          0.978879,
+          -0.169319,
+          0.024134,
+          0.111998
+        ]
+      },
+      "arm_joints_rad": [
+        -0.14019,
+        -0.79811,
+        0.07225,
+        -0.97632,
+        0.65206,
+        0.82019,
+        0.05653
+      ],
+      "waist_yaw_rad": -0.43647,
+      "gripper_closure": 0.0
+    },
+    "tool": "actuate",
+    "what_i_see": "The head camera shows the upright white mug on the gray table beside the open right hand, with fingers near its rim; a red marker is also visible. The left wrist view is tilted, with arms over the table and only part of the white object at the far right edge. The right wrist view shows the arm and gray checkered surface with magenta and blue objects, but no mug. The opposing grasp surfaces and their clearance around the mug are not yet clear.",
+    "arguments": {
+      "what_i_see": "The head camera shows the upright white mug on the gray table beside the open right hand, with fingers near its rim; a red marker is also visible. The left wrist view is tilted, with arms over the table and only part of the white object at the far right edge. The right wrist view shows the arm and gray checkered surface with magenta and blue objects, but no mug. The opposing grasp surfaces and their clearance around the mug are not yet clear.",
+      "reason": "Withdraw slightly backward and upward through the retreat direction to separate the fingertips from the rim and recover a clearer view before attempting a side approach. Keep the fingers open; do not grasp with the contact region ambiguous.",
+      "steps": 3,
+      "position": [
+        0.0387,
+        -0.22376,
+        1.04435
+      ],
+      "quaternion_wxyz": [
+        0.978879,
+        -0.169319,
+        0.024134,
+        0.111998
+      ],
+      "gripper": "open"
+    },
+    "result": {
+      "status": "aborted_on_contact",
+      "frames": 18,
+      "requested_position": [
+        0.0387,
+        -0.22376,
+        1.04435
+      ],
+      "reached_position": [
+        0.04416,
+        -0.22485,
+        1.04204
+      ],
+      "position_gap_m": 0.006,
+      "rotation_gap_rad": 0.0435,
+      "hand_table_contact": [],
+      "self_collision": [
+        [
+          "right_hand_thumb_2_link",
+          "torso_link"
+        ]
+      ],
+      "ik_at_request": {
+        "position_error_m": 0.0002847278523522849,
+        "orientation_error_rad": 0.00125390702255803,
+        "iterations": 17
+      }
+    }
+  }
+]
