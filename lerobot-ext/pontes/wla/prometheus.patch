@@ -1,8 +1,8 @@
 diff --git a/unifolm_wla/dataloader/multi_source_dataset/dataloader.py b/unifolm_wla/dataloader/multi_source_dataset/dataloader.py
-index c72aa26..01d84bc 100644
+index c72aa26..c90fc24 100644
 --- a/unifolm_wla/dataloader/multi_source_dataset/dataloader.py
 +++ b/unifolm_wla/dataloader/multi_source_dataset/dataloader.py
-@@ -184,8 +184,33 @@ def create_training_dataloader(
+@@ -184,8 +184,40 @@ def create_training_dataloader(
              len(dataset),
          )
  
@@ -31,8 +31,15 @@ index c72aa26..01d84bc 100644
 +        g = torch.Generator()
 +        g.manual_seed(1234 + int(rank or 0))
 +        sampler = WeightedRandomSampler(pesos, num_samples=n, replacement=True, generator=g)
-+        logger.info("[PROMETHEUS] amostragem por peso (%d por época): %s", n,
-+                    ", ".join(f"{f.config.name}={f.config.weight}" for f in source_datasets))
++        # `print` e não `logger.info`: o logger deste módulo não chega ao arquivo
++        # de log do treino (nem a mensagem `Concatenated` deles aparece lá), e
++        # sem confirmação visível não dá para saber se o balanceamento entrou.
++        total = sum(float(getattr(f.config, "weight", 1.0) or 1.0) for f in source_datasets)
++        print(f"[PROMETHEUS] amostragem por peso, {n} amostras por época:", flush=True)
++        for f in source_datasets:
++            w = float(getattr(f.config, "weight", 1.0) or 1.0)
++            print(f"[PROMETHEUS]   {f.config.name:22s} peso {w:5.1f} -> {100*w/total:4.1f}% "
++                  f"(tem {len(f)} amostras)", flush=True)
 +    elif distributed:
          sampler = DistributedSampler(
              dataset, num_replicas=num_replicas, rank=rank, shuffle=shuffle,

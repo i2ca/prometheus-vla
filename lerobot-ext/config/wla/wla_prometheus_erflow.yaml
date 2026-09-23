@@ -23,7 +23,11 @@ framework:
     #
     # O vocabulário difere do ER-1 (152.960 contra 153.088), então o tokenizador
     # TEM que vir desta pasta.
-    base_vlm: /data/mrwlker/UnifoLM-ER-Flow
+    #
+    # O NOME da pasta escolhe a classe: eles fazem `if "Qwen3-VL" in vlm_name`.
+    # Uma pasta chamada `UnifoLM-ER-Flow` morre com "VLM model ... not
+    # implemented". Por isso o link `-Qwen3-VL`, igual ao do ER-1.
+    base_vlm: /data/mrwlker/UnifoLM-ER-Flow-Qwen3-VL
     attn_implementation: flash_attention_2
     vl_hidden_dim: 2048
   # O ER-Flow declara `robot_state_dim: 120` e o token `<|robot_state|>`, e traz
@@ -68,9 +72,11 @@ datasets:
   vla_data:
     dataset_py: multi_source_datasets
     data_config_path: unifolm_wla/dataloader/multi_source_dataset/configs/dados_prometheus.yaml
-    # 16 e não 24: com 24 a corrida de 21/09 ficou a 96% da VRAM, e agora o
-    # projetor entra no grafo. 16x2 deu 58 GB e 10,5 amostras/s.
-    per_device_batch_size: 16
+    # 8 com acúmulo 4 = mesmo lote efetivo de 32 do 16x2, mas ~35 GB em vez de
+    # 58. A athena é compartilhada: em 23/09 um job de terceiro apareceu na
+    # GPU-1 no meio da montagem e o nosso estourou a memória. Cabe agora mesmo
+    # com metade da placa ocupada; o custo é ser um pouco mais lento por passo.
+    per_device_batch_size: 12
     num_workers: 8
 trainer:
   # 30 mil e não 20 mil: agora são 10 fontes e ~3,5 milhões de quadros, contra
@@ -94,7 +100,7 @@ trainer:
   # aprendeu.
   freeze_modules: qwen_vl_interface.model.model, qwen_vl_interface.model.lm_head
   gradient_clipping: 1.0
-  gradient_accumulation_steps: 2
+  gradient_accumulation_steps: 3
   logging_frequency: 10
   optimizer:
     name: AdamW
