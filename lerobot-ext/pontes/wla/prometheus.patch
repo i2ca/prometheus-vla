@@ -1,8 +1,8 @@
 diff --git a/unifolm_wla/dataloader/multi_source_dataset/dataloader.py b/unifolm_wla/dataloader/multi_source_dataset/dataloader.py
-index c72aa26..3a4fd3a 100644
+index c72aa26..01d84bc 100644
 --- a/unifolm_wla/dataloader/multi_source_dataset/dataloader.py
 +++ b/unifolm_wla/dataloader/multi_source_dataset/dataloader.py
-@@ -184,7 +184,23 @@ def create_training_dataloader(
+@@ -184,8 +184,33 @@ def create_training_dataloader(
              len(dataset),
          )
  
@@ -14,18 +14,29 @@ index c72aa26..3a4fd3a 100644
 +    # weight_i / len_i, então a fração de cada fonte no lote fica proporcional
 +    # ao weight, e não ao tamanho. Sem a variável, nada muda.
      sampler = None
-+    if os.environ.get("WLA_PESOS") and len(source_datasets) > 1 and not distributed:
+-    if distributed:
++    if os.environ.get("WLA_PESOS") and len(source_datasets) > 1:
 +        from torch.utils.data import WeightedRandomSampler
 +        pesos = []
 +        for fonte in source_datasets:
 +            w = float(getattr(fonte.config, "weight", 1.0) or 1.0)
 +            pesos.extend([w / max(1, len(fonte))] * len(fonte))
-+        sampler = WeightedRandomSampler(pesos, num_samples=len(dataset), replacement=True)
-+        logger.info("[PROMETHEUS] amostragem por peso: %s",
++        # `distributed` é True mesmo com UM processo, porque o accelerate
++        # inicializa o `dist`. Por isso o peso vale aqui também: cada réplica
++        # sorteia a sua parte com semente própria. Como o sorteio é COM
++        # reposição, réplicas diferentes podem repetir amostras — o que numa
++        # amostragem aleatória já é o caso, e é o preço de manter a proporção
++        # por fonte em vez da proporção por tamanho.
++        n = len(dataset) // max(1, num_replicas or 1) if distributed else len(dataset)
++        g = torch.Generator()
++        g.manual_seed(1234 + int(rank or 0))
++        sampler = WeightedRandomSampler(pesos, num_samples=n, replacement=True, generator=g)
++        logger.info("[PROMETHEUS] amostragem por peso (%d por época): %s", n,
 +                    ", ".join(f"{f.config.name}={f.config.weight}" for f in source_datasets))
-     if distributed:
++    elif distributed:
          sampler = DistributedSampler(
              dataset, num_replicas=num_replicas, rank=rank, shuffle=shuffle,
+         )
 diff --git a/unifolm_wla/model/modules/action_model/DiT_modules/mmdit.py b/unifolm_wla/model/modules/action_model/DiT_modules/mmdit.py
 index d7df858..0fe8bcf 100644
 --- a/unifolm_wla/model/modules/action_model/DiT_modules/mmdit.py
