@@ -1,11 +1,11 @@
-# ── Treino sobre o UnifoLM-ER-Flow (22/09/2026) ───────────────────────────
-# Diferenças para o `wla_prometheus.yaml`, que foi a corrida de 21/09:
-#   · base ER-Flow em vez de ER-1;
-#   · projetor de estado do robô LIGADO;
-#   · só o Qwen congelado, não o projetor;
-#   · 10 fontes de dados balanceadas por peso (precisa de WLA_PESOS=1);
-#   · 30 mil passos em vez de 20 mil.
-run_id: wla_prometheus_erflow
+# ── Corrida RÁPIDA de 23/09/2026 ───────────────────────────────────────────
+# Mesmo modelo do `wla_prometheus_erflow.yaml` (ER-Flow, projetor de estado
+# ligado, só o Qwen congelado), mas 2 mil passos sobre 4 fontes
+# (`dados_rapido.yaml`) para ter um checkpoint no mesmo dia. Roda na GPU-1;
+# a corrida de 30 mil foi parada no passo 414 para dar lugar a esta.
+#
+# 12x2: 3,0 s/passo medidos, ~1h40.
+run_id: wla_rapido_2k
 run_root_dir: /data/mrwlker/wla_treino
 seed: 42
 wandb_entity: prometheus-lcad
@@ -71,20 +71,16 @@ framework:
 datasets:
   vla_data:
     dataset_py: multi_source_datasets
-    data_config_path: unifolm_wla/dataloader/multi_source_dataset/configs/dados_prometheus.yaml
-    # 12 com acúmulo 3 = lote efetivo de 36, e 69 GB medidos em 23/09. 16 NÃO
-    # cabe nos 80 GB com o projetor de estado treinando (o 16x2 de 21/09, que
-    # usava 58 GB, era o ER-1 com o Qwen inteiro congelado). A athena é
-    # compartilhada: se um job de terceiro aparecer na placa, baixe para 8x4.
+    data_config_path: unifolm_wla/dataloader/multi_source_dataset/configs/dados_rapido.yaml
+    # 12x2: 16 estoura os 80 GB (medido 23/09: o projetor de estado treinando
+    # pesa; 12x3 já ocupava 69 GB). Acúmulo 2 e não 3 para caber no dia.
     per_device_batch_size: 12
     num_workers: 8
 trainer:
-  # 30 mil e não 20 mil: agora são 10 fontes e ~3,5 milhões de quadros, contra
-  # 900 mil em 21/09. MEDIDO em 23/09: 4,8 s por passo, ~40 h. Essa corrida
-  # foi parada no passo 414 para dar a GPU-1 ao `wla_rapido_2k.yaml`.
-  max_train_steps: 30000
-  num_warmup_steps: 1000
-  save_interval: 2000
+  # 2 mil passos = 64 mil amostras; checkpoint em 1000 e 2000.
+  max_train_steps: 2000
+  num_warmup_steps: 200
+  save_interval: 1000
   eval_interval: 500
   learning_rate:
     base: 0.0001
@@ -101,7 +97,7 @@ trainer:
   # aprendeu.
   freeze_modules: qwen_vl_interface.model.model, qwen_vl_interface.model.lm_head
   gradient_clipping: 1.0
-  gradient_accumulation_steps: 3
+  gradient_accumulation_steps: 2
   logging_frequency: 10
   optimizer:
     name: AdamW
