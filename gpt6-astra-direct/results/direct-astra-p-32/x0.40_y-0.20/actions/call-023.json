@@ -1,0 +1,44 @@
+{
+  "accepted": true,
+  "action": {
+    "reason": "Hold the existing grasp still for one second to check for slipping or rotation before deciding whether a small upright-attitude correction is needed.",
+    "steps": 5,
+    "target": {
+      "position": [
+        0.28285,
+        -0.1824,
+        1.08113
+      ],
+      "quaternion_wxyz": [
+        0.931595,
+        -0.182053,
+        0.269903,
+        -0.161679
+      ],
+      "gripper": "keep"
+    }
+  },
+  "executed": {
+    "status": "executed",
+    "frames": 30,
+    "requested_position": [
+      0.28285,
+      -0.1824,
+      1.08113
+    ],
+    "reached_position": [
+      0.28318,
+      -0.18233,
+      1.07967
+    ],
+    "position_gap_m": 0.0015,
+    "rotation_gap_rad": 0.006,
+    "hand_table_contact": [],
+    "self_collision": [],
+    "ik_at_request": {
+      "position_error_m": 4.664267455358309e-06,
+      "orientation_error_rad": 0.0,
+      "iterations": 1
+    }
+  }
+}

@@ -1,0 +1,44 @@
+{
+  "accepted": true,
+  "action": {
+    "reason": "Translate the open hand diagonally toward a side grasp without changing its attitude. The preview keeps the fingers above the table and on either side of, rather than through, the mug.",
+    "steps": 1,
+    "target": {
+      "position": [
+        0.23747,
+        -0.24228,
+        0.81825
+      ],
+      "quaternion_wxyz": [
+        0.9971,
+        0.034597,
+        -0.028039,
+        -0.06171
+      ],
+      "gripper": "open"
+    }
+  },
+  "executed": {
+    "status": "executed",
+    "frames": 6,
+    "requested_position": [
+      0.23747,
+      -0.24228,
+      0.81825
+    ],
+    "reached_position": [
+      0.2372,
+      -0.24275,
+      0.81891
+    ],
+    "position_gap_m": 0.0009,
+    "rotation_gap_rad": 0.1159,
+    "hand_table_contact": [],
+    "self_collision": [],
+    "ik_at_request": {
+      "position_error_m": 0.000298456896678446,
+      "orientation_error_rad": 0.0008788214625745075,
+      "iterations": 41
+    }
+  }
+}

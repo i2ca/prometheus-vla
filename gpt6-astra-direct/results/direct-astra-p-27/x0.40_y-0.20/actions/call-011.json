@@ -1,0 +1,44 @@
+{
+  "accepted": true,
+  "action": {
+    "reason": "Keep the measured attitude as a fixed grasp reference and lower the open hand in free space, moving slightly forward toward lateral alignment. This first descent retains substantial clearance for the lower thumb links, wrist, and forearm.",
+    "steps": 3,
+    "target": {
+      "position": [
+        0.27013,
+        -0.21499,
+        0.89599
+      ],
+      "quaternion_wxyz": [
+        0.981039,
+        -0.10837,
+        -0.125257,
+        -0.100641
+      ],
+      "gripper": "open"
+    }
+  },
+  "executed": {
+    "status": "executed",
+    "frames": 18,
+    "requested_position": [
+      0.27013,
+      -0.21499,
+      0.89599
+    ],
+    "reached_position": [
+      0.27029,
+      -0.21456,
+      0.89502
+    ],
+    "position_gap_m": 0.0011,
+    "rotation_gap_rad": 0.2854,
+    "hand_table_contact": [],
+    "self_collision": [],
+    "ik_at_request": {
+      "position_error_m": 0.0002987523613818796,
+      "orientation_error_rad": 0.000865772060280514,
+      "iterations": 36
+    }
+  }
+}

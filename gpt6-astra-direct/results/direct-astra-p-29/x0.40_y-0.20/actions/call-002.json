@@ -1,0 +1,44 @@
+{
+  "accepted": true,
+  "action": {
+    "reason": "Advance the already-open hand 3.5 cm toward the mug while retaining the current attitude. Keep the opposing fingers outside the wall and observe whether the mug remains stationary.",
+    "steps": 1,
+    "target": {
+      "position": [
+        0.22084,
+        -0.2508,
+        0.86761
+      ],
+      "quaternion_wxyz": [
+        0.973799,
+        -0.179309,
+        0.123432,
+        -0.065787
+      ],
+      "gripper": "keep"
+    }
+  },
+  "executed": {
+    "status": "executed",
+    "frames": 6,
+    "requested_position": [
+      0.22084,
+      -0.2508,
+      0.86761
+    ],
+    "reached_position": [
+      0.22113,
+      -0.25045,
+      0.86842
+    ],
+    "position_gap_m": 0.0009,
+    "rotation_gap_rad": 0.1179,
+    "hand_table_contact": [],
+    "self_collision": [],
+    "ik_at_request": {
+      "position_error_m": 0.00029827122185999144,
+      "orientation_error_rad": 0.0008924381086590994,
+      "iterations": 43
+    }
+  }
+}

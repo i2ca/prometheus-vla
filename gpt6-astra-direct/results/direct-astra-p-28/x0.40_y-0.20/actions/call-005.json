@@ -1,0 +1,44 @@
+{
+  "accepted": true,
+  "action": {
+    "reason": "Lower the open hand 12 mm at the established side-grasp attitude to place the mug's upper body between opposing contacts, retaining clearance for finger closure.",
+    "steps": 2,
+    "target": {
+      "position": [
+        0.314,
+        -0.20222,
+        0.87938
+      ],
+      "quaternion_wxyz": [
+        0.967564,
+        -0.179567,
+        0.14369,
+        -0.104545
+      ],
+      "gripper": "open"
+    }
+  },
+  "executed": {
+    "status": "executed",
+    "frames": 12,
+    "requested_position": [
+      0.314,
+      -0.20222,
+      0.87938
+    ],
+    "reached_position": [
+      0.31514,
+      -0.20463,
+      0.8834
+    ],
+    "position_gap_m": 0.0048,
+    "rotation_gap_rad": 0.0562,
+    "hand_table_contact": [],
+    "self_collision": [],
+    "ik_at_request": {
+      "position_error_m": 0.0002687061600093238,
+      "orientation_error_rad": 0.0007195627128498917,
+      "iterations": 12
+    }
+  }
+}

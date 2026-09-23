@@ -1,0 +1,44 @@
+{
+  "accepted": true,
+  "action": {
+    "reason": "Advance only 1.5 cm in the clear outer lane, keeping the intended level attitude, and check achieved hand shape before moving inward toward the mug.",
+    "steps": 1,
+    "target": {
+      "position": [
+        0.2718,
+        -0.2877,
+        0.8485
+      ],
+      "quaternion_wxyz": [
+        1,
+        0,
+        0,
+        0
+      ],
+      "gripper": "open"
+    }
+  },
+  "executed": {
+    "status": "executed",
+    "frames": 6,
+    "requested_position": [
+      0.2718,
+      -0.2877,
+      0.8485
+    ],
+    "reached_position": [
+      0.27058,
+      -0.28954,
+      0.84862
+    ],
+    "position_gap_m": 0.0022,
+    "rotation_gap_rad": 0.0919,
+    "hand_table_contact": [],
+    "self_collision": [],
+    "ik_at_request": {
+      "position_error_m": 0.00029489294536315375,
+      "orientation_error_rad": 0.0007451263202288883,
+      "iterations": 34
+    }
+  }
+}

@@ -1,0 +1,44 @@
+{
+  "accepted": true,
+  "action": {
+    "reason": "Move forward above the mug with the hand open and preserve the current attitude; the preview of this translation keeps the fingers clear of the table and avoids the problematic in-place rotation.",
+    "steps": 5,
+    "target": {
+      "position": [
+        0.2317,
+        -0.221,
+        0.898
+      ],
+      "quaternion_wxyz": [
+        0.982492,
+        -0.175626,
+        0.043489,
+        -0.044417
+      ],
+      "gripper": "open"
+    }
+  },
+  "executed": {
+    "status": "executed",
+    "frames": 30,
+    "requested_position": [
+      0.2317,
+      -0.221,
+      0.898
+    ],
+    "reached_position": [
+      0.23043,
+      -0.22205,
+      0.89774
+    ],
+    "position_gap_m": 0.0017,
+    "rotation_gap_rad": 0.1068,
+    "hand_table_contact": [],
+    "self_collision": [],
+    "ik_at_request": {
+      "position_error_m": 0.0002955033836660805,
+      "orientation_error_rad": 0.0009226957204792939,
+      "iterations": 59
+    }
+  }
+}

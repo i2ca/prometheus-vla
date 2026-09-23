@@ -1,0 +1,44 @@
+{
+  "accepted": true,
+  "action": {
+    "reason": "Move the open hand forward in free space above the mug, retaining the measured orientation before making a side approach.",
+    "steps": 3,
+    "target": {
+      "position": [
+        0.232,
+        -0.22556,
+        0.9277
+      ],
+      "quaternion_wxyz": [
+        0.981806,
+        -0.184893,
+        0.020426,
+        -0.038126
+      ],
+      "gripper": "open"
+    }
+  },
+  "executed": {
+    "status": "executed",
+    "frames": 18,
+    "requested_position": [
+      0.232,
+      -0.22556,
+      0.9277
+    ],
+    "reached_position": [
+      0.23175,
+      -0.22521,
+      0.92766
+    ],
+    "position_gap_m": 0.0004,
+    "rotation_gap_rad": 0.0917,
+    "hand_table_contact": [],
+    "self_collision": [],
+    "ik_at_request": {
+      "position_error_m": 0.00029994015592479923,
+      "orientation_error_rad": 0.0009268093560279079,
+      "iterations": 47
+    }
+  }
+}

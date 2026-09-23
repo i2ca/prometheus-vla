@@ -1,0 +1,44 @@
+{
+  "accepted": true,
+  "action": {
+    "reason": "Move the open hand forward and left while increasing table clearance. The checked open trajectory clears the table, and the prospective closing sweeps approach opposite sides of the mug body.",
+    "steps": 3,
+    "target": {
+      "position": [
+        0.25113,
+        -0.22245,
+        0.88842
+      ],
+      "quaternion_wxyz": [
+        0.96399,
+        -0.179407,
+        0.180391,
+        -0.077428
+      ],
+      "gripper": "open"
+    }
+  },
+  "executed": {
+    "status": "executed",
+    "frames": 18,
+    "requested_position": [
+      0.25113,
+      -0.22245,
+      0.88842
+    ],
+    "reached_position": [
+      0.2509,
+      -0.22325,
+      0.88893
+    ],
+    "position_gap_m": 0.001,
+    "rotation_gap_rad": 0.0476,
+    "hand_table_contact": [],
+    "self_collision": [],
+    "ik_at_request": {
+      "position_error_m": 0.00024559169272474446,
+      "orientation_error_rad": 0.0007311593299815448,
+      "iterations": 9
+    }
+  }
+}

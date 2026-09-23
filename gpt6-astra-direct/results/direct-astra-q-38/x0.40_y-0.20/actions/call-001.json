@@ -1,0 +1,44 @@
+{
+  "accepted": true,
+  "action": {
+    "reason": "Open the hand and move slightly upward into clearance while making a small orientation adjustment. The preview keeps the whole hand above the table and moves the fingers away from the mug.",
+    "steps": 3,
+    "target": {
+      "position": [
+        0.219,
+        -0.224,
+        0.922
+      ],
+      "quaternion_wxyz": [
+        0.999387,
+        -0.034993,
+        0,
+        0
+      ],
+      "gripper": "open"
+    }
+  },
+  "executed": {
+    "status": "executed",
+    "frames": 18,
+    "requested_position": [
+      0.219,
+      -0.224,
+      0.922
+    ],
+    "reached_position": [
+      0.22023,
+      -0.2237,
+      0.92102
+    ],
+    "position_gap_m": 0.0016,
+    "rotation_gap_rad": 1.5008,
+    "hand_table_contact": [],
+    "self_collision": [],
+    "ik_at_request": {
+      "position_error_m": 0.000256580445375193,
+      "orientation_error_rad": 0.0008196877501640215,
+      "iterations": 11
+    }
+  }
+}

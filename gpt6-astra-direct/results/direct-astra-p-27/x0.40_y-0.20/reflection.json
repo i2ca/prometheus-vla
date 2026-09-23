@@ -1,0 +1,90 @@
+{
+  "episode": "results/direct-astra-p-27/x0.40_y-0.20",
+  "at": "2026-09-23T17:14:26+00:00",
+  "critic_model": "gpt-6-astra",
+  "response_id": "chatcmpl-resp_0e96447bec7b5db9016ab4082437c887d28c65d5f63eb944fe",
+  "usage": {
+    "input_tokens": 21550,
+    "output_tokens": 6782
+  },
+  "accepted": false,
+  "diagnosis": "The episode failed before acquiring a grasp. Depth sensing initially provided useful mug-surface and tabletop geometry, but repeated probing did not resolve the relationship between the intended contact region and the opposing hand surfaces. Image overlap was not converted into verified grasp alignment, and open-hand motions disturbed the mug, producing a maximum pre-closure tilt of 17.74 degrees. The policy repeatedly called the latest measured attitude its fixed reference, allowing tracking drift to change the approach geometry. Clearance checks successfully avoided hand-table collisions, but recovery became repeated raising and repositioning rather than a completed correction and approach. The final attitude adjustment caused shoulder-roll-link contact with the torso. Across 14 motion calls and 43.1 cm of palm travel, there were no gripper-close commands. The evaluator reported only 1.24 cm of lift, no sustained retention, and no upright grasp.",
+  "failure_mode": "Unresolved contact alignment and accumulated attitude drift led to a pre-grasp recovery loop, ending in arm–torso self-collision. Repeated depth sensing consumed substantial effort without producing a verified acquisition.",
+  "lessons_review": [
+    {
+      "lesson": "Before reducing clearance to a support or obstacle, identify which part of the entire moving assembly would reach that boundary first, including intermediate hand links, arm links, and any held object.",
+      "verdict": "helped",
+      "why": "Checking lower hand links helped avoid table contact throughout the episode. At steps 3 and 5, clearance estimates changed the proposed descent, and unsafe rotation candidates were rejected at steps 8 and 9. However, the policy largely reduced this rule to minimum hand height above the table. It did not adequately account for target contact during the rotation at step 4 or arm–torso clearance at step 14. Preserve the principle while explicitly covering self-clearance and recovery motions."
+    },
+    {
+      "lesson": "Keep a separate, visually verified, task-compatible attitude reference.",
+      "verdict": "hurt",
+      "why": "In practice, the recovery branch became a raise-for-correction loop at steps 8–9 and 12–13, culminating in the collision during step 14. Meanwhile, the fixed-reference requirement was not followed: steps 2, 3, 6, 7, and 11 adopted the latest measured attitude as the command reference. Thus the policy incurred recovery detours without arresting drift. Retain the reference comparison, but require recovery to produce a verified correction or a different compatible approach rather than further clearance excursions."
+    },
+    {
+      "lesson": "Before probing depth, state which uncertainty the result will resolve and how it will change the next action.",
+      "verdict": "neutral",
+      "why": "Initial probes established useful geometry, and step 11 included potentially useful arm-surface probes. Nevertheless, many later batches repeatedly sampled object and support surfaces without producing better contact alignment. At step 8, the target was not identifiable; wrist probes mostly returned null or robot geometry, while head probes returned unrelated support points. The rule was not consistently operationalized as a decision-linked sensing strategy."
+    },
+    {
+      "lesson": "For acquisition, place the intended contact region between opposing contact surfaces before closing, and close without advancing into the object.",
+      "verdict": "neutral",
+      "why": "There were no close commands, so retention and completion checks were never exercised. The acquisition condition remained unresolved rather than driving a concrete alignment correction. Unsecured-object disturbances at steps 4–7 also did not trigger an explicit unload, reobservation, and realignment sequence. Keep the grasp and verification safeguards, but make the next alignment action explicit."
+    }
+  ],
+  "lessons": [
+    {
+      "lesson": "Check clearance for the whole moving assembly against the target, environment, and robot body before translation, rotation, or recovery. Use available views and measured joints to assess proximal-arm posture as well as hand links and any held object; a stationary or raised palm does not make a rotation safe. Choose a correction that preserves all relevant clearances. If its path is uncertain, inspect an informative available view and select a different task-compatible attitude or approach through observed free space, then resume with shorter motions.",
+      "evidence_steps": [
+        4,
+        8,
+        9,
+        12,
+        13,
+        14
+      ],
+      "why": "Table-height checks prevented hand-table collisions but did not prevent object disturbance during an in-place rotation or the terminal shoulder–torso collision. Repeated upward recovery improved support clearance without establishing safe whole-arm motion."
+    },
+    {
+      "lesson": "Base contact planning on the target's observed exterior and the actual contact surfaces derived from measured hand pose and joints, not projected overlap or palm position alone. For grasp acquisition, correct the open aperture's alignment until the intended region lies between opposing surfaces with a clear closing path, then close without advancing. If an unsecured target shifts or tilts, unload along a checked path, reobserve its supported pose, and realign. Verify retention through cautious object–hand co-motion, then establish and recheck the requested object attitude, displacement, and hold before declaring completion.",
+      "evidence_steps": [
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        14
+      ],
+      "why": "The open hand overlapped the mug in projection and made unilateral contact, but opposing contact geometry was never established. The mug tilted substantially before any closure, and the episode ended without a grasp attempt or retention test."
+    },
+    {
+      "lesson": "Maintain a deliberate, task-compatible attitude reference across position commands while initializing translations from the measured palm position. Compare the reached attitude and contact geometry with that reference before reducing clearance; do not relabel tracking drift as the new reference. If deviation changes the intended contact geometry, make a small clearance-checked correction. If the deviation persists, test another attainable task-compatible attitude or approach in free space and resume from that verified configuration instead of cycling through clearance moves.",
+      "evidence_steps": [
+        2,
+        3,
+        6,
+        7,
+        10,
+        11,
+        12,
+        13
+      ],
+      "why": "Successive commands repeatedly inherited reached attitudes despite calling them fixed references. The resulting drift changed finger height and aperture alignment, while later descents and raises failed to establish a stable approach. A verified correction or deliberate alternative would address the cause rather than repeatedly changing clearance."
+    },
+    {
+      "lesson": "Before querying depth, identify the unresolved geometric uncertainty and how its resolution will change the next action. Probe identifiable features in the current head-camera image, distinguishing target exterior, openings or background, support, and robot returns. Reuse geometry while observations remain consistent; direct additional probes toward intended contact boundaries or limiting clearance. If the target is not identifiable, inspect another available RGB view or make a clearance-checked viewing adjustment before probing again. Once the uncertainty is resolved, execute the corresponding adjustment rather than resampling unchanged geometry.",
+      "evidence_steps": [
+        1,
+        3,
+        8,
+        9,
+        11,
+        13,
+        14
+      ],
+      "why": "Early sensing supplied useful target and support information, but extensive later sampling did not lead to acquisition. Blind or poorly informative queries during lost visibility added little, while repeated surface scans consumed time and tokens without resolving the contact geometry or the eventual self-clearance problem."
+    }
+  ],
+  "rejected_lessons": []
+}

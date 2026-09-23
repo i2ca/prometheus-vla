@@ -1,0 +1,44 @@
+{
+  "accepted": true,
+  "action": {
+    "reason": "Hold the current measured pose with the grasp closed for a cautious retention test. Compare separated mug surfaces afterward rather than assuming a stationary hand means a stable mug.",
+    "steps": 5,
+    "target": {
+      "position": [
+        0.27412,
+        -0.18601,
+        1.06126
+      ],
+      "quaternion_wxyz": [
+        0.986694,
+        -0.028477,
+        0.030639,
+        -0.157117
+      ],
+      "gripper": "closed"
+    }
+  },
+  "executed": {
+    "status": "executed",
+    "frames": 30,
+    "requested_position": [
+      0.27412,
+      -0.18601,
+      1.06126
+    ],
+    "reached_position": [
+      0.27413,
+      -0.18659,
+      1.05902
+    ],
+    "position_gap_m": 0.0023,
+    "rotation_gap_rad": 0.167,
+    "hand_table_contact": [],
+    "self_collision": [],
+    "ik_at_request": {
+      "position_error_m": 4.700763773000018e-06,
+      "orientation_error_rad": 0.0,
+      "iterations": 1
+    }
+  }
+}

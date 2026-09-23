@@ -124,7 +124,8 @@ class Story:
         d.text((24, 12), "G1 · política Direct", font=font(24, True), fill=INK)
         d.text((24 + d.textlength("G1 · política Direct", font=font(24, True)) + 16, 20),
                f"{self.model.replace(' via OmniRoute', '')}  ·  episódio {self.ep.parent.name}/{self.ep.name}", font=FS, fill=MUTED)
-        x = W - 24 - len(self.calls) * 46
+        pitch, box = (46, 38) if len(self.calls) <= 15 else (32, 26)   # episodio longo: quadros menores
+        x = W - 24 - len(self.calls) * pitch
         d.text((x - 70, 22), "steps", font=FS, fill=MUTED)
         for c in self.calls:
             st = (c.get("result") or {}).get("status")
@@ -132,10 +133,11 @@ class Story:
             done = current is not None and c["call"] < current
             now = current == c["call"]
             fill = col if (done or now) else CARD
-            d.rounded_rectangle((x, 16, x + 38, 48), 8, fill=fill, outline=INK if now else None, width=2)
-            d.text((x + 19 - d.textlength(str(c["call"]), font=FH) / 2, 21), str(c["call"]), font=FH,
+            f = FH if box == 38 else FXS
+            d.rounded_rectangle((x, 16, x + box, 48), 7, fill=fill, outline=INK if now else None, width=2)
+            d.text((x + box / 2 - d.textlength(str(c["call"]), font=f) / 2, 32 - f.size / 2 - 2), str(c["call"]), font=f,
                    fill=(12, 12, 16) if (done or now) else MUTED)
-            x += 46
+            x += pitch
 
     def subtitle(self, d, text):
         d.rectangle((0, SUB_Y, PANEL_X, SUB_Y + SUB_H), fill=(9, 10, 14))

@@ -1,0 +1,44 @@
+{
+  "accepted": true,
+  "action": {
+    "reason": "Keep the existing raised grasp and upright attitude unchanged for one second while checking that the mug does not slip.",
+    "steps": 5,
+    "target": {
+      "position": [
+        0.28818,
+        -0.2417,
+        0.93385
+      ],
+      "quaternion_wxyz": [
+        1,
+        0,
+        0,
+        0
+      ],
+      "gripper": "closed"
+    }
+  },
+  "executed": {
+    "status": "executed",
+    "frames": 30,
+    "requested_position": [
+      0.28818,
+      -0.2417,
+      0.93385
+    ],
+    "reached_position": [
+      0.28874,
+      -0.24075,
+      0.9348
+    ],
+    "position_gap_m": 0.0015,
+    "rotation_gap_rad": 0.0099,
+    "hand_table_contact": [],
+    "self_collision": [],
+    "ik_at_request": {
+      "position_error_m": 0.00020598879668800639,
+      "orientation_error_rad": 0.0005476062024441826,
+      "iterations": 3
+    }
+  }
+}

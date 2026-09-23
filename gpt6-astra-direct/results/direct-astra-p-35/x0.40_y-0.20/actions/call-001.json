@@ -1,0 +1,44 @@
+{
+  "accepted": true,
+  "action": {
+    "reason": "Move the open hand forward while remaining above the mug, preserving the measured attitude so the fingers clear its sides before the mid-height approach.",
+    "steps": 5,
+    "target": {
+      "position": [
+        0.2307,
+        -0.22,
+        0.888
+      ],
+      "quaternion_wxyz": [
+        0.982492,
+        -0.175626,
+        0.043489,
+        -0.044417
+      ],
+      "gripper": "open"
+    }
+  },
+  "executed": {
+    "status": "executed",
+    "frames": 30,
+    "requested_position": [
+      0.2307,
+      -0.22,
+      0.888
+    ],
+    "reached_position": [
+      0.22935,
+      -0.22102,
+      0.88768
+    ],
+    "position_gap_m": 0.0017,
+    "rotation_gap_rad": 0.1372,
+    "hand_table_contact": [],
+    "self_collision": [],
+    "ik_at_request": {
+      "position_error_m": 0.0002962261911915722,
+      "orientation_error_rad": 0.0009291928681158913,
+      "iterations": 65
+    }
+  }
+}

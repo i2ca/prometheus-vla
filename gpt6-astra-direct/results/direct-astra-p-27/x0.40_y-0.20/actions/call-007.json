@@ -1,0 +1,44 @@
+{
+  "accepted": true,
+  "action": {
+    "reason": "Lower the open aperture toward the mug's side using the current visually compatible attitude as a fixed reference. Keep at least about 4.9 cm predicted clearance for the lowest intermediate hand link and inspect tracking before lowering further.",
+    "steps": 5,
+    "target": {
+      "position": [
+        0.28391,
+        -0.23492,
+        0.84086
+      ],
+      "quaternion_wxyz": [
+        0.989155,
+        -0.096007,
+        -0.064485,
+        -0.090539
+      ],
+      "gripper": "open"
+    }
+  },
+  "executed": {
+    "status": "executed",
+    "frames": 30,
+    "requested_position": [
+      0.28391,
+      -0.23492,
+      0.84086
+    ],
+    "reached_position": [
+      0.28562,
+      -0.24137,
+      0.84845
+    ],
+    "position_gap_m": 0.0101,
+    "rotation_gap_rad": 0.1456,
+    "hand_table_contact": [],
+    "self_collision": [],
+    "ik_at_request": {
+      "position_error_m": 0.00028928501457347943,
+      "orientation_error_rad": 0.0007879285363858448,
+      "iterations": 42
+    }
+  }
+}

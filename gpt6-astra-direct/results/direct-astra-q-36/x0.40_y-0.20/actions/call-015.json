@@ -1,0 +1,44 @@
+{
+  "accepted": true,
+  "action": {
+    "reason": "Move into the previewed clear offset and slightly reduce the downward hand tilt before aligning the grasp. Keep the hand open and check the achieved attitude before moving closer.",
+    "steps": 3,
+    "target": {
+      "position": [
+        0.263,
+        -0.235,
+        0.884
+      ],
+      "quaternion_wxyz": [
+        0.9831,
+        -0.1,
+        0.151,
+        -0.024
+      ],
+      "gripper": "open"
+    }
+  },
+  "executed": {
+    "status": "executed",
+    "frames": 18,
+    "requested_position": [
+      0.263,
+      -0.235,
+      0.884
+    ],
+    "reached_position": [
+      0.26152,
+      -0.2363,
+      0.88367
+    ],
+    "position_gap_m": 0.002,
+    "rotation_gap_rad": 0.2378,
+    "hand_table_contact": [],
+    "self_collision": [],
+    "ik_at_request": {
+      "position_error_m": 0.0002995033257313573,
+      "orientation_error_rad": 0.0008487219961870361,
+      "iterations": 37
+    }
+  }
+}

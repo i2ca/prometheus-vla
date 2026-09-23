@@ -1,0 +1,44 @@
+{
+  "accepted": true,
+  "action": {
+    "reason": "Check the achieved level side-grasp attitude while the entire hand remains safely above the mug; preview indicates time-dependent rotation, so use a short command and remeasure.",
+    "steps": 1,
+    "target": {
+      "position": [
+        0.23969,
+        -0.237,
+        0.93562
+      ],
+      "quaternion_wxyz": [
+        1,
+        0,
+        0,
+        0
+      ],
+      "gripper": "open"
+    }
+  },
+  "executed": {
+    "status": "executed",
+    "frames": 6,
+    "requested_position": [
+      0.23969,
+      -0.237,
+      0.93562
+    ],
+    "reached_position": [
+      0.23881,
+      -0.23856,
+      0.93592
+    ],
+    "position_gap_m": 0.0018,
+    "rotation_gap_rad": 0.1644,
+    "hand_table_contact": [],
+    "self_collision": [],
+    "ik_at_request": {
+      "position_error_m": 0.00016282661269201602,
+      "orientation_error_rad": 0.00048242604440801616,
+      "iterations": 4
+    }
+  }
+}

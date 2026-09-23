@@ -1,0 +1,44 @@
+{
+  "accepted": true,
+  "action": {
+    "reason": "Lower the open aperture toward the mug's middle with a short, clearance-checked translation, keeping the same requested orientation.",
+    "steps": 5,
+    "target": {
+      "position": [
+        0.291,
+        -0.169,
+        0.825
+      ],
+      "quaternion_wxyz": [
+        0.965709,
+        -0.02123,
+        -0.016034,
+        -0.258262
+      ],
+      "gripper": "open"
+    }
+  },
+  "executed": {
+    "status": "executed",
+    "frames": 30,
+    "requested_position": [
+      0.291,
+      -0.169,
+      0.825
+    ],
+    "reached_position": [
+      0.29034,
+      -0.17086,
+      0.825
+    ],
+    "position_gap_m": 0.002,
+    "rotation_gap_rad": 0.21,
+    "hand_table_contact": [],
+    "self_collision": [],
+    "ik_at_request": {
+      "position_error_m": 0.0002914024219190046,
+      "orientation_error_rad": 0.0008656952915338719,
+      "iterations": 47
+    }
+  }
+}

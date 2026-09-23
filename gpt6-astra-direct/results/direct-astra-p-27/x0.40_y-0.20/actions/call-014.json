@@ -1,0 +1,49 @@
+{
+  "accepted": true,
+  "action": {
+    "reason": "Adjust toward a flatter side-grasp attitude in free space before descending. The preview keeps the entire hand above z=0.853 during this rotation, leaving over 10 cm table clearance; the visible wrist and forearm are higher still.",
+    "steps": 5,
+    "target": {
+      "position": [
+        0.27331,
+        -0.21078,
+        0.98753
+      ],
+      "quaternion_wxyz": [
+        0.98756,
+        -0.08,
+        -0.135,
+        0
+      ],
+      "gripper": "open"
+    }
+  },
+  "executed": {
+    "status": "aborted_on_contact",
+    "frames": 30,
+    "requested_position": [
+      0.27331,
+      -0.21078,
+      0.98753
+    ],
+    "reached_position": [
+      0.28158,
+      -0.20318,
+      1.00983
+    ],
+    "position_gap_m": 0.025,
+    "rotation_gap_rad": 0.1151,
+    "hand_table_contact": [],
+    "self_collision": [
+      [
+        "right_shoulder_roll_link",
+        "torso_link"
+      ]
+    ],
+    "ik_at_request": {
+      "position_error_m": 0.0003456945351841752,
+      "orientation_error_rad": 0.0020597349574220337,
+      "iterations": 200
+    }
+  }
+}

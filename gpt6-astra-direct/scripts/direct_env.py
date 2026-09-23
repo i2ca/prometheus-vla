@@ -58,7 +58,9 @@ TRUNK = {"torso_link", "pelvis", "waist_yaw_link", "waist_roll_link", "head_link
 # direct-astra-03: a chamada 7 passava a 4,2 cm no plano e encostou na execucao (mao com kp baixo cede,
 # a malha de correcao desloca o alvo em ate 2 cm, o PD atrasa); chamadas normais ficam acima de 6,4 cm.
 # O cotovelo e rigido e so sofre o desvio da correcao; a folga maior e para punho/mao, cujos dedos cedem.
-SELF_CLEARANCE_M = {"right_elbow": 0.025, "right_wrist": 0.05, "right_hand": 0.05, "right_palm": 0.05}
+# Ombro (roll/yaw): folga normal 2,2 a 3,8 cm do tronco; no direct-astra-p-27 chegou a 1,0 cm e encostou na correcao.
+SELF_CLEARANCE_M = {"right_elbow": 0.025, "right_wrist": 0.05, "right_hand": 0.05, "right_palm": 0.05,
+                    "right_shoulder_roll": 0.012, "right_shoulder_yaw": 0.012}
 DISTAL_ARM = tuple(SELF_CLEARANCE_M)
 
 
@@ -330,6 +332,15 @@ class DirectEpisode:
                 "lowest_hand_point_along_path": {"z": round(lowest[0], 4), "point": lowest[1]},
                 "note": "own-body dynamics (self-contacts kept, contacts with anything else removed): it does not know about the table or objects"}
 
+    def _since(self, key, active):
+        now = self.meta["frames"] / FPS
+        if not active:
+            self.meta[key] = None
+            return 0.0
+        if self.meta.get(key) is None:
+            self.meta[key] = now
+        return round(now - self.meta[key], 2)
+
     def _hand_geometry(self):
         """Propriocepcao da mao (angulos medidos das juntas + malha do proprio robo). Nao usa nada do objeto."""
         r = lambda v: [round(float(x), 4) for x in v]
@@ -370,6 +381,9 @@ class DirectEpisode:
             "hand_geometry": self._hand_geometry(),
             "waist_yaw_rad": round(float(self.sim.q(["waist_yaw_joint"])[0]), 5),
             "gripper_closure": round(closure, 3),
+            # relogios do proprio estado (propriocepcao): ha quanto tempo a mao esta fechada e a palma parada
+            "gripper_closed_for_s": self._since("closed_since", closure > 0.5),
+            "palm_still_for_s": self._since("still_since", True),
             "previous_reason": reason_of_previous,
             "previous_execution": executed,
             "limits": self.meta["limits"],
@@ -447,7 +461,27 @@ class DirectEpisode:
             return self._reject(errors, action, ik={**ik_info, "predicted_self_collision": [b1, b2], "clearance_m": round(float(dist), 4),
                                                     "at_fraction": round((frame + 1) / frames, 2)})
 
+        # ensaio dinamico do comando inteiro (movimento, acomodacao e correcao final) numa copia do robo com a dinamica
+        # dele, contatos do corpo consigo mesmo LIGADOS e ambiente DESLIGADO: pega a autocolisao que a checagem
+        # cinematica nao ve (o braco fica atras do plano quando gira carregando o proprio peso; direct-astra-p-33)
+        rehearsal = self._rehearse(pos, target_mat, grip, steps, reason, action, ik_info)
+        if rehearsal and rehearsal.get("self_collision"):
+            b1, b2 = rehearsal["self_collision"][0]
+            errors.append(f"ensaio do movimento com a dinamica do braco: {b1} encosta em {b2}; nada foi executado. "
+                          f"Mude o alvo ou a orientacao para afastar o braco do tronco, ou divida a rotacao em passos menores.")
+            return self._reject(errors, action, ik={**ik_info, "rehearsal_self_collision": [b1, b2]})
+
         return self._execute(pos, target_mat, grip, steps, reason, action, ik_info)
+
+    def _rehearse(self, pos, target_mat, grip, steps, reason, action, ik_info):
+        e2 = DirectEpisode(self.dir).load()
+        e2.meta["video"] = False
+        root = e2.m.body_rootid[e2.m.body("pelvis").id]
+        for g in range(e2.m.ngeom):
+            if e2.m.body_rootid[e2.m.geom_bodyid[g]] != root:
+                e2.m.geom_contype[g] = 0; e2.m.geom_conaffinity[g] = 0
+        out = e2._execute(pos, target_mat, grip, steps, reason, action, ik_info, dry=True)
+        return out.get("aborted")
 
     def _is_self_contact(self, b1, b2):
         r1, r2 = b1.startswith("right_"), b2.startswith("right_")
@@ -491,6 +525,10 @@ class DirectEpisode:
             spare, pair, dist = self._clearance(d2)
             if spare < 0 and spare < start_clear - 1e-4:
                 return i, pair, dist
+        # ja comecou dentro da margem: so passa se o comando AUMENTAR a folga (a correcao final e o atraso do PD
+        # somam ate ~2 cm; ficar parado perto do tronco foi o que bateu o ombro no direct-astra-p-27)
+        if start_clear < 0 and spare <= start_clear + 1e-4:
+            return frames - 1, pair, dist
         return None
 
     def _clearance(self, d2):
@@ -522,7 +560,7 @@ class DirectEpisode:
         obs["rejected"] = True
         return obs
 
-    def _execute(self, pos, target_mat, grip, steps, reason, action, ik_info):
+    def _execute(self, pos, target_mat, grip, steps, reason, action, ik_info, dry=False):
         sim = self.sim
         start_pos, start_mat = self._palm_pose()
         rot_vec = cv2.Rodrigues(target_mat @ start_mat.T)[0].ravel()
@@ -573,6 +611,14 @@ class DirectEpisode:
                 q_corr, info_corr = self.ik.solve(pos + bias, target_mat, sim.q(IK_JOINTS), q, iterations=200)
                 if info_corr["position_error_m"] > IK_TOLERANCE_M:  # alvo deslocado saiu do alcance
                     break
+                # a correcao e assistencia do arnes: nao pode aproximar o braco do proprio corpo alem da margem
+                # (foi a correcao que bateu o ombro no tronco no direct-astra-p-27)
+                dc = mujoco.MjData(self.m); dc.qpos[:] = self.d.qpos
+                now_spare = self._clearance(dc)[0]
+                dc.qpos[[self.m.jnt_qposadr[self.m.joint(j).id] for j in IK_JOINTS]] = q_corr
+                corr_spare = self._clearance(dc)[0]
+                if corr_spare < 0 and corr_spare < now_spare:
+                    break
                 sim.set_targets(IK_JOINTS, q_corr)
                 table, selfc = self._substeps(CORRECTION_FRAMES, samples)
                 table_hits.update(table); self_hits.update(selfc)
@@ -580,6 +626,10 @@ class DirectEpisode:
                     self.meta["aborted"] = {"call": self.meta["calls"] + 1, "frame": -1,
                                             "hand_table": sorted(table_hits), "self_collision": sorted(self_hits)}
                     break
+        if not dry and float(np.linalg.norm(self._palm_pose()[0] - start_pos)) > 0.005:
+            self.meta["still_since"] = None
+        if dry:   # ensaio: so informa o que aconteceria, nao grava nada
+            return {"aborted": self.meta["aborted"], "palm": self._palm_pose()[0].tolist()}
         self.meta["calls"] += 1
         reached_pos, reached_mat = self._palm_pose()
         executed = {"status": "aborted_on_contact" if self.meta["aborted"] else "executed",

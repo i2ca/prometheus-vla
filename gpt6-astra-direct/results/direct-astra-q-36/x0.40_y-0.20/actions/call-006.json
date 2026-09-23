@@ -1,0 +1,44 @@
+{
+  "accepted": true,
+  "action": {
+    "reason": "Preserve the current attitude while moving rightward and slightly up into clearance away from the torso before reorienting.",
+    "steps": 3,
+    "target": {
+      "position": [
+        0.15347,
+        -0.2671,
+        0.94151
+      ],
+      "quaternion_wxyz": [
+        0.55318,
+        -0.765293,
+        0.254844,
+        -0.208263
+      ],
+      "gripper": "open"
+    }
+  },
+  "executed": {
+    "status": "executed",
+    "frames": 18,
+    "requested_position": [
+      0.15347,
+      -0.2671,
+      0.94151
+    ],
+    "reached_position": [
+      0.15289,
+      -0.26724,
+      0.94158
+    ],
+    "position_gap_m": 0.0006,
+    "rotation_gap_rad": 0.0527,
+    "hand_table_contact": [],
+    "self_collision": [],
+    "ik_at_request": {
+      "position_error_m": 0.00029942036640366945,
+      "orientation_error_rad": 0.0009696047293199783,
+      "iterations": 28
+    }
+  }
+}

@@ -1,0 +1,44 @@
+{
+  "accepted": true,
+  "action": {
+    "reason": "Make a much smaller descent with the established measured side-grasp attitude as a fixed reference. Keep the already-open fingers separated and reassess the lowest links and attitude before reducing clearance further.",
+    "steps": 1,
+    "target": {
+      "position": [
+        0.27709,
+        -0.22336,
+        0.88779
+      ],
+      "quaternion_wxyz": [
+        0.994149,
+        -0.070838,
+        0.068705,
+        -0.043928
+      ],
+      "gripper": "keep"
+    }
+  },
+  "executed": {
+    "status": "executed",
+    "frames": 6,
+    "requested_position": [
+      0.27709,
+      -0.22336,
+      0.88779
+    ],
+    "reached_position": [
+      0.27903,
+      -0.22628,
+      0.89356
+    ],
+    "position_gap_m": 0.0068,
+    "rotation_gap_rad": 0.0926,
+    "hand_table_contact": [],
+    "self_collision": [],
+    "ik_at_request": {
+      "position_error_m": 0.00029274700752097234,
+      "orientation_error_rad": 0.0008226201788282363,
+      "iterations": 11
+    }
+  }
+}

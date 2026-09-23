@@ -1,0 +1,44 @@
+{
+  "accepted": true,
+  "action": {
+    "reason": "Lower the open grasp aperture toward the mug's mid-body without advancing. The previewed full-hand path stays above the table, with the fingers on the far side and thumb on the near side of the mug.",
+    "steps": 3,
+    "target": {
+      "position": [
+        0.31573,
+        -0.20632,
+        0.84528
+      ],
+      "quaternion_wxyz": [
+        0.977045,
+        -0.16398,
+        0.040324,
+        -0.129875
+      ],
+      "gripper": "open"
+    }
+  },
+  "executed": {
+    "status": "executed",
+    "frames": 18,
+    "requested_position": [
+      0.31573,
+      -0.20632,
+      0.84528
+    ],
+    "reached_position": [
+      0.31484,
+      -0.20668,
+      0.83995
+    ],
+    "position_gap_m": 0.0054,
+    "rotation_gap_rad": 0.0162,
+    "hand_table_contact": [],
+    "self_collision": [],
+    "ik_at_request": {
+      "position_error_m": 0.00029591011752577484,
+      "orientation_error_rad": 0.0007852775121255929,
+      "iterations": 46
+    }
+  }
+}

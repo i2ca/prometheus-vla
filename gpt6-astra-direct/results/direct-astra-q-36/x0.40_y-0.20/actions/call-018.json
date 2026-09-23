@@ -1,0 +1,44 @@
+{
+  "accepted": true,
+  "action": {
+    "reason": "Settle the intended level side-grasp attitude while the entire hand is above the mug, checking the short-step rotational tracking before descent.",
+    "steps": 1,
+    "target": {
+      "position": [
+        0.24,
+        -0.236,
+        0.934
+      ],
+      "quaternion_wxyz": [
+        1,
+        0,
+        0,
+        0
+      ],
+      "gripper": "open"
+    }
+  },
+  "executed": {
+    "status": "executed",
+    "frames": 6,
+    "requested_position": [
+      0.24,
+      -0.236,
+      0.934
+    ],
+    "reached_position": [
+      0.23982,
+      -0.23672,
+      0.93497
+    ],
+    "position_gap_m": 0.0012,
+    "rotation_gap_rad": 0.2271,
+    "hand_table_contact": [],
+    "self_collision": [],
+    "ik_at_request": {
+      "position_error_m": 0.0002956074382056586,
+      "orientation_error_rad": 0.0008773456247803312,
+      "iterations": 19
+    }
+  }
+}

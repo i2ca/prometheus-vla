@@ -1,0 +1,44 @@
+{
+  "accepted": true,
+  "action": {
+    "reason": "Make a small upward retention test while preserving the current grasp attitude. The previewed 12 mm translation keeps the swept hand well clear of the table; check whether the rim, body, and handle move together with the hand.",
+    "steps": 2,
+    "target": {
+      "position": [
+        0.28253,
+        -0.18303,
+        1.06724
+      ],
+      "quaternion_wxyz": [
+        0.919107,
+        -0.17679,
+        0.313491,
+        -0.160348
+      ],
+      "gripper": "closed"
+    }
+  },
+  "executed": {
+    "status": "executed",
+    "frames": 12,
+    "requested_position": [
+      0.28253,
+      -0.18303,
+      1.06724
+    ],
+    "reached_position": [
+      0.28277,
+      -0.18269,
+      1.06649
+    ],
+    "position_gap_m": 0.0009,
+    "rotation_gap_rad": 0.038,
+    "hand_table_contact": [],
+    "self_collision": [],
+    "ik_at_request": {
+      "position_error_m": 0.00029404964044876016,
+      "orientation_error_rad": 0.0008749622885591321,
+      "iterations": 3
+    }
+  }
+}

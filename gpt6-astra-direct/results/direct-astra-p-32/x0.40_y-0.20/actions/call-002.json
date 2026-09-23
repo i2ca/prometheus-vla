@@ -1,0 +1,44 @@
+{
+  "accepted": true,
+  "action": {
+    "reason": "Move the open hand forward and slightly left using the checked approach. The predicted swept hand stays above the table and outside the mug while bringing the aperture closer.",
+    "steps": 2,
+    "target": {
+      "position": [
+        0.23,
+        -0.225,
+        0.891
+      ],
+      "quaternion_wxyz": [
+        0.974724,
+        -0.180714,
+        0.116143,
+        -0.061368
+      ],
+      "gripper": "open"
+    }
+  },
+  "executed": {
+    "status": "executed",
+    "frames": 12,
+    "requested_position": [
+      0.23,
+      -0.225,
+      0.891
+    ],
+    "reached_position": [
+      0.22921,
+      -0.22554,
+      0.89109
+    ],
+    "position_gap_m": 0.001,
+    "rotation_gap_rad": 0.0467,
+    "hand_table_contact": [],
+    "self_collision": [],
+    "ik_at_request": {
+      "position_error_m": 0.0002954820637435468,
+      "orientation_error_rad": 0.0009174270638640685,
+      "iterations": 15
+    }
+  }
+}

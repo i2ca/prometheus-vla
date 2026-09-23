@@ -1,0 +1,44 @@
+{
+  "accepted": true,
+  "action": {
+    "reason": "Raise and flatten the open hand along the previewed clearance-safe path before aligning opposing contacts at the mug's side. This avoids lowering the currently downward-pointing fingertips toward the table.",
+    "steps": 2,
+    "target": {
+      "position": [
+        0.283,
+        -0.214,
+        0.91
+      ],
+      "quaternion_wxyz": [
+        0.98995,
+        -0.1,
+        0.1,
+        0
+      ],
+      "gripper": "open"
+    }
+  },
+  "executed": {
+    "status": "executed",
+    "frames": 12,
+    "requested_position": [
+      0.283,
+      -0.214,
+      0.91
+    ],
+    "reached_position": [
+      0.28254,
+      -0.21437,
+      0.91152
+    ],
+    "position_gap_m": 0.0016,
+    "rotation_gap_rad": 0.6298,
+    "hand_table_contact": [],
+    "self_collision": [],
+    "ik_at_request": {
+      "position_error_m": 0.00025243536419430115,
+      "orientation_error_rad": 0.0007119923492354121,
+      "iterations": 9
+    }
+  }
+}

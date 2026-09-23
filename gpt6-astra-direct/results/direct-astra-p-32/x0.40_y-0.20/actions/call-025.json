@@ -1,0 +1,44 @@
+{
+  "accepted": true,
+  "action": {
+    "reason": "Hold the existing grasp without reconfiguration for a one-second retention check, comparing the same rim and lower-wall features before correcting tilt.",
+    "steps": 5,
+    "target": {
+      "position": [
+        0.28348,
+        -0.18225,
+        1.07815
+      ],
+      "quaternion_wxyz": [
+        0.930588,
+        -0.183021,
+        0.275482,
+        -0.156903
+      ],
+      "gripper": "closed"
+    }
+  },
+  "executed": {
+    "status": "executed",
+    "frames": 30,
+    "requested_position": [
+      0.28348,
+      -0.18225,
+      1.07815
+    ],
+    "reached_position": [
+      0.28375,
+      -0.18218,
+      1.07664
+    ],
+    "position_gap_m": 0.0015,
+    "rotation_gap_rad": 0.0092,
+    "hand_table_contact": [],
+    "self_collision": [],
+    "ik_at_request": {
+      "position_error_m": 5.245262227127372e-06,
+      "orientation_error_rad": 0.0,
+      "iterations": 1
+    }
+  }
+}

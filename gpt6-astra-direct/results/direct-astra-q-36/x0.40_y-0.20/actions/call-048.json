@@ -1,0 +1,44 @@
+{
+  "accepted": true,
+  "action": {
+    "reason": "Keep the closed grasp level and stationary for one second to verify stable retention without disturbing the raised mug.",
+    "steps": 5,
+    "target": {
+      "position": [
+        0.28714,
+        -0.24313,
+        0.93165
+      ],
+      "quaternion_wxyz": [
+        1,
+        0,
+        0,
+        0
+      ],
+      "gripper": "closed"
+    }
+  },
+  "executed": {
+    "status": "executed",
+    "frames": 30,
+    "requested_position": [
+      0.28714,
+      -0.24313,
+      0.93165
+    ],
+    "reached_position": [
+      0.28808,
+      -0.24213,
+      0.93404
+    ],
+    "position_gap_m": 0.0028,
+    "rotation_gap_rad": 0.0093,
+    "hand_table_contact": [],
+    "self_collision": [],
+    "ik_at_request": {
+      "position_error_m": 1.351964971918182e-05,
+      "orientation_error_rad": 3.961418142689439e-05,
+      "iterations": 2
+    }
+  }
+}

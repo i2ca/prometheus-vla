@@ -1,0 +1,44 @@
+{
+  "accepted": true,
+  "action": {
+    "reason": "Continue the retention test with a 3.5 cm vertical lift and a near-level side-grasp attitude. Check that the same rim features rise with the hand without tilting or slipping.",
+    "steps": 4,
+    "target": {
+      "position": [
+        0.2757,
+        -0.25676,
+        0.87986
+      ],
+      "quaternion_wxyz": [
+        1,
+        0,
+        0,
+        0
+      ],
+      "gripper": "closed"
+    }
+  },
+  "executed": {
+    "status": "executed",
+    "frames": 24,
+    "requested_position": [
+      0.2757,
+      -0.25676,
+      0.87986
+    ],
+    "reached_position": [
+      0.27589,
+      -0.25793,
+      0.88065
+    ],
+    "position_gap_m": 0.0014,
+    "rotation_gap_rad": 0.0116,
+    "hand_table_contact": [],
+    "self_collision": [],
+    "ik_at_request": {
+      "position_error_m": 0.000299891829729175,
+      "orientation_error_rad": 0.0007962764961743737,
+      "iterations": 67
+    }
+  }
+}

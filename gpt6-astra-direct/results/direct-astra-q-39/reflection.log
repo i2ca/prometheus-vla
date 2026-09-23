@@ -1,0 +1,16 @@
+Traceback (most recent call last):
+  File "/home/fercout/g1-cup-grasp/scripts/direct_reflect.py", line 187, in <module>
+    main()
+  File "/home/fercout/g1-cup-grasp/scripts/direct_reflect.py", line 159, in main
+    content, report = build(ep)
+                      ^^^^^^^^^
+  File "/home/fercout/g1-cup-grasp/scripts/direct_reflect.py", line 88, in build
+    report = json.loads((ep / "report.json").read_text())
+                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/fercout/.local/share/uv/python/cpython-3.11.16-linux-aarch64-gnu/lib/python3.11/pathlib.py", line 1058, in read_text
+    with self.open(mode='r', encoding=encoding, errors=errors) as f:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/fercout/.local/share/uv/python/cpython-3.11.16-linux-aarch64-gnu/lib/python3.11/pathlib.py", line 1044, in open
+    return io.open(self, mode, buffering, encoding, errors, newline)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+FileNotFoundError: [Errno 2] No such file or directory: 'results/direct-astra-q-39/x0.40_y-0.20/report.json'

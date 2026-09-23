@@ -1,0 +1,44 @@
+{
+  "accepted": true,
+  "action": {
+    "reason": "Maintain the existing closed grasp and upright attitude for another second, checking for slip without disturbing the raised mug.",
+    "steps": 5,
+    "target": {
+      "position": [
+        0.28949,
+        -0.23982,
+        0.93649
+      ],
+      "quaternion_wxyz": [
+        1,
+        0,
+        0,
+        0
+      ],
+      "gripper": "closed"
+    }
+  },
+  "executed": {
+    "status": "executed",
+    "frames": 30,
+    "requested_position": [
+      0.28949,
+      -0.23982,
+      0.93649
+    ],
+    "reached_position": [
+      0.29031,
+      -0.23889,
+      0.93881
+    ],
+    "position_gap_m": 0.0026,
+    "rotation_gap_rad": 0.0083,
+    "hand_table_contact": [],
+    "self_collision": [],
+    "ik_at_request": {
+      "position_error_m": 3.0625595231050164e-05,
+      "orientation_error_rad": 8.255666658001905e-05,
+      "iterations": 2
+    }
+  }
+}

@@ -1,0 +1,44 @@
+{
+  "accepted": true,
+  "action": {
+    "reason": "Lower the open hand 1.5 cm at the existing staging location while retaining the intended attitude. The preceding preview of this exact target kept the swept hand above the tabletop and lateral to the mug.",
+    "steps": 2,
+    "target": {
+      "position": [
+        0.20462,
+        -0.26644,
+        0.81879
+      ],
+      "quaternion_wxyz": [
+        0.995582,
+        0.027898,
+        -0.077521,
+        -0.045044
+      ],
+      "gripper": "open"
+    }
+  },
+  "executed": {
+    "status": "executed",
+    "frames": 12,
+    "requested_position": [
+      0.20462,
+      -0.26644,
+      0.81879
+    ],
+    "reached_position": [
+      0.20247,
+      -0.26728,
+      0.81825
+    ],
+    "position_gap_m": 0.0024,
+    "rotation_gap_rad": 0.1053,
+    "hand_table_contact": [],
+    "self_collision": [],
+    "ik_at_request": {
+      "position_error_m": 0.0002940144706429041,
+      "orientation_error_rad": 0.0008752286600173889,
+      "iterations": 44
+    }
+  }
+}

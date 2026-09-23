@@ -1,0 +1,44 @@
+{
+  "accepted": true,
+  "action": {
+    "reason": "Adjust the open hand in free space using the previously previewed orientation, which raises the thumb and keeps the fingers above the rim. The present rolled hand would bring the thumb too close to the table during a mid-height approach.",
+    "steps": 2,
+    "target": {
+      "position": [
+        0.20637,
+        -0.26899,
+        0.90092
+      ],
+      "quaternion_wxyz": [
+        0.952346,
+        -0.27465,
+        0.01545,
+        0.13199
+      ],
+      "gripper": "open"
+    }
+  },
+  "executed": {
+    "status": "executed",
+    "frames": 12,
+    "requested_position": [
+      0.20637,
+      -0.26899,
+      0.90092
+    ],
+    "reached_position": [
+      0.20671,
+      -0.26845,
+      0.90133
+    ],
+    "position_gap_m": 0.0008,
+    "rotation_gap_rad": 0.7178,
+    "hand_table_contact": [],
+    "self_collision": [],
+    "ik_at_request": {
+      "position_error_m": 0.00024659434369865574,
+      "orientation_error_rad": 0.0007269910426254008,
+      "iterations": 8
+    }
+  }
+}

@@ -1,0 +1,44 @@
+{
+  "accepted": true,
+  "action": {
+    "reason": "Maintain the existing closed grasp and level palm for one second, checking that the elevated mug remains stable without changing its attitude.",
+    "steps": 5,
+    "target": {
+      "position": [
+        0.27808,
+        -0.25457,
+        0.92034
+      ],
+      "quaternion_wxyz": [
+        1,
+        0,
+        0,
+        0
+      ],
+      "gripper": "closed"
+    }
+  },
+  "executed": {
+    "status": "executed",
+    "frames": 30,
+    "requested_position": [
+      0.27808,
+      -0.25457,
+      0.92034
+    ],
+    "reached_position": [
+      0.27921,
+      -0.25309,
+      0.9212
+    ],
+    "position_gap_m": 0.0021,
+    "rotation_gap_rad": 0.0127,
+    "hand_table_contact": [],
+    "self_collision": [],
+    "ik_at_request": {
+      "position_error_m": 0.0002964569156515639,
+      "orientation_error_rad": 0.0007982032984061846,
+      "iterations": 2
+    }
+  }
+}

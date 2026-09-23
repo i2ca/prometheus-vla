@@ -1,0 +1,44 @@
+{
+  "accepted": true,
+  "action": {
+    "reason": "Lower the open hand partway toward a side grasp without changing orientation. The preview keeps the lowest hand point near 0.791, above the table, with the digits outside the mug's sides.",
+    "steps": 3,
+    "target": {
+      "position": [
+        0.25492,
+        -0.18012,
+        0.87131
+      ],
+      "quaternion_wxyz": [
+        0.973538,
+        -0.01046,
+        0.044204,
+        -0.223964
+      ],
+      "gripper": "open"
+    }
+  },
+  "executed": {
+    "status": "executed",
+    "frames": 18,
+    "requested_position": [
+      0.25492,
+      -0.18012,
+      0.87131
+    ],
+    "reached_position": [
+      0.25779,
+      -0.18419,
+      0.87805
+    ],
+    "position_gap_m": 0.0084,
+    "rotation_gap_rad": 0.1261,
+    "hand_table_contact": [],
+    "self_collision": [],
+    "ik_at_request": {
+      "position_error_m": 0.00029974597473701416,
+      "orientation_error_rad": 0.0009601274389393594,
+      "iterations": 47
+    }
+  }
+}

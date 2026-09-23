@@ -1,0 +1,44 @@
+{
+  "accepted": true,
+  "action": {
+    "reason": "Translate slightly left and down without changing the grasp attitude to expose the mug and verify that it follows the hand. The preview keeps the swept hand above z=0.92 m and the mug retains ample support clearance.",
+    "steps": 5,
+    "target": {
+      "position": [
+        0.28242,
+        -0.18266,
+        1.05627
+      ],
+      "quaternion_wxyz": [
+        0.920715,
+        -0.187655,
+        0.277925,
+        -0.199566
+      ],
+      "gripper": "keep"
+    }
+  },
+  "executed": {
+    "status": "executed",
+    "frames": 30,
+    "requested_position": [
+      0.28242,
+      -0.18266,
+      1.05627
+    ],
+    "reached_position": [
+      0.28253,
+      -0.18303,
+      1.05524
+    ],
+    "position_gap_m": 0.0011,
+    "rotation_gap_rad": 0.1082,
+    "hand_table_contact": [],
+    "self_collision": [],
+    "ik_at_request": {
+      "position_error_m": 0.00023423260326517505,
+      "orientation_error_rad": 0.0006957043337510991,
+      "iterations": 7
+    }
+  }
+}

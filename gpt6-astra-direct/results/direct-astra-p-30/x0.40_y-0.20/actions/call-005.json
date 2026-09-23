@@ -1,0 +1,44 @@
+{
+  "accepted": true,
+  "action": {
+    "reason": "Move the open grasp aperture toward the mug's side using the previously previewed pose, with the lowest hand point remaining above the table.",
+    "steps": 2,
+    "target": {
+      "position": [
+        0.307,
+        -0.25,
+        0.84
+      ],
+      "quaternion_wxyz": [
+        0.981392,
+        0.137351,
+        -0.07185,
+        0.113319
+      ],
+      "gripper": "open"
+    }
+  },
+  "executed": {
+    "status": "executed",
+    "frames": 12,
+    "requested_position": [
+      0.307,
+      -0.25,
+      0.84
+    ],
+    "reached_position": [
+      0.31345,
+      -0.25326,
+      0.86877
+    ],
+    "position_gap_m": 0.0297,
+    "rotation_gap_rad": 0.2046,
+    "hand_table_contact": [],
+    "self_collision": [],
+    "ik_at_request": {
+      "position_error_m": 0.0002869721967195513,
+      "orientation_error_rad": 0.0007236960572205212,
+      "iterations": 52
+    }
+  }
+}

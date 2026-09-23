@@ -1,0 +1,44 @@
+{
+  "accepted": true,
+  "action": {
+    "reason": "Keep the existing grasp still for one second and compare separated rim and wall features to establish retention before attempting an upright correction.",
+    "steps": 5,
+    "target": {
+      "position": [
+        0.28375,
+        -0.18218,
+        1.07664
+      ],
+      "quaternion_wxyz": [
+        0.929776,
+        -0.183532,
+        0.279245,
+        -0.154452
+      ],
+      "gripper": "closed"
+    }
+  },
+  "executed": {
+    "status": "executed",
+    "frames": 30,
+    "requested_position": [
+      0.28375,
+      -0.18218,
+      1.07664
+    ],
+    "reached_position": [
+      0.284,
+      -0.18211,
+      1.07514
+    ],
+    "position_gap_m": 0.0015,
+    "rotation_gap_rad": 0.0092,
+    "hand_table_contact": [],
+    "self_collision": [],
+    "ik_at_request": {
+      "position_error_m": 2.0554456137177148e-06,
+      "orientation_error_rad": 0.0,
+      "iterations": 1
+    }
+  }
+}

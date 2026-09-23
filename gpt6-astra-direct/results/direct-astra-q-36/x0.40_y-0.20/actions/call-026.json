@@ -1,0 +1,44 @@
+{
+  "accepted": true,
+  "action": {
+    "reason": "Move down and slightly forward in the clear outer lane, keeping the current attitude for this clearance motion. Preview shows the open fingers remain above the table and outside the mug.",
+    "steps": 1,
+    "target": {
+      "position": [
+        0.208,
+        -0.301,
+        0.849
+      ],
+      "quaternion_wxyz": [
+        0.989141,
+        -0.052123,
+        -0.136957,
+        -0.011248
+      ],
+      "gripper": "open"
+    }
+  },
+  "executed": {
+    "status": "executed",
+    "frames": 6,
+    "requested_position": [
+      0.208,
+      -0.301,
+      0.849
+    ],
+    "reached_position": [
+      0.20779,
+      -0.30155,
+      0.8474
+    ],
+    "position_gap_m": 0.0017,
+    "rotation_gap_rad": 0.212,
+    "hand_table_contact": [],
+    "self_collision": [],
+    "ik_at_request": {
+      "position_error_m": 0.00029418885821187333,
+      "orientation_error_rad": 0.0008041838181438145,
+      "iterations": 71
+    }
+  }
+}

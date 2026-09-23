@@ -1,0 +1,44 @@
+{
+  "accepted": true,
+  "action": {
+    "reason": "Retract slightly while adjusting orientation in clear space, because the predicted finger sweep changes appreciably and must not pass through the rim or handle.",
+    "steps": 3,
+    "target": {
+      "position": [
+        0.11383,
+        -0.24055,
+        0.86
+      ],
+      "quaternion_wxyz": [
+        0.9986,
+        -0.045,
+        0.01,
+        -0.025
+      ],
+      "gripper": "keep"
+    }
+  },
+  "executed": {
+    "status": "executed",
+    "frames": 18,
+    "requested_position": [
+      0.11383,
+      -0.24055,
+      0.86
+    ],
+    "reached_position": [
+      0.11577,
+      -0.23977,
+      0.85907
+    ],
+    "position_gap_m": 0.0023,
+    "rotation_gap_rad": 1.3676,
+    "hand_table_contact": [],
+    "self_collision": [],
+    "ik_at_request": {
+      "position_error_m": 0.000292088431053779,
+      "orientation_error_rad": 0.0010959425294011513,
+      "iterations": 9
+    }
+  }
+}

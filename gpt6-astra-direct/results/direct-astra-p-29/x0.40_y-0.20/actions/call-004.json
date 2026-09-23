@@ -1,0 +1,44 @@
+{
+  "accepted": true,
+  "action": {
+    "reason": "Advance the open hand 2 cm to put the thumb and opposing finger closing paths around the mug body. The previewed trajectory maintains clearance above the table; keep the chosen attitude and inspect before closing.",
+    "steps": 3,
+    "target": {
+      "position": [
+        0.2709,
+        -0.22325,
+        0.88393
+      ],
+      "quaternion_wxyz": [
+        0.964527,
+        -0.165449,
+        0.181576,
+        -0.09667
+      ],
+      "gripper": "open"
+    }
+  },
+  "executed": {
+    "status": "executed",
+    "frames": 18,
+    "requested_position": [
+      0.2709,
+      -0.22325,
+      0.88393
+    ],
+    "reached_position": [
+      0.26966,
+      -0.2239,
+      0.88363
+    ],
+    "position_gap_m": 0.0014,
+    "rotation_gap_rad": 0.0876,
+    "hand_table_contact": [],
+    "self_collision": [],
+    "ik_at_request": {
+      "position_error_m": 0.0002937678393505578,
+      "orientation_error_rad": 0.0008368218525474716,
+      "iterations": 32
+    }
+  }
+}

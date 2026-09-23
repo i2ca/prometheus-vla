@@ -1,0 +1,392 @@
+{
+  "call": 1,
+  "step_id": 0,
+  "model": "gpt-6-astra",
+  "response_id": "chatcmpl-resp_0bab51387789e1bc016ab42329834c87d280d0841e78d87428",
+  "sent_at": "2026-09-23T19:05:52.178+00:00",
+  "received_at": "2026-09-23T19:06:27.852+00:00",
+  "sim_time_s": 0.5,
+  "images_sent": [
+    {
+      "camera": "head_camera",
+      "file": "obs/step-000/head_camera.png",
+      "sha256": "12511ea0237e146724a256e9b2f9ce28b4bc3de7dddd7a0ecbe35801d15bbd34"
+    },
+    {
+      "camera": "left_wrist_camera",
+      "file": "obs/step-000/left_wrist_camera.png",
+      "sha256": "46b1d1e756dbacb1785238bd22a8409bff63addb0a4227b5b4e6e9f7f4fe0e84"
+    },
+    {
+      "camera": "right_wrist_camera",
+      "file": "obs/step-000/right_wrist_camera.png",
+      "sha256": "92dbe8d60ddd8f45ff6154e15e9c2f7c6ac16a706f402faa79ba8b62d631e2e9"
+    }
+  ],
+  "latency_s": 35.64,
+  "usage": {
+    "input_tokens": 7763,
+    "output_tokens": 705
+  },
+  "model_text": "(empty response)",
+  "depth_probes": [
+    {
+      "camera": "head_camera",
+      "points": [
+        [
+          644,
+          169
+        ],
+        [
+          632,
+          224
+        ],
+        [
+          677,
+          199
+        ],
+        [
+          588,
+          197
+        ],
+        [
+          553,
+          261
+        ],
+        [
+          678,
+          269
+        ]
+      ],
+      "result": [
+        {
+          "u": 644,
+          "v": 169,
+          "valid": true,
+          "depth_m": 0.5927,
+          "point": [
+            0.4354,
+            -0.2112,
+            0.793
+          ]
+        },
+        {
+          "u": 632,
+          "v": 224,
+          "valid": true,
+          "depth_m": 0.5387,
+          "point": [
+            0.3631,
+            -0.1815,
+            0.8181
+          ]
+        },
+        {
+          "u": 677,
+          "v": 199,
+          "valid": true,
+          "depth_m": 0.5784,
+          "point": [
+            0.4024,
+            -0.2371,
+            0.7929
+          ]
+        },
+        {
+          "u": 588,
+          "v": 197,
+          "valid": true,
+          "depth_m": 0.626,
+          "point": [
+            0.4277,
+            -0.1663,
+            0.7523
+          ]
+        },
+        {
+          "u": 553,
+          "v": 261,
+          "valid": true,
+          "depth_m": 0.5979,
+          "point": [
+            0.3579,
+            -0.125,
+            0.7498
+          ]
+        },
+        {
+          "u": 678,
+          "v": 269,
+          "valid": true,
+          "depth_m": 0.5921,
+          "point": [
+            0.3487,
+            -0.2437,
+            0.7518
+          ]
+        }
+      ],
+      "response_id": "chatcmpl-resp_014fffb712b307a9016ab42311204887d29ddce068ddf1829a"
+    },
+    {
+      "camera": "head_camera",
+      "points": [
+        [
+          640,
+          139
+        ],
+        [
+          687,
+          167
+        ],
+        [
+          606,
+          184
+        ],
+        [
+          614,
+          249
+        ],
+        [
+          650,
+          240
+        ],
+        [
+          617,
+          212
+        ],
+        [
+          650,
+          201
+        ],
+        [
+          576,
+          212
+        ]
+      ],
+      "result": [
+        {
+          "u": 640,
+          "v": 139,
+          "valid": true,
+          "depth_m": 0.5511,
+          "point": [
+            0.4371,
+            -0.1928,
+            0.84
+          ]
+        },
+        {
+          "u": 687,
+          "v": 167,
+          "valid": true,
+          "depth_m": 0.55,
+          "point": [
+            0.414,
+            -0.2343,
+            0.8301
+          ]
+        },
+        {
+          "u": 606,
+          "v": 184,
+          "valid": true,
+          "depth_m": 0.5389,
+          "point": [
+            0.3946,
+            -0.1589,
+            0.8331
+          ]
+        },
+        {
+          "u": 614,
+          "v": 249,
+          "valid": true,
+          "depth_m": 0.5865,
+          "point": [
+            0.3636,
+            -0.1806,
+            0.7652
+          ]
+        },
+        {
+          "u": 650,
+          "v": 240,
+          "valid": true,
+          "depth_m": 0.5612,
+          "point": [
+            0.3603,
+            -0.2055,
+            0.7917
+          ]
+        },
+        {
+          "u": 617,
+          "v": 212,
+          "valid": true,
+          "depth_m": 0.5392,
+          "point": [
+            0.3727,
+            -0.1686,
+            0.8222
+          ]
+        },
+        {
+          "u": 650,
+          "v": 201,
+          "valid": true,
+          "depth_m": 0.6206,
+          "point": [
+            0.4215,
+            -0.2272,
+            0.7553
+          ]
+        },
+        {
+          "u": 576,
+          "v": 212,
+          "valid": true,
+          "depth_m": 0.5938,
+          "point": [
+            0.3987,
+            -0.1462,
+            0.7741
+          ]
+        }
+      ],
+      "response_id": "chatcmpl-resp_06e1bad0c98c4d45016ab42315378087d285189ea73d25cd3f"
+    },
+    {
+      "preview": {
+        "position": [
+          0.151,
+          -0.226,
+          0.915
+        ],
+        "quaternion_wxyz": [
+          0.997185,
+          -0.075,
+          0,
+          0
+        ],
+        "steps": 3,
+        "gripper": "open"
+      },
+      "result": {
+        "within_limits": true,
+        "distance_m": 0.0368,
+        "rotation_rad": 0.239,
+        "predicted_palm_end": [
+          0.151,
+          -0.2262,
+          0.915
+        ],
+        "end": {
+          "thumb_tip": [
+            0.1491,
+            -0.1441,
+            1.0208
+          ],
+          "index_tip": [
+            0.323,
+            -0.2164,
+            1.0505
+          ],
+          "middle_tip": [
+            0.3353,
+            -0.1707,
+            1.0187
+          ],
+          "aperture_center": [
+            0.2304,
+            -0.1892,
+            0.9969
+          ],
+          "lowest_point": [
+            0.2008,
+            -0.2111,
+            0.9385
+          ]
+        },
+        "lowest_hand_point_along_path": {
+          "z": 0.852,
+          "point": [
+            0.365,
+            -0.2528,
+            0.852
+          ]
+        },
+        "note": "own-body dynamics (self-contacts kept, contacts with anything else removed): it does not know about the table or objects"
+      },
+      "response_id": "chatcmpl-resp_0accbbcd0940d611016ab4231c587487d2b712dcdf62926b93"
+    }
+  ],
+  "observed": {
+    "palm": {
+      "position": [
+        0.18672,
+        -0.22595,
+        0.90596
+      ],
+      "quaternion_wxyz": [
+        0.982492,
+        -0.175626,
+        0.043489,
+        -0.044417
+      ]
+    },
+    "arm_joints_rad": [
+      0.06409,
+      -0.35,
+      -0.0632,
+      -0.09523,
+      -0.00209,
+      0.13248,
+      -0.01372
+    ],
+    "waist_yaw_rad": 0.0,
+    "gripper_closure": 0.0
+  },
+  "tool": "actuate",
+  "what_i_see": "The head view shows an upright white mug on the table just left of the right hand, with its handle to the left. The right-wrist view shows the mug below-left of the projecting fingers; the left-wrist view shows the other hand and table, not the mug. Depth places the table near z=0.75 and the mug rim near z=0.84, below the current fingertips.",
+  "arguments": {
+    "what_i_see": "The head view shows an upright white mug on the table just left of the right hand, with its handle to the left. The right-wrist view shows the mug below-left of the projecting fingers; the left-wrist view shows the other hand and table, not the mug. Depth places the table near z=0.75 and the mug rim near z=0.84, below the current fingertips.",
+    "reason": "Retract slightly into clear space and establish a level side-grasp attitude with the hand open before descending beside the mug.",
+    "steps": 3,
+    "position": [
+      0.151,
+      -0.226,
+      0.915
+    ],
+    "quaternion_wxyz": [
+      0.997185,
+      -0.075,
+      0,
+      0
+    ],
+    "gripper": "open"
+  },
+  "result": {
+    "status": "executed",
+    "frames": 18,
+    "requested_position": [
+      0.151,
+      -0.226,
+      0.915
+    ],
+    "reached_position": [
+      0.15233,
+      -0.22549,
+      0.91479
+    ],
+    "position_gap_m": 0.0014,
+    "rotation_gap_rad": 1.1823,
+    "hand_table_contact": [],
+    "self_collision": [],
+    "ik_at_request": {
+      "position_error_m": 0.0002981077684461983,
+      "orientation_error_rad": 0.0010956167454681117,
+      "iterations": 38
+    }
+  }
+}

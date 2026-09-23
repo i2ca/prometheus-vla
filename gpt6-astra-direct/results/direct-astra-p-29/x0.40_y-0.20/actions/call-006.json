@@ -1,0 +1,44 @@
+{
+  "accepted": true,
+  "action": {
+    "reason": "Test retention with a checked 2.3 cm upward motion, holding the present attitude and closed grasp. Compare mug motion with hand motion before lifting farther.",
+    "steps": 3,
+    "target": {
+      "position": [
+        0.26854,
+        -0.22519,
+        0.90589
+      ],
+      "quaternion_wxyz": [
+        0.953027,
+        -0.167096,
+        0.228097,
+        -0.108585
+      ],
+      "gripper": "closed"
+    }
+  },
+  "executed": {
+    "status": "executed",
+    "frames": 18,
+    "requested_position": [
+      0.26854,
+      -0.22519,
+      0.90589
+    ],
+    "reached_position": [
+      0.26713,
+      -0.22567,
+      0.90379
+    ],
+    "position_gap_m": 0.0026,
+    "rotation_gap_rad": 0.0662,
+    "hand_table_contact": [],
+    "self_collision": [],
+    "ik_at_request": {
+      "position_error_m": 0.00029516494712876853,
+      "orientation_error_rad": 0.0008424169491166286,
+      "iterations": 13
+    }
+  }
+}

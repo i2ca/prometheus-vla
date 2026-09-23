@@ -1,0 +1,44 @@
+{
+  "accepted": true,
+  "action": {
+    "reason": "Test retention with a 3 cm vertical lift, preserving the current side-grasp attitude and closed fingers. The preview keeps the whole hand above the table throughout.",
+    "steps": 3,
+    "target": {
+      "position": [
+        0.26544,
+        -0.22184,
+        0.85892
+      ],
+      "quaternion_wxyz": [
+        0.984888,
+        0.039917,
+        -0.020289,
+        -0.167306
+      ],
+      "gripper": "closed"
+    }
+  },
+  "executed": {
+    "status": "executed",
+    "frames": 18,
+    "requested_position": [
+      0.26544,
+      -0.22184,
+      0.85892
+    ],
+    "reached_position": [
+      0.26369,
+      -0.22286,
+      0.85714
+    ],
+    "position_gap_m": 0.0027,
+    "rotation_gap_rad": 0.0905,
+    "hand_table_contact": [],
+    "self_collision": [],
+    "ik_at_request": {
+      "position_error_m": 0.0002971721017341792,
+      "orientation_error_rad": 0.0008590664099348858,
+      "iterations": 60
+    }
+  }
+}

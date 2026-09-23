@@ -1,0 +1,44 @@
+{
+  "accepted": true,
+  "action": {
+    "reason": "Lower the already open hand toward the mug while preserving the current deliberate hand attitude and keeping the fingertips above the table.",
+    "steps": 1,
+    "target": {
+      "position": [
+        0.32486,
+        -0.24841,
+        0.8635
+      ],
+      "quaternion_wxyz": [
+        0.976094,
+        0.143303,
+        -0.133909,
+        0.093669
+      ],
+      "gripper": "open"
+    }
+  },
+  "executed": {
+    "status": "executed",
+    "frames": 6,
+    "requested_position": [
+      0.32486,
+      -0.24841,
+      0.8635
+    ],
+    "reached_position": [
+      0.32288,
+      -0.24839,
+      0.85818
+    ],
+    "position_gap_m": 0.0057,
+    "rotation_gap_rad": 0.0104,
+    "hand_table_contact": [],
+    "self_collision": [],
+    "ik_at_request": {
+      "position_error_m": 0.0002921203841590356,
+      "orientation_error_rad": 0.0007142070365312111,
+      "iterations": 45
+    }
+  }
+}

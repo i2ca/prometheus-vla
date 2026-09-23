@@ -1,0 +1,85 @@
+{
+  "episode": "results/direct-astra-p-28/x0.40_y-0.20",
+  "at": "2026-09-23T17:24:31+00:00",
+  "critic_model": "gpt-6-astra",
+  "response_id": "chatcmpl-resp_02761e6043cb62ce016ab40ac4612c87d2b323bb1e97cec2d9",
+  "usage": {
+    "input_tokens": 12065,
+    "output_tokens": 4575
+  },
+  "accepted": false,
+  "diagnosis": "The episode failed before grasp acquisition. Depth use was initially useful: the policy localized the tabletop and visible mug surfaces, and its clearance checks avoided hand–table and self-collisions. However, it did not convert those observations into verified opposing-contact geometry. It repeatedly treated projected enclosure, aperture height, and table clearance as evidence that further approach or descent was safe. Simulator truth shows unilateral contacts causing increasing tilt excursions, culminating in a tip of about 93 degrees. Increasing occlusion was not resolved before further lowering. Meanwhile, commands repeatedly adopted the latest measured orientation, allowing tracking drift to change the contact geometry despite claims of preserving an established attitude. No close command was issued. The evaluator reported only 4.2 cm of lift, no upright grasp, and no retained hold. Sampling was substantial—74 depth points across 13 batches—but did not resolve the decisive questions: whether the target had moved and whether opposing contact surfaces actually bracketed it.",
+  "failure_mode": "Unsecured-target tipping during open-hand approach, caused by unverified contact geometry and continued motion despite changing target pose and hand attitude; no grasp was acquired.",
+  "lessons_review": [
+    {
+      "lesson": "Check clearance for the whole moving assembly before translation, rotation, or recovery.",
+      "verdict": "helped",
+      "why": "Clearance previews influenced the motions throughout steps 1–7, and no hand–table or self-collision was recorded. Application was incomplete: the policy emphasized the lowest hand point above the table while target contact progressively destabilized the mug. Retain whole-assembly clearance, but connect it explicitly to target-relative contact geometry."
+    },
+    {
+      "lesson": "Plan from observed exterior and actual contact surfaces; unload and realign after target motion, then verify retention and task completion.",
+      "verdict": "neutral",
+      "why": "The principle was appropriate but was not effectively enforced. Steps 3–7 continued advancing or lowering without establishing opposing contacts or resolving changing target pose. There was no closure or retention test. The revised rule should make bracketing in depth and height explicit and give a concrete observation-and-recovery sequence."
+    },
+    {
+      "lesson": "Maintain a deliberate attitude reference rather than adopting tracking drift as the new reference.",
+      "verdict": "neutral",
+      "why": "The policy repeatedly commanded the latest measured quaternion instead of preserving an independent reference. Step 2 had substantial orientation error, and subsequent commands inherited the changed attitude. Across step 6, the measured aperture rose despite palm descent, demonstrating why palm translation alone was misleading. The rule was not harmful; it needs a more explicit attitude-versus-translation check."
+    },
+    {
+      "lesson": "Query depth only to resolve an identified geometric uncertainty, reuse stable geometry, and act once the uncertainty is resolved.",
+      "verdict": "neutral",
+      "why": "Initial probes established useful surface and support geometry, but repeated batches did not produce a reliable target-pose or contact-boundary estimate. Some returns came from support or robot surfaces, and growing occlusion remained unresolved. Reobservation was justified when the target moved, but broad resampling without an action-changing interpretation added considerable overhead."
+    }
+  ],
+  "lessons": [
+    {
+      "lesson": "For grasp acquisition, compare identifiable target surfaces with the contact patches and closing sweeps derived from measured hand pose and joints. Confirm that opposing patches bracket the same intended region in depth and height, not merely in image projection or around an aperture center. If they do not, reposition the open hand through checked free space or select a different attainable approach. Check the entire moving assembly, including the proximal arm, against the target, support, environment, and robot body. Once aligned, close without advancing and verify retention through cautious object–hand co-motion; if retention fails, re-support and realign before retrying. After retention is verified, perform and recheck the requested object motion and hold.",
+      "evidence_steps": [
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ],
+      "why": "Table clearance remained intact, but unilateral contacts tipped the mug. The policy lowered based on aperture height without confirming that actual opposing contact patches could close around the same region. It never closed or established retention."
+    },
+    {
+      "lesson": "After near-contact motion, compare identifiable target features with the support and measured hand motion to check whether the target remained stable. If an unsecured target shifts or tilts, unload along a clearance-checked path, observe its supported pose, and recompute the approach before resuming. If occlusion prevents distinguishing target motion from viewpoint change, inspect an informative available view or make a checked viewing adjustment, then use the clarified geometry to realign rather than continuing the same contact-changing motion.",
+      "evidence_steps": [
+        3,
+        4,
+        5,
+        6,
+        7
+      ],
+      "why": "Tilt excursions increased from about 10 degrees at step 3 to about 33 degrees at step 6, followed by tipping at step 7. The policy continued to describe an upright target despite increasingly obstructed views. A target-stability check could have triggered recovery without access to hidden contact labels."
+    },
+    {
+      "lesson": "Keep a deliberate task-compatible attitude reference separate from the latest measured attitude, while initializing translations from the measured position. Before reducing clearance, compare the reached attitude and derived contact geometry with that reference. If palm motion and contact-surface motion disagree because of unintended rotation, make a clearance-checked attitude correction instead of compensating with further approach motion. If the reference cannot be maintained, choose and verify another attainable task-compatible attitude in free space, then resume from that configuration.",
+      "evidence_steps": [
+        2,
+        3,
+        5,
+        6,
+        7
+      ],
+      "why": "Successive commands rebased orientation onto measured drift. During step 6, palm descent did not lower the aperture as expected because the hand rotated. Further descent addressed the apparent aperture error without resolving the changed contact geometry."
+    },
+    {
+      "lesson": "Before probing depth, state which geometric uncertainty will change the next action and select the smallest useful set of identifiable features in the current image. Associate returns with the surfaces actually visible, distinguishing the target, support, background, and robot; do not treat points through openings as exterior contact boundaries. Reuse geometry while observations remain consistent, but update the target pose when motion is suspected. If the needed boundary is occluded, obtain a more informative view before probing again. Once the uncertainty is resolved, execute the corresponding adjustment rather than resampling already established geometry.",
+      "evidence_steps": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ],
+      "why": "The policy gathered 74 depth points in 13 batches during seven actuation calls. Initial localization helped, but later sampling did not resolve target displacement, occlusion, or opposing-contact alignment. Targeted, surface-labeled probes would have been more useful and less costly than repeated broad batches."
+    }
+  ],
+  "rejected_lessons": []
+}

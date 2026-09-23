@@ -1,0 +1,33 @@
+{
+  "accepted": false,
+  "errors": [
+    "ensaio do movimento com a dinamica do braco: right_shoulder_roll_link encosta em torso_link; nada foi executado. Mude o alvo ou a orientacao para afastar o braco do tronco, ou divida a rotacao em passos menores."
+  ],
+  "ik": {
+    "position_error_m": 0.00029929589685176656,
+    "orientation_error_rad": 0.0010849905208808858,
+    "iterations": 61,
+    "rehearsal_self_collision": [
+      "right_shoulder_roll_link",
+      "torso_link"
+    ]
+  },
+  "action": {
+    "reason": "Reorient the open hand in clearance behind the mug while raising the palm slightly. The preview keeps the entire hand above the tabletop despite substantial predicted tracking drift.",
+    "steps": 5,
+    "target": {
+      "position": [
+        0.1535,
+        -0.2271,
+        0.95
+      ],
+      "quaternion_wxyz": [
+        0.441,
+        -0.858,
+        0.203,
+        -0.166
+      ],
+      "gripper": "open"
+    }
+  }
+}

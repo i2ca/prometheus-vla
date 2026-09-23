@@ -1,0 +1,44 @@
+{
+  "accepted": true,
+  "action": {
+    "reason": "Test retention with a 2 cm vertical lift while keeping the grasp attitude unchanged. The previewed swept hand stays above the table; observe the mug's separated rim and lower-body features before lifting farther.",
+    "steps": 2,
+    "target": {
+      "position": [
+        0.28453,
+        -0.202,
+        0.89211
+      ],
+      "quaternion_wxyz": [
+        0.964448,
+        -0.172016,
+        0.154526,
+        -0.127956
+      ],
+      "gripper": "closed"
+    }
+  },
+  "executed": {
+    "status": "executed",
+    "frames": 12,
+    "requested_position": [
+      0.28453,
+      -0.202,
+      0.89211
+    ],
+    "reached_position": [
+      0.28321,
+      -0.20318,
+      0.89097
+    ],
+    "position_gap_m": 0.0021,
+    "rotation_gap_rad": 0.0464,
+    "hand_table_contact": [],
+    "self_collision": [],
+    "ik_at_request": {
+      "position_error_m": 0.0002973573012376306,
+      "orientation_error_rad": 0.0008523483623973166,
+      "iterations": 14
+    }
+  }
+}

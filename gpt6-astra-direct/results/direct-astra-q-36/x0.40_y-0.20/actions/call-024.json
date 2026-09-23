@@ -1,0 +1,44 @@
+{
+  "accepted": true,
+  "action": {
+    "reason": "Move slightly outward into clear space before descending for a side grasp, keeping the intended level attitude rather than following transient finger swing.",
+    "steps": 1,
+    "target": {
+      "position": [
+        0.1804,
+        -0.285,
+        0.92
+      ],
+      "quaternion_wxyz": [
+        1,
+        0,
+        0,
+        0
+      ],
+      "gripper": "open"
+    }
+  },
+  "executed": {
+    "status": "executed",
+    "frames": 6,
+    "requested_position": [
+      0.1804,
+      -0.285,
+      0.92
+    ],
+    "reached_position": [
+      0.18082,
+      -0.28561,
+      0.91931
+    ],
+    "position_gap_m": 0.001,
+    "rotation_gap_rad": 0.1207,
+    "hand_table_contact": [],
+    "self_collision": [],
+    "ik_at_request": {
+      "position_error_m": 0.00025761930161032987,
+      "orientation_error_rad": 0.0007645972351437704,
+      "iterations": 10
+    }
+  }
+}

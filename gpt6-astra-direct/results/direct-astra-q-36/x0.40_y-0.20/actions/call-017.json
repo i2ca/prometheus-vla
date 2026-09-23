@@ -1,0 +1,44 @@
+{
+  "accepted": true,
+  "action": {
+    "reason": "Establish a level side-grasp attitude in clearance above the mug. Use a short action to check the unexpected rotational tracking before descending.",
+    "steps": 1,
+    "target": {
+      "position": [
+        0.221,
+        -0.237,
+        0.931
+      ],
+      "quaternion_wxyz": [
+        1,
+        0,
+        0,
+        0
+      ],
+      "gripper": "open"
+    }
+  },
+  "executed": {
+    "status": "executed",
+    "frames": 6,
+    "requested_position": [
+      0.221,
+      -0.237,
+      0.931
+    ],
+    "reached_position": [
+      0.22126,
+      -0.23622,
+      0.93326
+    ],
+    "position_gap_m": 0.0024,
+    "rotation_gap_rad": 0.1662,
+    "hand_table_contact": [],
+    "self_collision": [],
+    "ik_at_request": {
+      "position_error_m": 0.0002987652261138642,
+      "orientation_error_rad": 0.0009214930159821294,
+      "iterations": 22
+    }
+  }
+}

@@ -1,0 +1,44 @@
+{
+  "accepted": true,
+  "action": {
+    "reason": "Make a small, previously previewed correction toward the intended level side-grasp attitude in clearance; check actual rotation before descending.",
+    "steps": 1,
+    "target": {
+      "position": [
+        0.2404,
+        -0.2359,
+        0.9356
+      ],
+      "quaternion_wxyz": [
+        0.994062,
+        0.04786,
+        -0.0127,
+        0.09691
+      ],
+      "gripper": "open"
+    }
+  },
+  "executed": {
+    "status": "executed",
+    "frames": 6,
+    "requested_position": [
+      0.2404,
+      -0.2359,
+      0.9356
+    ],
+    "reached_position": [
+      0.23969,
+      -0.237,
+      0.93562
+    ],
+    "position_gap_m": 0.0013,
+    "rotation_gap_rad": 0.0928,
+    "hand_table_contact": [],
+    "self_collision": [],
+    "ik_at_request": {
+      "position_error_m": 0.00017450533102831,
+      "orientation_error_rad": 0.0005177522067998189,
+      "iterations": 3
+    }
+  }
+}

@@ -1,0 +1,44 @@
+{
+  "accepted": true,
+  "action": {
+    "reason": "Raise the closed hand 3 cm at the measured attitude, using it as a fixed attitude reference, to test mug\u2013hand co-motion. The preview keeps the lowest hand point above the table throughout.",
+    "steps": 3,
+    "target": {
+      "position": [
+        0.26565,
+        -0.22576,
+        0.98378
+      ],
+      "quaternion_wxyz": [
+        0.91926,
+        -0.159242,
+        0.328512,
+        -0.147251
+      ],
+      "gripper": "closed"
+    }
+  },
+  "executed": {
+    "status": "executed",
+    "frames": 18,
+    "requested_position": [
+      0.26565,
+      -0.22576,
+      0.98378
+    ],
+    "reached_position": [
+      0.26534,
+      -0.22565,
+      0.98189
+    ],
+    "position_gap_m": 0.0019,
+    "rotation_gap_rad": 0.0928,
+    "hand_table_contact": [],
+    "self_collision": [],
+    "ik_at_request": {
+      "position_error_m": 0.0002820175222227274,
+      "orientation_error_rad": 0.0008090555659317368,
+      "iterations": 10
+    }
+  }
+}

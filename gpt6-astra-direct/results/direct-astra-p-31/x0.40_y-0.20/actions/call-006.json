@@ -1,0 +1,44 @@
+{
+  "accepted": true,
+  "action": {
+    "reason": "Translate the open hand toward a side-grasp alignment, preserving the intended attitude. The previewed fingers pass outside the mug and remain at least about 18 mm above the table.",
+    "steps": 3,
+    "target": {
+      "position": [
+        0.2672,
+        -0.21775,
+        0.8289
+      ],
+      "quaternion_wxyz": [
+        0.993826,
+        0.037373,
+        0.011518,
+        -0.103825
+      ],
+      "gripper": "open"
+    }
+  },
+  "executed": {
+    "status": "executed",
+    "frames": 18,
+    "requested_position": [
+      0.2672,
+      -0.21775,
+      0.8289
+    ],
+    "reached_position": [
+      0.26619,
+      -0.21953,
+      0.82924
+    ],
+    "position_gap_m": 0.0021,
+    "rotation_gap_rad": 0.121,
+    "hand_table_contact": [],
+    "self_collision": [],
+    "ik_at_request": {
+      "position_error_m": 0.00027570141378620576,
+      "orientation_error_rad": 0.0007991335737239204,
+      "iterations": 11
+    }
+  }
+}

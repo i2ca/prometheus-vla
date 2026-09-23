@@ -1,0 +1,75 @@
+{
+  "case": {
+    "home_shoulder_roll_rad": -0.35,
+    "left_arm_pose": [
+      0.3,
+      0.15,
+      0.0,
+      0.7,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "hand_kp": 8,
+    "offset": [
+      -0.02,
+      -0.02,
+      -0.02
+    ],
+    "gain": 1.5,
+    "cup_yaw_deg": 90.0,
+    "instruction": "Pegue a caneca branca da mesa com a mao direita, levante-a pelo menos 8 cm mantendo-a em pe, e segure por 2 segundos.",
+    "cup_xy": [
+      0.4,
+      -0.2
+    ],
+    "home_arm_pose": [
+      0.06409163773059845,
+      -0.3499999940395355,
+      -0.0632048025727272,
+      -0.09522665292024612,
+      -0.0020852552261203527,
+      0.13248226046562195,
+      -0.013721458613872528
+    ]
+  },
+  "scene": "scene_grasp.xml",
+  "max_calls": 200,
+  "max_sim_seconds": 3600.0,
+  "video": true,
+  "fps": 30,
+  "step_seconds": 0.2,
+  "hand_open": [
+    -0.0450708232820034,
+    -0.06435875594615936,
+    -0.06325916200876236,
+    0.029303444549441338,
+    0.036779142916202545,
+    0.05189113691449165,
+    0.04266977310180664
+  ],
+  "hand_close": [
+    -0.04506239295005798,
+    -0.2869790196418762,
+    -0.7255648374557495,
+    0.5860313177108765,
+    1.297844648361206,
+    0.7173755764961243,
+    0.9146603345870972
+  ],
+  "limits": {
+    "max_target_distance_m": 0.05,
+    "max_target_rotation_rad": 0.35,
+    "max_steps_per_call": 5,
+    "ik_tolerance_m": 0.03,
+    "ik_tolerance_rad": 0.15,
+    "max_joint_speed_deg_s": 240.0
+  },
+  "calls": 4,
+  "frames": 161,
+  "aborted": null,
+  "policy_model": "cx/gpt-6-astra via OmniRoute",
+  "system_prompt": "You are the visuomotor policy for a Unitree G1 humanoid in MuJoCo, right arm, Dex3 hand.\nUse only the RGB images and measured proprioception in this message. You do not know the cup pose.\nEach call: choose ONE absolute target pose for the right palm, within 5 cm and 0.35 rad of the\ncurrent measured palm pose, then look at the next observation. Frame: x forward, y left, z up (meters).\nKeep the hand above the table in transit, approach the mug from the side at mid height, open before\ncontact, close only when the mug is between thumb and fingers, then lift. Touching the table with the\nhand or the robot body aborts the episode. If a command is rejected, read the error and fix it.\nCameras: head_camera (848x480) on the head looking down at the workspace; left_wrist_camera and\nright_wrist_camera (424x240) mounted on top of each wrist, looking forward along the hand. All three are\nRGB-D. Call probe_depth with a camera and pixel coordinates (u, v) (a labeled grid is drawn on each image)\nto get the 3D point under each pixel, in the same frame as the palm pose. It does not move the robot.\nThe observation includes hand_geometry: approximate fingertip positions and the center of the grasp aperture\nbetween thumb and opposing fingers, from your measured joint angles. The palm is not the leading part of the\nhand; plan with these points. Rotating the hand swings the fingertips; call preview_pose to check where they\nwould go before committing a motion.\nIn `what_i_see`, describe what each camera shows right now (mug, hand, fingers, table) before deciding.\nPut your immediate purpose in `reason` (one or two sentences).\nThere is no limit on the number of calls: keep working until the task is done. Still, every call costs\ntime and tokens, so prefer the fewest calls that reliably complete the task.\nCall finish_episode only when the mug is lifted and held. The controller rejects unsafe commands (you get\nthe reason back), so a rejection is information, not a reason to stop.\n\nLessons from your previous attempts (follow them):\n- Plan contact using the complete hand configuration and its swept path, not just the palm position or clearance above a support surface. Use the available views and measured hand configuration to align the target between opposing contact regions while keeping the approach and closing sweep clear. If part of the hand would strike the target before that alignment is achieved, choose a clear offset approach and establish the needed attitude before advancing. If an unsecured target moves unexpectedly, unload along an observed clear path, reobserve its pose, and restore compatible support or revise the approach before closing.\n- Maintain explicit task-compatible pose goals and compare achieved palm motion, attitude, and joint configuration with the intended change after each action. Treat reorientation as a whole-arm sweep, including any held object, and inspect body and surrounding clearance. If attitude tracking degrades or clearance becomes uncertain, inspect a more informative available view and choose a verified-clear waypoint or better arm configuration before resuming the approach. Preserve attitude while leaving constrained geometry, then blend reorientation into verified clearance; if retention is unreliable, re-support the object before reconfiguring.\n- Choose depth samples to resolve the geometric uncertainty that changes the next action. Associate returns with identifiable target surfaces or relevant obstacles, reject unintended hand or background returns, and compare the resulting geometry with the measured hand configuration to select a clear approach and opposing contacts. Infer attitude from coherent surfaces or corresponding features rather than unrelated samples. Reuse geometry while observations remain consistent. If surface identity is ambiguous, inspect another available view before adding samples; if the unresolved issue is arm clearance or pose tracking, inspect the relevant images and proprioception instead of resampling the target.\n- Once the target is aligned within opposing contact regions and the closing sweep is clear, close and perform a cautious, task-compatible retention test. Track corresponding object features to verify hand-relative stability separately from required displacement and attitude. If retention and task conditions are verified, proceed to the next required action or complete the remaining hold. If retention is reliable but attitude is wrong, correct it in verified clearance. If retention is ambiguous, obtain a more informative view or measurement; if it remains unreliable, re-support the object and revise the grasp. Count holding time only while the required conditions remain verified.",
+  "lessons_file": "results/direct-lessons-visao-real.json",
+  "policy_effort": "max"
+}

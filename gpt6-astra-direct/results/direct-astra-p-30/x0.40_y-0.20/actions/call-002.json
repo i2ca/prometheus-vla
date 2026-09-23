@@ -1,0 +1,44 @@
+{
+  "accepted": true,
+  "action": {
+    "reason": "Advance the open grasp toward the mug while retaining clearance under the lowest finger. Keep the existing side-approach attitude as the reference for this bounded translation.",
+    "steps": 2,
+    "target": {
+      "position": [
+        0.2665,
+        -0.2256,
+        0.894
+      ],
+      "quaternion_wxyz": [
+        0.978621,
+        -0.179714,
+        0.090544,
+        -0.042498
+      ],
+      "gripper": "open"
+    }
+  },
+  "executed": {
+    "status": "executed",
+    "frames": 12,
+    "requested_position": [
+      0.2665,
+      -0.2256,
+      0.894
+    ],
+    "reached_position": [
+      0.26602,
+      -0.22572,
+      0.89452
+    ],
+    "position_gap_m": 0.0007,
+    "rotation_gap_rad": 0.1571,
+    "hand_table_contact": [],
+    "self_collision": [],
+    "ik_at_request": {
+      "position_error_m": 0.0002981696217977023,
+      "orientation_error_rad": 0.0008540906899888991,
+      "iterations": 58
+    }
+  }
+}

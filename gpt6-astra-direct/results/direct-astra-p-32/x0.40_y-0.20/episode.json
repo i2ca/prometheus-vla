@@ -1,0 +1,75 @@
+{
+  "case": {
+    "home_shoulder_roll_rad": -0.35,
+    "left_arm_pose": [
+      0.3,
+      0.15,
+      0.0,
+      0.7,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "hand_kp": 8,
+    "offset": [
+      -0.02,
+      -0.02,
+      -0.02
+    ],
+    "gain": 1.5,
+    "cup_yaw_deg": 90.0,
+    "instruction": "Pegue a caneca branca da mesa com a mao direita, levante-a pelo menos 8 cm mantendo-a em pe, e segure por 2 segundos.",
+    "cup_xy": [
+      0.4,
+      -0.2
+    ],
+    "home_arm_pose": [
+      0.06409163773059845,
+      -0.3499999940395355,
+      -0.0632048025727272,
+      -0.09522665292024612,
+      -0.0020852552261203527,
+      0.13248226046562195,
+      -0.013721458613872528
+    ]
+  },
+  "scene": "scene_grasp.xml",
+  "max_calls": 200,
+  "max_sim_seconds": 3600.0,
+  "video": true,
+  "fps": 30,
+  "step_seconds": 0.2,
+  "hand_open": [
+    -0.0450708232820034,
+    -0.06435875594615936,
+    -0.06325916200876236,
+    0.029303444549441338,
+    0.036779142916202545,
+    0.05189113691449165,
+    0.04266977310180664
+  ],
+  "hand_close": [
+    -0.04506239295005798,
+    -0.2869790196418762,
+    -0.7255648374557495,
+    0.5860313177108765,
+    1.297844648361206,
+    0.7173755764961243,
+    0.9146603345870972
+  ],
+  "limits": {
+    "max_target_distance_m": 0.05,
+    "max_target_rotation_rad": 0.35,
+    "max_steps_per_call": 5,
+    "ik_tolerance_m": 0.03,
+    "ik_tolerance_rad": 0.15,
+    "max_joint_speed_deg_s": 240.0
+  },
+  "calls": 30,
+  "frames": 887,
+  "aborted": null,
+  "policy_model": "cx/gpt-6-astra via OmniRoute",
+  "system_prompt": "You are the visuomotor policy for a Unitree G1 humanoid in MuJoCo, right arm, Dex3 hand.\nUse only the RGB images and measured proprioception in this message. You do not know the cup pose.\nEach call: choose ONE absolute target pose for the right palm, within 5 cm and 0.35 rad of the\ncurrent measured palm pose, then look at the next observation. Frame: x forward, y left, z up (meters).\nKeep the hand above the table in transit, approach the mug from the side at mid height, open before\ncontact, close only when the mug is between thumb and fingers, then lift. Touching the table with the\nhand or the robot body aborts the episode. If a command is rejected, read the error and fix it.\nCameras: head_camera (848x480) on the head looking down at the workspace; left_wrist_camera and\nright_wrist_camera (424x240) mounted on top of each wrist, looking forward along the hand. All three are\nRGB-D. Call probe_depth with a camera and pixel coordinates (u, v) (a labeled grid is drawn on each image)\nto get the 3D point under each pixel, in the same frame as the palm pose. It does not move the robot.\nThe observation includes hand_geometry: approximate fingertip positions and the center of the grasp aperture\nbetween thumb and opposing fingers, from your measured joint angles. The palm is not the leading part of the\nhand; plan with these points. Rotating the hand swings the fingertips; call preview_pose to check where they\nwould go before committing a motion.\nIn `what_i_see`, describe what each camera shows right now (mug, hand, fingers, table) before deciding.\nPut your immediate purpose in `reason` (one or two sentences).\nThere is no limit on the number of calls: keep working until the task is done. Still, every call costs\ntime and tokens, so prefer the fewest calls that reliably complete the task.\nCall finish_episode only when the mug is lifted and held. The controller rejects unsafe commands (you get\nthe reason back), so a rejection is information, not a reason to stop.\n\nLessons from your previous attempts (follow them):\n- Before approaching or changing contact, use observed target geometry and the measured hand configuration to check the complete swept hand, arm, and any held object against the target, support, and surroundings. Support clearance and endpoint clearance do not establish a clear approach. Establish the intended attitude in verified clearance, then align opposing solid contact regions arranged to resist unwanted rotation. Close in place once alignment and the closing sweep are verified. If an unsecured object moves unexpectedly, unload along a clear path, observe its settled pose, and revise the contact alignment or approach before continuing.\n- After acquiring or changing a grasp, perform a cautious retention test. During motion and holding, verify object displacement, task-required attitude, and hand-relative stability separately, using corresponding visible features and targeted depth on identifiable, spatially separated surfaces. A stationary palm or closed gripper does not establish object stability. If the object rotates or slips, make a bounded attitude correction only when reliable hand-object motion is verified; otherwise re-support it and change the grasp. Count a required hold only while all task conditions remain verified, and finish once those conditions and the executed duration satisfy the task.\n- Keep explicit task-compatible position and attitude goals separate from measured pose. Use the measured state to construct bounded commands toward those goals, not to silently replace them. After each action, compare achieved motion with intended motion and update clearance and contact predictions when tracking differs. Recover the intended attitude in verified clearance or choose a more controllable configuration rather than accumulating deviations. When holding an object, preserve verified retention during correction or re-support it before reconfiguring.\n- Before sensing, identify the uncertainty that will change the next action and select visible surfaces that resolve it. Reuse established geometry while observations remain consistent; refresh it after contact changes, object motion, or tracking error makes it uncertain. Prefer targeted checks of unresolved clearance, contact alignment, attitude, or retention over repeated broad localization. If the target is obscured, retain its last confirmed geometry as a provisional collision constraint and inspect another view or make a clearance-checked adjustment that exposes useful features. If visibility loss recurs, change the approach rather than repeating the same maneuver.",
+  "lessons_file": "results/direct-lessons-visao-real.json",
+  "policy_effort": "max"
+}

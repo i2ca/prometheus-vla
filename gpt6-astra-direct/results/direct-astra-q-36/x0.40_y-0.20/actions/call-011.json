@@ -1,0 +1,44 @@
+{
+  "accepted": true,
+  "action": {
+    "reason": "Rotate the open hand toward a side-grasp attitude while it remains high and clear of the mug. Use a short motion because the longer preview showed substantial tracking drift.",
+    "steps": 1,
+    "target": {
+      "position": [
+        0.1947,
+        -0.2671,
+        0.978
+      ],
+      "quaternion_wxyz": [
+        0.86624,
+        -0.44484,
+        0.21361,
+        -0.06179
+      ],
+      "gripper": "open"
+    }
+  },
+  "executed": {
+    "status": "executed",
+    "frames": 6,
+    "requested_position": [
+      0.1947,
+      -0.2671,
+      0.978
+    ],
+    "reached_position": [
+      0.19526,
+      -0.26627,
+      0.97747
+    ],
+    "position_gap_m": 0.0011,
+    "rotation_gap_rad": 0.4134,
+    "hand_table_contact": [],
+    "self_collision": [],
+    "ik_at_request": {
+      "position_error_m": 0.00024699220850437985,
+      "orientation_error_rad": 0.00074711356977719,
+      "iterations": 11
+    }
+  }
+}

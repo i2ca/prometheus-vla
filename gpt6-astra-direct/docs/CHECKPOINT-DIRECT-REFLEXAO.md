@@ -35,7 +35,17 @@ Critério: aceito pelo `direct_finish.py`, com os mesmos critérios do controlad
 | direct-astra-12-geometria-mao | + pontas dos dedos na observação | **pegou e levantou 9,3 cm, reteve 2 s**; reprovado por 40° | primeira pega real |
 | direct-astra-13 e ciclo c-14..c-21 (esforço padrão) | lições evoluindo | 0/8 aceitos; c-17 e c-20 levantaram ~9,8 cm e retiveram, 42° e 29° | pose inicial com dedos colados na caneca |
 | ciclo e-22..e-26 (esforço max) | idem | 0 aceitos; 3 abortos por mão na mesa | rotação da mão varria os dedos para baixo |
-| ciclo p-27.. (esforço max + preview_pose) | idem | rodando | |
+| p-27 | esforço max + preview_pose | abortado: ombro no tronco (na correção final) | levou à correção 8 |
+| p-28 | idem | tombou (93°) | polegar empurrou a caneca na descida |
+| **p-29** | idem | reprovado só por 24° na janela final; **pegou limpo (6°), levantou 19 cm, reteve** | **teria sido ACEITO se encerrasse em qualquer chamada entre a 12 e a 18** (sim_finish.py); ficou "verificando" e a caneca girou na mão |
+| p-30 | lições "encerrar quando cumprir" e "manter o objetivo na pausa" | reprovado (35°, não reteve) | |
+| **p-31** | idem | reprovado só por 23,5° ANTES do fecho; levantou 10,7 cm, reteve, 14,75° na janela, **encerrou certo após 2 s** | falha restante: empurrar a caneca na aproximação |
+| p-32 | idem | encerrado pelo operador (19° antes do fecho) | **endireitou a caneca na mão de 28° para 8°** |
+| p-33 | + lição "orientação é restrição já na aproximação" | abortado na 1: ombro no tronco | levou ao ensaio dinâmico (10) |
+| p-34, p-35 | idem (p-35 com ensaio dinâmico) | encerrados pela regra (≥15° antes do fecho) | dedo médio já encostava na pose inicial |
+| **q-36** | idem | encerrado pelo operador (laço de verificação) | **seria ACEITO em 13 pontos seguidos** (amostras 36 a 48): 11,4-12,6 cm, retida, 7,7° antes do fecho, 9-14,5° na janela; não declarou conclusão |
+| q-37, q-38 | + relógios gripper_closed_for_s / palm_still_for_s | reprovados | empurrão na aproximação |
+| q-39 | idem | **cota do Codex esgotada** na chamada 34 (HTTP 429, reset em ~150 h) | aproximação cuidadosa, 0° até ali |
 
 ## Mudanças no arnês e no runner (23/09 tarde), em ordem
 1. Vision Bridge corrigido (visão real) a partir do ep08.
@@ -51,6 +61,16 @@ Critério: aceito pelo `direct_finish.py`, com os mesmos critérios do controlad
    devolve pontas dos dedos no fim e o ponto mais baixo da mão no caminho. Validada: prevê as 3 batidas do e-22..e-24
    e erra ≤2,5 cm (para o lado seguro) em 6 ações reais do ep12. Um primeiro laço tinha bug (usava a pose de outro
    objeto) e dava previsão errada; corrigido antes do p-27.
+8. Autocolisão também no ombro (roll/yaw, margem 1,2 cm) e regra "se já está dentro da margem, só passa comando
+   que aumenta a folga"; e a malha de correção final não pode aproximar o braço do corpo (p-30+). Validado em 41
+   ações reais: 0 divergências, precisão da palma mantida (mediana 2,4 mm).
+10. Ensaio dinâmico antes de executar (p-35+): o comando inteiro (movimento, acomodação, correção) roda numa
+   cópia do robô com a dinâmica dele, autocontatos ligados e ambiente desligado; se o braço encostar no corpo, o
+   comando é recusado com o motivo. Pega o que a checagem cinemática não vê (no p-33 o alvo tinha 2,2 cm de folga e
+   a execução real encostou o ombro). 43 ações reais: 0 divergências, 0,87 s por comando.
+12. Relógios de propriocepção na observação (q-37+): gripper_closed_for_s e palm_still_for_s.
+11. Regra do operador: inclinação ≥15° sem dedo na caneca (critério "antes do fecho", sem volta) encerra (p-33+).
+9. `scripts/sim_finish.py <ep> <chamadas>`: aplica o avaliador como se a política tivesse encerrado em cada chamada.
 
 ## Decisões
 - A tarefa continua "pegue a caneca" (Luiz, 23/09). O system prompt do runner fica como está.
@@ -71,9 +91,13 @@ Critério: aceito pelo `direct_finish.py`, com os mesmos critérios do controlad
 - Falta: validar lições em outra posição da caneca (generalização) quando um episódio for aceito.
 
 ## Retomar (tudo roda na spark-aff4 desde 23/09 ~12h)
-Estado ao sair (23/09 ~14h): ciclo `direct-astra-p` (esforço max + preview_pose) rodando sozinho na Spark,
-até 6 rodadas ou 2 aceitos. Nenhum episódio aceito ainda. Melhor resultado: pega real com 9,8 cm e retenção
-de 2 s (c-20), reprovada só por 29° de inclinação (limite 15°).
+Estado em 23/09 ~17:55: **parado por cota**. O OmniRoute responde 429 para `codex/gpt-6-astra`: "All codex
+accounts reached configured quota threshold (reset after 150h)", ou seja, volta por volta de 29-30/09. O esforço
+max (milhares de tokens de raciocínio por decisão, ~US$ 1,3 por 10 chamadas em preço de tabela) consumiu a cota.
+Nenhum episódio aceito. Dois episódios (p-29 e q-36) cumpriram todos os critérios por vários passos seguidos e
+só falharam por não declarar a conclusão; o p-31 encerrou certo mas empurrou a caneca antes do fecho.
+Falha restante: (1) empurrar a caneca na aproximação (pose inicial com o dedo médio quase encostando);
+(2) encerrar quando cumprido. Os relógios (item 12) atacam (2) e só rodaram em q-37..q-39.
 ```bash
 ssh fercout@10.9.8.66                         # senha no cofre: ~/.Luiz/lewis-memory/i2ca-lcad/thinkstation-pgx.md
 cat ~/ciclo-previa.log                         # resultado de cada episódio do ciclo p

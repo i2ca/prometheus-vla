@@ -32,6 +32,8 @@ The observation includes hand_geometry: approximate fingertip positions and the 
 between thumb and opposing fingers, from your measured joint angles. The palm is not the leading part of the
 hand; plan with these points. Rotating the hand swings the fingertips; call preview_pose to check where they
 would go before committing a motion.
+gripper_closed_for_s and palm_still_for_s are clocks of your own state: how long the hand has been closed and
+how long the palm has been still, in simulated seconds.
 In `what_i_see`, describe what each camera shows right now (mug, hand, fingers, table) before deciding.
 Put your immediate purpose in `reason` (one or two sentences).
 There is no limit on the number of calls: keep working until the task is done. Still, every call costs
@@ -114,6 +116,7 @@ def post(body, retries=3):
 
 MAX_PROBE_ROUNDS = 4
 TOPPLED_DEG = 80.0
+TILT_BEFORE_CLOSE_DEG = 15.0   # mesmo limite do direct_finish.py
 
 
 INFO_TOOLS = ("probe_depth", "preview_pose")
@@ -230,6 +233,13 @@ def main():
         truth = ep_dir / "truth" / f"step-{obs['step_id']:03d}.json"
         if truth.exists() and json.loads(truth.read_text()).get("cup_tilt_deg", 0) > TOPPLED_DEG and call.get("tool") != "finish_episode":
             call["terminated_by_operator"] = f"objeto tombado (inclinacao acima de {TOPPLED_DEG} graus)"
+        # criterio do avaliador que nao tem volta: caneca inclinada acima do limite sem nenhum dedo nela (aproximacao)
+        if not call.get("terminated_by_operator") and call.get("tool") != "finish_episode":
+            s_path = ep_dir / "actions" / f"samples-{obs['step_id']:03d}.json"
+            if s_path.exists() and any(x["cup_tilt_deg"] >= TILT_BEFORE_CLOSE_DEG and not x["fingers"]
+                                       for x in json.loads(s_path.read_text())):
+                call["terminated_by_operator"] = (f"inclinacao acima de {TILT_BEFORE_CLOSE_DEG} graus antes da pega: "
+                                                  "o avaliador ja reprova, continuar so gasta chamadas")
         (ep_dir / "policy-calls" / f"call-{n:03d}.json").write_text(json.dumps(call, indent=2) + "\n")
         log.write(json.dumps(call) + "\n"); log.flush()
         r = call.get("result") or {}

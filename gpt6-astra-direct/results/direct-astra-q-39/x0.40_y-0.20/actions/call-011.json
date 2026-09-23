@@ -1,0 +1,44 @@
+{
+  "accepted": true,
+  "action": {
+    "reason": "Adjust the open hand in free space, using the clearance-checked rotation, then inspect the achieved finger alignment before approaching.",
+    "steps": 3,
+    "target": {
+      "position": [
+        0.17007,
+        -0.24053,
+        0.92508
+      ],
+      "quaternion_wxyz": [
+        0.99336,
+        -0.10106,
+        -0.01137,
+        -0.05314
+      ],
+      "gripper": "open"
+    }
+  },
+  "executed": {
+    "status": "executed",
+    "frames": 18,
+    "requested_position": [
+      0.17007,
+      -0.24053,
+      0.92508
+    ],
+    "reached_position": [
+      0.17128,
+      -0.24079,
+      0.92206
+    ],
+    "position_gap_m": 0.0033,
+    "rotation_gap_rad": 0.006,
+    "hand_table_contact": [],
+    "self_collision": [],
+    "ik_at_request": {
+      "position_error_m": 0.0002878781401013271,
+      "orientation_error_rad": 0.0009766455389575417,
+      "iterations": 8
+    }
+  }
+}

@@ -1,0 +1,44 @@
+{
+  "accepted": true,
+  "action": {
+    "reason": "Advance the open hand toward a side grasp while preserving the current reachable attitude and keeping all fingertips above the table.",
+    "steps": 3,
+    "target": {
+      "position": [
+        0.2307,
+        -0.22595,
+        0.89596
+      ],
+      "quaternion_wxyz": [
+        0.982492,
+        -0.175626,
+        0.043489,
+        -0.044417
+      ],
+      "gripper": "open"
+    }
+  },
+  "executed": {
+    "status": "executed",
+    "frames": 18,
+    "requested_position": [
+      0.2307,
+      -0.22595,
+      0.89596
+    ],
+    "reached_position": [
+      0.23035,
+      -0.22567,
+      0.89591
+    ],
+    "position_gap_m": 0.0005,
+    "rotation_gap_rad": 0.1297,
+    "hand_table_contact": [],
+    "self_collision": [],
+    "ik_at_request": {
+      "position_error_m": 0.00029445647619900624,
+      "orientation_error_rad": 0.0009118413576073573,
+      "iterations": 60
+    }
+  }
+}

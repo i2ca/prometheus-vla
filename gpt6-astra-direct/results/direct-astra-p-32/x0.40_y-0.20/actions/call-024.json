@@ -1,0 +1,44 @@
+{
+  "accepted": true,
+  "action": {
+    "reason": "Keep the existing grasp still for one second, then compare separated rim and lower-wall features to verify retention before correcting the mug's tilt.",
+    "steps": 5,
+    "target": {
+      "position": [
+        0.28318,
+        -0.18233,
+        1.07967
+      ],
+      "quaternion_wxyz": [
+        0.931338,
+        -0.182492,
+        0.27181,
+        -0.159452
+      ],
+      "gripper": "closed"
+    }
+  },
+  "executed": {
+    "status": "executed",
+    "frames": 30,
+    "requested_position": [
+      0.28318,
+      -0.18233,
+      1.07967
+    ],
+    "reached_position": [
+      0.28348,
+      -0.18225,
+      1.07815
+    ],
+    "position_gap_m": 0.0015,
+    "rotation_gap_rad": 0.0091,
+    "hand_table_contact": [],
+    "self_collision": [],
+    "ik_at_request": {
+      "position_error_m": 5.815079680776823e-06,
+      "orientation_error_rad": 0.0,
+      "iterations": 1
+    }
+  }
+}

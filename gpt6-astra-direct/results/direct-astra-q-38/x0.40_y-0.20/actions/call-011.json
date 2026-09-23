@@ -1,0 +1,44 @@
+{
+  "accepted": true,
+  "action": {
+    "reason": "Lower the open hand toward the mug's side without rotating. The preview keeps the full hand above z=0.780 and places the opposing fingertips outside the mug's lateral sides.",
+    "steps": 3,
+    "target": {
+      "position": [
+        0.2578,
+        -0.1842,
+        0.84
+      ],
+      "quaternion_wxyz": [
+        0.97079,
+        -0.017675,
+        -0.016617,
+        -0.238702
+      ],
+      "gripper": "open"
+    }
+  },
+  "executed": {
+    "status": "executed",
+    "frames": 18,
+    "requested_position": [
+      0.2578,
+      -0.1842,
+      0.84
+    ],
+    "reached_position": [
+      0.25659,
+      -0.18424,
+      0.83995
+    ],
+    "position_gap_m": 0.0012,
+    "rotation_gap_rad": 0.0144,
+    "hand_table_contact": [],
+    "self_collision": [],
+    "ik_at_request": {
+      "position_error_m": 0.0002966445743405442,
+      "orientation_error_rad": 0.000936115098505045,
+      "iterations": 61
+    }
+  }
+}

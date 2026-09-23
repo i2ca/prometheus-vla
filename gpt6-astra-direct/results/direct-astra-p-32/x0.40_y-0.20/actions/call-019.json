@@ -1,0 +1,44 @@
+{
+  "accepted": true,
+  "action": {
+    "reason": "Perform a small 1 cm upward retention test at unchanged attitude. The preview keeps the entire hand above z=0.942 m; compare separated mug features afterward before correcting its orientation.",
+    "steps": 3,
+    "target": {
+      "position": [
+        0.282,
+        -0.20264,
+        1.08815
+      ],
+      "quaternion_wxyz": [
+        0.917525,
+        -0.185344,
+        0.289456,
+        -0.200027
+      ],
+      "gripper": "closed"
+    }
+  },
+  "executed": {
+    "status": "executed",
+    "frames": 18,
+    "requested_position": [
+      0.282,
+      -0.20264,
+      1.08815
+    ],
+    "reached_position": [
+      0.28242,
+      -0.20266,
+      1.08627
+    ],
+    "position_gap_m": 0.0019,
+    "rotation_gap_rad": 0.0244,
+    "hand_table_contact": [],
+    "self_collision": [],
+    "ik_at_request": {
+      "position_error_m": 0.00017511172351968965,
+      "orientation_error_rad": 0.0003562459858664467,
+      "iterations": 2
+    }
+  }
+}

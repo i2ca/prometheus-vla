@@ -1,0 +1,44 @@
+{
+  "accepted": true,
+  "action": {
+    "reason": "Begin leveling the hand in the clear space behind the mug. The preview checks the entire rotating hand and keeps its lowest point above the table.",
+    "steps": 5,
+    "target": {
+      "position": [
+        0.15455,
+        -0.22503,
+        0.93
+      ],
+      "quaternion_wxyz": [
+        0.93562,
+        0.30612,
+        -0.1183,
+        0.13339
+      ],
+      "gripper": "open"
+    }
+  },
+  "executed": {
+    "status": "executed",
+    "frames": 30,
+    "requested_position": [
+      0.15455,
+      -0.22503,
+      0.93
+    ],
+    "reached_position": [
+      0.15347,
+      -0.2271,
+      0.92151
+    ],
+    "position_gap_m": 0.0088,
+    "rotation_gap_rad": 2.6872,
+    "hand_table_contact": [],
+    "self_collision": [],
+    "ik_at_request": {
+      "position_error_m": 0.00022681962531238774,
+      "orientation_error_rad": 0.0008296281359779548,
+      "iterations": 8
+    }
+  }
+}

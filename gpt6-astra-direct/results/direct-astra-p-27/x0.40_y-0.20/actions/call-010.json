@@ -1,0 +1,44 @@
+{
+  "accepted": true,
+  "action": {
+    "reason": "Retain the measured, previously checked attitude as the grasp reference rather than use the previewed rotation that swings fingers downward. Shift the open hand slightly backward and left at full clearance to prepare a side approach.",
+    "steps": 3,
+    "target": {
+      "position": [
+        0.25369,
+        -0.21696,
+        0.93799
+      ],
+      "quaternion_wxyz": [
+        0.978997,
+        -0.111083,
+        -0.124307,
+        -0.117356
+      ],
+      "gripper": "open"
+    }
+  },
+  "executed": {
+    "status": "executed",
+    "frames": 18,
+    "requested_position": [
+      0.25369,
+      -0.21696,
+      0.93799
+    ],
+    "reached_position": [
+      0.25513,
+      -0.21499,
+      0.93799
+    ],
+    "position_gap_m": 0.0024,
+    "rotation_gap_rad": 0.0342,
+    "hand_table_contact": [],
+    "self_collision": [],
+    "ik_at_request": {
+      "position_error_m": 0.0008931886618139714,
+      "orientation_error_rad": 0.005523391738773244,
+      "iterations": 200
+    }
+  }
+}

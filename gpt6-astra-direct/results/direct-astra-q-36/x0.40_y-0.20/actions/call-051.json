@@ -1,0 +1,44 @@
+{
+  "accepted": true,
+  "action": {
+    "reason": "Maintain the raised grasp without changing its intended attitude, and verify that the mug remains stable during another second of holding.",
+    "steps": 5,
+    "target": {
+      "position": [
+        0.28874,
+        -0.24075,
+        0.9348
+      ],
+      "quaternion_wxyz": [
+        1,
+        0,
+        0,
+        0
+      ],
+      "gripper": "closed"
+    }
+  },
+  "executed": {
+    "status": "executed",
+    "frames": 30,
+    "requested_position": [
+      0.28874,
+      -0.24075,
+      0.9348
+    ],
+    "reached_position": [
+      0.28949,
+      -0.23982,
+      0.93649
+    ],
+    "position_gap_m": 0.0021,
+    "rotation_gap_rad": 0.0088,
+    "hand_table_contact": [],
+    "self_collision": [],
+    "ik_at_request": {
+      "position_error_m": 0.0001876079872740387,
+      "orientation_error_rad": 0.0005021471222182832,
+      "iterations": 2
+    }
+  }
+}

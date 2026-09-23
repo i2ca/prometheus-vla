@@ -1,0 +1,44 @@
+{
+  "accepted": true,
+  "action": {
+    "reason": "Raise in free space before attitude adjustment: the preview showed a rotation could swing the middle finger down to z=0.789, so extra clearance is needed for the complete hand and visible forearm.",
+    "steps": 3,
+    "target": {
+      "position": [
+        0.27157,
+        -0.21273,
+        0.98618
+      ],
+      "quaternion_wxyz": [
+        0.956819,
+        -0.174823,
+        -0.230862,
+        -0.025239
+      ],
+      "gripper": "open"
+    }
+  },
+  "executed": {
+    "status": "executed",
+    "frames": 18,
+    "requested_position": [
+      0.27157,
+      -0.21273,
+      0.98618
+    ],
+    "reached_position": [
+      0.27331,
+      -0.21078,
+      0.98753
+    ],
+    "position_gap_m": 0.0029,
+    "rotation_gap_rad": 0.0356,
+    "hand_table_contact": [],
+    "self_collision": [],
+    "ik_at_request": {
+      "position_error_m": 0.0002996428287169978,
+      "orientation_error_rad": 0.000868627165315738,
+      "iterations": 16
+    }
+  }
+}

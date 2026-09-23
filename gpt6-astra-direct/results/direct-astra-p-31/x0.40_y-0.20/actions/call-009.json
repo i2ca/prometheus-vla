@@ -1,0 +1,44 @@
+{
+  "accepted": true,
+  "action": {
+    "reason": "Continue the vertical lift without changing the established grasp attitude. Track the mug against the hand and table to confirm retention and the required clearance.",
+    "steps": 5,
+    "target": {
+      "position": [
+        0.26369,
+        -0.22286,
+        0.90214
+      ],
+      "quaternion_wxyz": [
+        0.976384,
+        0.046816,
+        -0.038181,
+        -0.207422
+      ],
+      "gripper": "closed"
+    }
+  },
+  "executed": {
+    "status": "executed",
+    "frames": 30,
+    "requested_position": [
+      0.26369,
+      -0.22286,
+      0.90214
+    ],
+    "reached_position": [
+      0.26246,
+      -0.22345,
+      0.89977
+    ],
+    "position_gap_m": 0.0027,
+    "rotation_gap_rad": 0.0819,
+    "hand_table_contact": [],
+    "self_collision": [],
+    "ik_at_request": {
+      "position_error_m": 0.0002968987405714958,
+      "orientation_error_rad": 0.0008597869727697166,
+      "iterations": 73
+    }
+  }
+}

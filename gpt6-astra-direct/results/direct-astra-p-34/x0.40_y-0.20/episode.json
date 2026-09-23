@@ -1,0 +1,75 @@
+{
+  "case": {
+    "home_shoulder_roll_rad": -0.35,
+    "left_arm_pose": [
+      0.3,
+      0.15,
+      0.0,
+      0.7,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "hand_kp": 8,
+    "offset": [
+      -0.02,
+      -0.02,
+      -0.02
+    ],
+    "gain": 1.5,
+    "cup_yaw_deg": 90.0,
+    "instruction": "Pegue a caneca branca da mesa com a mao direita, levante-a pelo menos 8 cm mantendo-a em pe, e segure por 2 segundos.",
+    "cup_xy": [
+      0.4,
+      -0.2
+    ],
+    "home_arm_pose": [
+      0.06409163773059845,
+      -0.3499999940395355,
+      -0.0632048025727272,
+      -0.09522665292024612,
+      -0.0020852552261203527,
+      0.13248226046562195,
+      -0.013721458613872528
+    ]
+  },
+  "scene": "scene_grasp.xml",
+  "max_calls": 200,
+  "max_sim_seconds": 3600.0,
+  "video": true,
+  "fps": 30,
+  "step_seconds": 0.2,
+  "hand_open": [
+    -0.0450708232820034,
+    -0.06435875594615936,
+    -0.06325916200876236,
+    0.029303444549441338,
+    0.036779142916202545,
+    0.05189113691449165,
+    0.04266977310180664
+  ],
+  "hand_close": [
+    -0.04506239295005798,
+    -0.2869790196418762,
+    -0.7255648374557495,
+    0.5860313177108765,
+    1.297844648361206,
+    0.7173755764961243,
+    0.9146603345870972
+  ],
+  "limits": {
+    "max_target_distance_m": 0.05,
+    "max_target_rotation_rad": 0.35,
+    "max_steps_per_call": 5,
+    "ik_tolerance_m": 0.03,
+    "ik_tolerance_rad": 0.15,
+    "max_joint_speed_deg_s": 240.0
+  },
+  "calls": 2,
+  "frames": 91,
+  "aborted": null,
+  "policy_model": "cx/gpt-6-astra via OmniRoute",
+  "system_prompt": "You are the visuomotor policy for a Unitree G1 humanoid in MuJoCo, right arm, Dex3 hand.\nUse only the RGB images and measured proprioception in this message. You do not know the cup pose.\nEach call: choose ONE absolute target pose for the right palm, within 5 cm and 0.35 rad of the\ncurrent measured palm pose, then look at the next observation. Frame: x forward, y left, z up (meters).\nKeep the hand above the table in transit, approach the mug from the side at mid height, open before\ncontact, close only when the mug is between thumb and fingers, then lift. Touching the table with the\nhand or the robot body aborts the episode. If a command is rejected, read the error and fix it.\nCameras: head_camera (848x480) on the head looking down at the workspace; left_wrist_camera and\nright_wrist_camera (424x240) mounted on top of each wrist, looking forward along the hand. All three are\nRGB-D. Call probe_depth with a camera and pixel coordinates (u, v) (a labeled grid is drawn on each image)\nto get the 3D point under each pixel, in the same frame as the palm pose. It does not move the robot.\nThe observation includes hand_geometry: approximate fingertip positions and the center of the grasp aperture\nbetween thumb and opposing fingers, from your measured joint angles. The palm is not the leading part of the\nhand; plan with these points. Rotating the hand swings the fingertips; call preview_pose to check where they\nwould go before committing a motion.\nIn `what_i_see`, describe what each camera shows right now (mug, hand, fingers, table) before deciding.\nPut your immediate purpose in `reason` (one or two sentences).\nThere is no limit on the number of calls: keep working until the task is done. Still, every call costs\ntime and tokens, so prefer the fewest calls that reliably complete the task.\nCall finish_episode only when the mug is lifted and held. The controller rejects unsafe commands (you get\nthe reason back), so a rejection is information, not a reason to stop.\n\nLessons from your previous attempts (follow them):\n- Treat a palm orientation change as a whole-arm motion, even when the palm position stays fixed. Use available camera views and measured joints to assess arm\u2013body clearance as well as clearance from surrounding geometry, including any held object. Hand clearance and endpoint reachability are not substitutes for checking the arm's sweep. If an in-place rotation crowds the arm against the body or its clearance is uncertain, inspect the other available views and choose a better-separated waypoint; move toward it while largely preserving attitude, then blend the needed rotation into the approach. Use bounded increments and recheck visible arm clearance and measured tracking before continuing.\n- Maintain explicit task-compatible position and attitude goals rather than replacing them with each newly measured pose. Plan approach and contact acquisition to preserve the required target attitude, align opposing contact regions that resist unwanted motion, and clear the closing sweep. If an unsecured target shifts unexpectedly, unload along an observed clear path, observe its settled pose, and restore a compatible pose or revise the approach before closing. After acting, compare achieved hand motion and target attitude with the intended change. Correct in verified clearance while retention is reliable; otherwise re-support the target and choose a more controllable arm configuration or grasp.\n- Make each cautious retention test lead to a decision. If corresponding object features follow the hand reliably and task conditions are satisfied, proceed to the next required action or execute the remaining hold. If retention is reliable but attitude is wrong, correct attitude in verified clearance instead of adding displacement or repeating the same hold. If retention remains ambiguous, obtain a more informative view or measurement; if uncertainty persists, re-support the object and revise the grasp. Count holding time only while all required conditions remain verified, and finish when the task is satisfied.\n- Choose depth queries to resolve uncertainty that changes the next action. Associate each sample with a visible target surface, reject hand or background returns and inconsistent samples, and estimate attitude from a coherent surface or identifiable object axis. Do not infer spatial attitude from an upright-looking projection or similar heights of unrelated points. Track corresponding features to assess displacement, attitude, and hand-relative stability separately. Reuse geometry while observations remain consistent. When the unresolved issue is arm clearance rather than target geometry, inspect the relevant arm and body views and revise the approach instead of collecting more target samples.",
+  "lessons_file": "results/direct-lessons-visao-real.json",
+  "policy_effort": "max"
+}

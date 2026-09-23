@@ -1,0 +1,44 @@
+{
+  "accepted": true,
+  "action": {
+    "reason": "Lower the open aperture 15 mm to put the mug body between opposing contact surfaces, preserving the side-grasp attitude and table clearance.",
+    "steps": 3,
+    "target": {
+      "position": [
+        0.31514,
+        -0.20463,
+        0.8684
+      ],
+      "quaternion_wxyz": [
+        0.969075,
+        -0.180866,
+        0.119222,
+        -0.118184
+      ],
+      "gripper": "open"
+    }
+  },
+  "executed": {
+    "status": "executed",
+    "frames": 18,
+    "requested_position": [
+      0.31514,
+      -0.20463,
+      0.8684
+    ],
+    "reached_position": [
+      0.31573,
+      -0.20632,
+      0.87028
+    ],
+    "position_gap_m": 0.0026,
+    "rotation_gap_rad": 0.1639,
+    "hand_table_contact": [],
+    "self_collision": [],
+    "ik_at_request": {
+      "position_error_m": 0.00029268874539796605,
+      "orientation_error_rad": 0.0007790886709599672,
+      "iterations": 17
+    }
+  }
+}

@@ -1,0 +1,44 @@
+{
+  "accepted": true,
+  "action": {
+    "reason": "Lift just 1 cm without changing the measured attitude to test whether the mug moves rigidly with the hand. The previewed swept hand remains above z=0.927, and the mug has substantial support clearance.",
+    "steps": 3,
+    "target": {
+      "position": [
+        0.28117,
+        -0.2028,
+        1.07702
+      ],
+      "quaternion_wxyz": [
+        0.911747,
+        -0.181654,
+        0.306135,
+        -0.204941
+      ],
+      "gripper": "closed"
+    }
+  },
+  "executed": {
+    "status": "executed",
+    "frames": 18,
+    "requested_position": [
+      0.28117,
+      -0.2028,
+      1.07702
+    ],
+    "reached_position": [
+      0.28162,
+      -0.20274,
+      1.07516
+    ],
+    "position_gap_m": 0.0019,
+    "rotation_gap_rad": 0.0279,
+    "hand_table_contact": [],
+    "self_collision": [],
+    "ik_at_request": {
+      "position_error_m": 0.00028688726022558006,
+      "orientation_error_rad": 0.0007108615794413053,
+      "iterations": 2
+    }
+  }
+}

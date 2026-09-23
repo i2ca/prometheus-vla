@@ -1,0 +1,88 @@
+{
+  "episode": "results/direct-astra-p-29/x0.40_y-0.20",
+  "at": "2026-09-23T17:48:39+00:00",
+  "critic_model": "gpt-6-astra",
+  "response_id": "chatcmpl-resp_08f722ebccc8df64016ab4105a1a4487d28937ddc1a2d45064",
+  "usage": {
+    "input_tokens": 34215,
+    "output_tokens": 5149
+  },
+  "accepted": false,
+  "diagnosis": "The episode failed the upright requirement, not grasp acquisition or lifting. The evaluator recorded a 0.1933 m lift and successful retention for two seconds, but upright_grasp was false. Early depth sensing usefully located object surfaces and the support, enabling a collision-free approach and closure. Later sensing mostly reconfirmed elevation instead of reliably estimating attitude and object–hand stability. The policy repeatedly called the latest measured quaternion its fixed reference, thereby incorporating tracking error into subsequent goals. Tilt reached 21.6 degrees during lifting, decreased to 8.8 degrees at the first hold, then increased to 24.6 degrees by the end. Reinitializing stationary position goals from each measured position also allowed gradual downward drift. Fifteen successive hold calls added substantial cost and further attitude deterioration without corrective action or a clear completion decision. Frequent depth measurements did not compensate for the missing persistent reference and task-state tracking.",
+  "failure_mode": "Accumulating attitude drift hidden by repeatedly rebasing pose goals on measurements, compounded by elevation-focused sensing and an excessive verification loop. Lift height and retention succeeded; uprightness did not.",
+  "lessons_review": [
+    {
+      "lesson": "For grasp acquisition, compare identifiable target surfaces with the contact patches and closing sweeps derived from measured hand pose and joints.",
+      "verdict": "helped",
+      "why": "Steps 1–5 established opposing grasp geometry, avoided table and self-collision, and closed without advancing. The object remained retained afterward. Preserve these acquisition checks, but give the retention and completion checks explicit exit criteria: steps 6–13 repeatedly described further lifting as another retention test."
+    },
+    {
+      "lesson": "After near-contact motion, compare identifiable target features with the support and measured hand motion to check whether the target remained stable.",
+      "verdict": "neutral",
+      "why": "The unsecured object remained stationary during steps 1–4, so the recovery branch was not needed. After closure, the policy monitored elevation but did not adequately distinguish attitude change from stable retention. Broaden the monitoring requirement to secured objects and make the response depend on the diagnosed error rather than automatically retreating."
+    },
+    {
+      "lesson": "Keep a deliberate task-compatible attitude reference separate from the latest measured attitude, while initializing translations from the measured position.",
+      "verdict": "neutral",
+      "why": "The central instruction was not implemented: successive commands adopted the latest measured quaternion despite claiming to preserve a reference. Steps 14–28 also copied measured positions into stationary hold goals, allowing downward drift. Preserve the persistent-reference principle, but explicitly distinguish a measured starting state from a desired goal during both motion and holding."
+    },
+    {
+      "lesson": "Before probing depth, state which geometric uncertainty will change the next action and select the smallest useful set of identifiable features in the current image.",
+      "verdict": "helped",
+      "why": "Depth measurements supported useful surface and support localization in steps 1–5. Its reuse and action-selection clauses were largely ignored later: steps 14–28 repeatedly sampled an already-established support and elevated surfaces without diagnosing growing tilt or changing the action. Retain purposeful probing, while requiring feature correspondence and separate checks of displacement, attitude, and retention."
+    }
+  ],
+  "lessons": [
+    {
+      "lesson": "Preserve deliberate, task-compatible object and hand attitude goals across action calls, and preserve the desired position during a stationary hold. Change these goals only for an intended task motion. Use proprioception as the starting state for bounded commands, not as a replacement goal. Compare achieved hand attitude and visible object attitude against the persistent references. Correct accumulating drift along a clearance-checked path while maintaining verified retention; if correction cannot safely preserve the required object attitude, re-support the object and select a better grasp or attainable configuration.",
+      "evidence_steps": [
+        2,
+        6,
+        10,
+        14,
+        20,
+        28
+      ],
+      "why": "Commands repeatedly used the latest measured quaternion rather than a persistent reference. Tilt reached 21.6 degrees during lifting and rose from 8.8 to 24.6 degrees across the prolonged hold. Copying measured positions into hold targets also accumulated downward motion. These discrepancies were observable through proprioception and object features."
+    },
+    {
+      "lesson": "Check object displacement, attitude, and hand-relative stability separately using identifiable features, the support, and measured hand pose. Probe depth only to resolve uncertainty that changes the next action, associating returns with the visible target or support rather than robot surfaces, background, or openings. Track corresponding features across observations; do not infer attitude or whole-object clearance from unrelated surface heights. If necessary features are occluded, inspect a more informative available view or make a clearance-checked viewing adjustment, then use the clarified geometry to correct the diagnosed error. Reuse established geometry while observations remain consistent.",
+      "evidence_steps": [
+        6,
+        8,
+        10,
+        14,
+        20,
+        28
+      ],
+      "why": "The policy repeatedly measured elevated surfaces but did not establish consistent feature-based attitude estimates. At step 14 it inferred uprightness from a nearly vertical pair of surface points; subsequent probes continued to emphasize height while tilt increased. Depth was available, but its results did not drive the correction needed for the failed task condition."
+    },
+    {
+      "lesson": "Make verification advance the task: establish retention with a cautious test, then execute the remaining requested motion rather than repeatedly testing by moving farther. Once the requested state is observed, maintain a fixed goal and accumulate the required stable duration using executed action durations. When the state and duration are satisfied, report completion or proceed to the next requested stage instead of adding redundant holds and depth probes. If a condition fails, correct that condition and restart only the affected verification.",
+      "evidence_steps": [
+        6,
+        9,
+        13,
+        14,
+        15,
+        16,
+        26,
+        28
+      ],
+      "why": "Steps 6–13 repeatedly framed additional lifting as retention testing. Steps 14–28 then issued fifteen hold calls, with step 26 still claiming to complete the requested duration. This was significant waste within a 28-call episode and exposed the grasp to continued drift. An explicit task-state and duration record would replace indefinite checking with correction or completion."
+    },
+    {
+      "lesson": "Before acquiring or changing a grasp, compare visible target surfaces with contact patches and closing sweeps derived from measured hand pose and joints. Align opposing contacts on the same intended region in depth and height, not merely in projection or around an opening, then close without advancing. Check the full swept assembly, including the arm and any held object, against the support, surroundings, and robot body. If an unsecured object moves unexpectedly or retention fails, safely re-support or unload it, observe its settled pose, and reposition the open hand or choose a different approach before retrying.",
+      "evidence_steps": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6
+      ],
+      "why": "The approach and closure were the successful parts of the episode: the object remained undisturbed before closure, the grasp retained it, and no hand–table or self-collisions were recorded. This preserves the useful acquisition and recovery principles while the higher-priority lessons address attitude control and verification."
+    }
+  ],
+  "rejected_lessons": []
+}

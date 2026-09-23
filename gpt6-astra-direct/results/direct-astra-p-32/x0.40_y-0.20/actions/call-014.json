@@ -1,0 +1,44 @@
+{
+  "accepted": true,
+  "action": {
+    "reason": "Lift only 1.8 cm without intentional rotation to verify retention from separated mug features. The preview keeps the entire hand above z=0.843 m; upright attitude remains a separate unmet goal.",
+    "steps": 2,
+    "target": {
+      "position": [
+        0.28032,
+        -0.20318,
+        1.02575
+      ],
+      "quaternion_wxyz": [
+        0.871239,
+        -0.160338,
+        0.419898,
+        -0.197281
+      ],
+      "gripper": "closed"
+    }
+  },
+  "executed": {
+    "status": "executed",
+    "frames": 12,
+    "requested_position": [
+      0.28032,
+      -0.20318,
+      1.02575
+    ],
+    "reached_position": [
+      0.28048,
+      -0.20283,
+      1.02507
+    ],
+    "position_gap_m": 0.0008,
+    "rotation_gap_rad": 0.0795,
+    "hand_table_contact": [],
+    "self_collision": [],
+    "ik_at_request": {
+      "position_error_m": 0.00030770143617734035,
+      "orientation_error_rad": 0.00669146144606283,
+      "iterations": 200
+    }
+  }
+}

@@ -1,0 +1,44 @@
+{
+  "accepted": true,
+  "action": {
+    "reason": "Raise 2 cm at unchanged commanded attitude to verify retention from corresponding rim and lower-body features. The previewed hand sweep stays above z=0.90, clear of the table.",
+    "steps": 3,
+    "target": {
+      "position": [
+        0.28069,
+        -0.20292,
+        1.06867
+      ],
+      "quaternion_wxyz": [
+        0.902366,
+        -0.175659,
+        0.33713,
+        -0.203032
+      ],
+      "gripper": "closed"
+    }
+  },
+  "executed": {
+    "status": "executed",
+    "frames": 18,
+    "requested_position": [
+      0.28069,
+      -0.20292,
+      1.06867
+    ],
+    "reached_position": [
+      0.28117,
+      -0.2028,
+      1.06702
+    ],
+    "position_gap_m": 0.0017,
+    "rotation_gap_rad": 0.066,
+    "hand_table_contact": [],
+    "self_collision": [],
+    "ik_at_request": {
+      "position_error_m": 0.000258503426779548,
+      "orientation_error_rad": 0.005622456253674275,
+      "iterations": 200
+    }
+  }
+}

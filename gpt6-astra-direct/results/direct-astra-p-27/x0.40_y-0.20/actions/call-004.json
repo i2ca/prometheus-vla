@@ -1,0 +1,44 @@
+{
+  "accepted": true,
+  "action": {
+    "reason": "Adjust attitude without lowering or advancing. The preceding preview predicts the lower links swing upward and retain at least 4.4 cm table clearance; establish a more level side-approach attitude before lowering.",
+    "steps": 2,
+    "target": {
+      "position": [
+        0.27418,
+        -0.22244,
+        0.8978
+      ],
+      "quaternion_wxyz": [
+        0.9911,
+        -0.065,
+        0.11,
+        -0.04
+      ],
+      "gripper": "keep"
+    }
+  },
+  "executed": {
+    "status": "executed",
+    "frames": 12,
+    "requested_position": [
+      0.27418,
+      -0.22244,
+      0.8978
+    ],
+    "reached_position": [
+      0.27709,
+      -0.22336,
+      0.90279
+    ],
+    "position_gap_m": 0.0059,
+    "rotation_gap_rad": 0.084,
+    "hand_table_contact": [],
+    "self_collision": [],
+    "ik_at_request": {
+      "position_error_m": 0.00012598471537003024,
+      "orientation_error_rad": 0.00035502403095628745,
+      "iterations": 4
+    }
+  }
+}
