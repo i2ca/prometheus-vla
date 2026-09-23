@@ -1,0 +1,80 @@
+{
+  "episode": "x0.40_y-0.20",
+  "step_id": 5,
+  "remaining_calls": 35,
+  "elapsed_sim_seconds": 4.83,
+  "remaining_sim_seconds": 35.17,
+  "task": "Pegue a caneca branca da mesa com a mao direita, levante-a pelo menos 8 cm mantendo-a em pe, e segure por 2 segundos.",
+  "images": [
+    {
+      "camera": "head_camera",
+      "path": "/home/luiz-aumo/I2CA/robotics-lab/g1-cup-grasp/results/direct-astra-01/x0.40_y-0.20/obs/step-005/head_camera.png"
+    },
+    {
+      "camera": "left_wrist_camera",
+      "path": "/home/luiz-aumo/I2CA/robotics-lab/g1-cup-grasp/results/direct-astra-01/x0.40_y-0.20/obs/step-005/left_wrist_camera.png"
+    },
+    {
+      "camera": "right_wrist_camera",
+      "path": "/home/luiz-aumo/I2CA/robotics-lab/g1-cup-grasp/results/direct-astra-01/x0.40_y-0.20/obs/step-005/right_wrist_camera.png"
+    }
+  ],
+  "current_palm": {
+    "position": [
+      0.29206,
+      -0.14532,
+      0.90891
+    ],
+    "quaternion_wxyz": [
+      0.980732,
+      -0.158061,
+      0.022276,
+      -0.112627
+    ]
+  },
+  "arm_joints_rad": [
+    -0.29342,
+    -0.2214,
+    -0.09759,
+    0.2738,
+    -0.10079,
+    0.16021,
+    -0.33981
+  ],
+  "waist_yaw_rad": 0.21238,
+  "gripper_closure": 0.0,
+  "previous_reason": "Hold the current safe pose with the fingers open to obtain a clearer observation before attempting contact or closing.",
+  "previous_execution": {
+    "status": "executed",
+    "frames": 6,
+    "requested_position": [
+      0.29263,
+      -0.14379,
+      0.90903
+    ],
+    "reached_position": [
+      0.29206,
+      -0.14532,
+      0.90891
+    ],
+    "position_gap_m": 0.0016,
+    "rotation_gap_rad": 0.0099,
+    "hand_table_contact": [],
+    "self_collision": [],
+    "ik_at_request": {
+      "position_error_m": 4.714571403991059e-06,
+      "orientation_error_rad": 0.0,
+      "iterations": 1
+    }
+  },
+  "limits": {
+    "max_target_distance_m": 0.05,
+    "max_target_rotation_rad": 0.35,
+    "max_steps_per_call": 5,
+    "ik_tolerance_m": 0.03,
+    "ik_tolerance_rad": 0.15,
+    "max_joint_speed_deg_s": 240.0
+  },
+  "finished": false,
+  "next_call": "scripts/direct_act.py results/direct-astra-01/x0.40_y-0.20 --action <arquivo.json>"
+}

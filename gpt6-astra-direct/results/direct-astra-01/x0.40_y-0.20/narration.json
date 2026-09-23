@@ -1,0 +1,13 @@
+{
+  "voice": "pt-BR-AntonioNeural",
+  "intro": "Este é um episódio real do robô humanoide G1, simulado no MuJoCo. Quem controla o braço direito é o GPT-6 Astra, diretamente, sem nenhum controlador treinado. A cada passo ele recebe três câmeras e a posição medida da mão, e responde com um único comando: para onde mover a palma, e se abre ou fecha os dedos. Ele não sabe onde a caneca está. Só vê.",
+  "steps": {
+    "1": "Passo um. O Astra vê a caneca à esquerda da mão aberta, pela câmera da cabeça e pela do punho. Decide avançar três centímetros para a frente e três para a esquerda, mantendo a altura e os dedos abertos.",
+    "2": "Passo dois. A caneca aparece cortada na câmera do punho direito, e os dedos ainda não a envolvem. Ele continua a aproximação lateral, em passos pequenos, sem descer a mão.",
+    "3": "Passo três. Mais um avanço curto. Repare no painel da verdade do simulador, que o modelo não vê: o dedo médio encosta na caneca, e ela começa a inclinar.",
+    "4": "Passo quatro. O Astra ainda descreve a caneca ao lado da mão, sem perceber o toque. Ele avança de novo, e a caneca chega a vinte e sete graus de inclinação.",
+    "5": "Passo cinco. A câmera do punho já não mostra a caneca. Na dúvida, o modelo escolhe ficar parado e observar de novo, com os dedos abertos.",
+    "6": "Passo seis. O Astra encerra o episódio por conta própria. Ele declara que não consegue confirmar a caneca entre o polegar e os dedos, e que fechar a mão sem essa confirmação poderia empurrar a caneca. Não afirma sucesso."
+  },
+  "outro": "O avaliador reprova o episódio. A caneca não foi levantada: ela subiu um centímetro e nove porque tombou ao ser tocada. Foram seis chamadas, cerca de sete mil e duzentos tokens de entrada, e uns doze centavos de dólar em preço de API. O modelo foi honesto sobre a própria incerteza, mas só as câmeras não bastaram para uma pega lateral."
+}
