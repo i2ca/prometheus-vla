@@ -1,0 +1,80 @@
+{
+  "episode": "x0.40_y-0.20",
+  "step_id": 10,
+  "remaining_calls": 30,
+  "elapsed_sim_seconds": 12.37,
+  "remaining_sim_seconds": 27.63,
+  "task": "Pegue a caneca branca da mesa com a mao direita, levante-a pelo menos 8 cm mantendo-a em pe, e segure por 2 segundos.",
+  "images": [
+    {
+      "camera": "head_camera",
+      "path": "/home/luiz-aumo/I2CA/robotics-lab/g1-cup-grasp/results/direct-omniroute-01/x0.40_y-0.20/obs/step-010/head_camera.png"
+    },
+    {
+      "camera": "left_wrist_camera",
+      "path": "/home/luiz-aumo/I2CA/robotics-lab/g1-cup-grasp/results/direct-omniroute-01/x0.40_y-0.20/obs/step-010/left_wrist_camera.png"
+    },
+    {
+      "camera": "right_wrist_camera",
+      "path": "/home/luiz-aumo/I2CA/robotics-lab/g1-cup-grasp/results/direct-omniroute-01/x0.40_y-0.20/obs/step-010/right_wrist_camera.png"
+    }
+  ],
+  "current_palm": {
+    "position": [
+      0.19124,
+      -0.14447,
+      1.12003
+    ],
+    "quaternion_wxyz": [
+      0.981139,
+      -0.118109,
+      -0.151058,
+      0.02444
+    ]
+  },
+  "arm_joints_rad": [
+    -0.80723,
+    -0.17803,
+    0.02033,
+    -0.79128,
+    -0.05415,
+    1.26703,
+    0.07375
+  ],
+  "waist_yaw_rad": -0.09393,
+  "gripper_closure": 1.0,
+  "previous_reason": "The mug is visibly upright and elevated while the gripper remains fully closed, and the prior hold contributed 1 second. Maintain the same palm pose and grip for another 1 second to satisfy the 2-second hold requirement.",
+  "previous_execution": {
+    "status": "executed",
+    "frames": 30,
+    "requested_position": [
+      0.19059,
+      -0.14541,
+      1.11993
+    ],
+    "reached_position": [
+      0.19124,
+      -0.14447,
+      1.12003
+    ],
+    "position_gap_m": 0.0011,
+    "rotation_gap_rad": 0.0158,
+    "hand_table_contact": [],
+    "self_collision": [],
+    "ik_at_request": {
+      "position_error_m": 5.370571167402174e-06,
+      "orientation_error_rad": 0.0,
+      "iterations": 1
+    }
+  },
+  "limits": {
+    "max_target_distance_m": 0.05,
+    "max_target_rotation_rad": 0.35,
+    "max_steps_per_call": 5,
+    "ik_tolerance_m": 0.03,
+    "ik_tolerance_rad": 0.15,
+    "max_joint_speed_deg_s": 240.0
+  },
+  "finished": false,
+  "next_call": "scripts/direct_act.py results/direct-omniroute-01/x0.40_y-0.20 --action <arquivo.json>"
+}

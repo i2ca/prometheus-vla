@@ -1,0 +1,44 @@
+{
+  "accepted": true,
+  "action": {
+    "reason": "The mug is visibly upright and elevated while the gripper remains fully closed, and the prior hold contributed 1 second. Maintain the same palm pose and grip for another 1 second to satisfy the 2-second hold requirement.",
+    "steps": 5,
+    "target": {
+      "position": [
+        0.19059,
+        -0.14541,
+        1.11993
+      ],
+      "quaternion_wxyz": [
+        0.981445,
+        -0.11849,
+        -0.149831,
+        0.016641
+      ],
+      "gripper": "closed"
+    }
+  },
+  "executed": {
+    "status": "executed",
+    "frames": 30,
+    "requested_position": [
+      0.19059,
+      -0.14541,
+      1.11993
+    ],
+    "reached_position": [
+      0.19124,
+      -0.14447,
+      1.12003
+    ],
+    "position_gap_m": 0.0011,
+    "rotation_gap_rad": 0.0158,
+    "hand_table_contact": [],
+    "self_collision": [],
+    "ik_at_request": {
+      "position_error_m": 5.370571167402174e-06,
+      "orientation_error_rad": 0.0,
+      "iterations": 1
+    }
+  }
+}

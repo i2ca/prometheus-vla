@@ -1,0 +1,44 @@
+{
+  "accepted": true,
+  "action": {
+    "reason": "The mug remains upright in the head view, and the measured palm is at the completed raised height with the gripper fully closed and no table contact. Hold the current pose and grip for 1 second to build the required stable hold duration.",
+    "steps": 5,
+    "target": {
+      "position": [
+        0.18983,
+        -0.14651,
+        1.1198
+      ],
+      "quaternion_wxyz": [
+        0.981739,
+        -0.118873,
+        -0.148381,
+        0.006375
+      ],
+      "gripper": "closed"
+    }
+  },
+  "executed": {
+    "status": "executed",
+    "frames": 30,
+    "requested_position": [
+      0.18983,
+      -0.14651,
+      1.1198
+    ],
+    "reached_position": [
+      0.19059,
+      -0.14541,
+      1.11993
+    ],
+    "position_gap_m": 0.0013,
+    "rotation_gap_rad": 0.0208,
+    "hand_table_contact": [],
+    "self_collision": [],
+    "ik_at_request": {
+      "position_error_m": 6.878909244934696e-06,
+      "orientation_error_rad": 0.0,
+      "iterations": 1
+    }
+  }
+}
