@@ -1,0 +1,44 @@
+{
+  "accepted": true,
+  "action": {
+    "reason": "The last rotation was rejected for elbow-to-torso clearance. Move the palm forward and slightly outward without changing attitude to gain clearance before changing the viewing angle.",
+    "steps": 3,
+    "target": {
+      "position": [
+        0.29758,
+        -0.18154,
+        0.86766
+      ],
+      "quaternion_wxyz": [
+        0.896544,
+        -0.154598,
+        -0.372485,
+        -0.183203
+      ],
+      "gripper": "open"
+    }
+  },
+  "executed": {
+    "status": "executed",
+    "frames": 18,
+    "requested_position": [
+      0.29758,
+      -0.18154,
+      0.86766
+    ],
+    "reached_position": [
+      0.29759,
+      -0.18175,
+      0.86797
+    ],
+    "position_gap_m": 0.0004,
+    "rotation_gap_rad": 0.0908,
+    "hand_table_contact": [],
+    "self_collision": [],
+    "ik_at_request": {
+      "position_error_m": 0.0002714711182948184,
+      "orientation_error_rad": 0.0007795421011847907,
+      "iterations": 6
+    }
+  }
+}

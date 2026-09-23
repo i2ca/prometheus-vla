@@ -1,0 +1,44 @@
+{
+  "accepted": true,
+  "action": {
+    "reason": "Move the open hand a small distance left toward the mug while preserving height, to improve side alignment and obtain parallax before attempting contact. Do not close until depth and finger clearance are established.",
+    "steps": 1,
+    "target": {
+      "position": [
+        0.2528,
+        -0.18087,
+        0.91296
+      ],
+      "quaternion_wxyz": [
+        0.977118,
+        -0.169196,
+        0.095443,
+        -0.086624
+      ],
+      "gripper": "open"
+    }
+  },
+  "executed": {
+    "status": "executed",
+    "frames": 6,
+    "requested_position": [
+      0.2528,
+      -0.18087,
+      0.91296
+    ],
+    "reached_position": [
+      0.25229,
+      -0.18123,
+      0.91281
+    ],
+    "position_gap_m": 0.0006,
+    "rotation_gap_rad": 0.0142,
+    "hand_table_contact": [],
+    "self_collision": [],
+    "ik_at_request": {
+      "position_error_m": 0.00029474064425704527,
+      "orientation_error_rad": 0.0009481198051402098,
+      "iterations": 3
+    }
+  }
+}

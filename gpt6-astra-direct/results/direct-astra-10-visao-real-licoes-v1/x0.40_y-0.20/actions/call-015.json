@@ -1,0 +1,44 @@
+{
+  "accepted": true,
+  "action": {
+    "reason": "Move toward the measured table region while maintaining elevated clearance to bring the mug into view.",
+    "steps": 5,
+    "target": {
+      "position": [
+        0.467,
+        0.105,
+        0.951
+      ],
+      "quaternion_wxyz": [
+        0.975438,
+        -0.131531,
+        -0.050235,
+        -0.169404
+      ],
+      "gripper": "open"
+    }
+  },
+  "executed": {
+    "status": "executed",
+    "frames": 30,
+    "requested_position": [
+      0.467,
+      0.105,
+      0.951
+    ],
+    "reached_position": [
+      0.4667,
+      0.10558,
+      0.95079
+    ],
+    "position_gap_m": 0.0007,
+    "rotation_gap_rad": 0.1205,
+    "hand_table_contact": [],
+    "self_collision": [],
+    "ik_at_request": {
+      "position_error_m": 0.0002989870525944741,
+      "orientation_error_rad": 0.0006246471988585418,
+      "iterations": 39
+    }
+  }
+}

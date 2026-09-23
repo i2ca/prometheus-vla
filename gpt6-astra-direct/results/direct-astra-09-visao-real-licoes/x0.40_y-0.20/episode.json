@@ -1,0 +1,74 @@
+{
+  "case": {
+    "home_shoulder_roll_rad": -0.35,
+    "left_arm_pose": [
+      0.3,
+      0.15,
+      0.0,
+      0.7,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "hand_kp": 8,
+    "offset": [
+      -0.02,
+      -0.02,
+      -0.02
+    ],
+    "gain": 1.5,
+    "cup_yaw_deg": 90.0,
+    "instruction": "Pegue a caneca branca da mesa com a mao direita, levante-a pelo menos 8 cm mantendo-a em pe, e segure por 2 segundos.",
+    "cup_xy": [
+      0.4,
+      -0.2
+    ],
+    "home_arm_pose": [
+      0.06409163773059845,
+      -0.3499999940395355,
+      -0.0632048025727272,
+      -0.09522665292024612,
+      -0.0020852552261203527,
+      0.13248226046562195,
+      -0.013721458613872528
+    ]
+  },
+  "scene": "scene_grasp.xml",
+  "max_calls": 200,
+  "max_sim_seconds": 3600.0,
+  "video": true,
+  "fps": 30,
+  "step_seconds": 0.2,
+  "hand_open": [
+    -0.0450708232820034,
+    -0.06435875594615936,
+    -0.06325916200876236,
+    0.029303444549441338,
+    0.036779142916202545,
+    0.05189113691449165,
+    0.04266977310180664
+  ],
+  "hand_close": [
+    -0.04506239295005798,
+    -0.2869790196418762,
+    -0.7255648374557495,
+    0.5860313177108765,
+    1.297844648361206,
+    0.7173755764961243,
+    0.9146603345870972
+  ],
+  "limits": {
+    "max_target_distance_m": 0.05,
+    "max_target_rotation_rad": 0.35,
+    "max_steps_per_call": 5,
+    "ik_tolerance_m": 0.03,
+    "ik_tolerance_rad": 0.15,
+    "max_joint_speed_deg_s": 240.0
+  },
+  "calls": 19,
+  "frames": 773,
+  "aborted": null,
+  "policy_model": "cx/gpt-6-astra via OmniRoute",
+  "system_prompt": "You are the visuomotor policy for a Unitree G1 humanoid in MuJoCo, right arm, Dex3 hand.\nUse only the RGB images and measured proprioception in this message. You do not know the cup pose.\nEach call: choose ONE absolute target pose for the right palm, within 5 cm and 0.35 rad of the\ncurrent measured palm pose, then look at the next observation. Frame: x forward, y left, z up (meters).\nKeep the hand above the table in transit, approach the mug from the side at mid height, open before\ncontact, close only when the mug is between thumb and fingers, then lift. Touching the table with the\nhand or the robot body aborts the episode. If a command is rejected, read the error and fix it.\nThe head camera also has a depth sensor. Call probe_depth with pixel coordinates (u, v) of the 848x480\nhead image (a labeled grid is drawn every 100 px) to get the 3D point under each pixel, in the same frame as\nthe palm pose. Use it to measure where things are before moving; it does not move the robot.\nIn `what_i_see`, describe what each camera shows right now (mug, hand, fingers, table) before deciding.\nPut your immediate purpose in `reason` (one or two sentences).\nThere is no limit on the number of calls: keep working until the task is done. Still, every call costs\ntime and tokens, so prefer the fewest calls that reliably complete the task.\nCall finish_episode only when the mug is lifted and held, or if continuing would be unsafe.\n\nLessons from your previous attempts (follow them):\n- Maintain a temporally consistent estimate of the object's support and relationship to the hand using successive images, scene references, and measured hand motion. Apparent enclosure, shadows, and gripper closure alone do not establish a grasp. After closing, make a small clearance-checked test motion and verify that the object moves with the hand relative to the surroundings while remaining stable within the hand before continuing transport. If the evidence is ambiguous, preserve the possible grasp while obtaining a discriminating view. If the object remains supported and does not follow, reopen and realign; do not replace that failure evidence with a new grasp assumption based only on image overlap.\n- For a grasp, establish that the target occupies the space swept by opposing grasp surfaces as they close, not merely the space between their projected outlines. Use complementary views or parallax from a clearance-checked motion to resolve uncertain depth. Begin incremental alignment wherever the next motion has visible clearance; complete enclosure is required for closure, not for starting alignment. After an empty closure or failed grasp test, revise the hand\u2013target depth, height, or orientation and verify improved enclosure before closing again. Cycling the gripper or receiving a different visual impression without improved alignment is not a corrective action.\n- Choose each viewing motion to resolve a specific uncertainty, and judge its value by whether it reveals usable target geometry or changes an ambiguous hand\u2013target relationship. If visibility does not improve, do not accumulate further withdrawal or alternate ineffective viewing motions indefinitely. Use measured pose history and current clearance to move toward a previously informative working pose, or choose a different visible route that creates useful parallax or removes the occlusion. Use whichever camera supplies relevant geometry and resume task-directed alignment as soon as it supports the next safe motion. Preserve any established grasp during view recovery.\n- Check the swept clearance of the fingers, hand, arm, and any held object during both translation and rotation using images, measured pose, and joints. Palm clearance or a stationary palm does not guarantee clearance of the rest of the hand. Reduce motion as contact becomes imminent, and distinguish actual unexpected object motion from viewpoint-induced changes by comparing successive views against scene references. If unintended contact is supported by that evidence, gently relieve it along a visible clear path, revise the contact alignment, and resume incrementally. If a route is uncertain, choose a visible waypoint or informative view that enables a revised route.",
+  "lessons_file": "results/direct-lessons.json"
+}

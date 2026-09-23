@@ -1,0 +1,100 @@
+{
+  "call": 1,
+  "step_id": 0,
+  "model": "gpt-6-astra",
+  "response_id": "chatcmpl-resp_0cf66352dd0fbb89016ab3e9559f9087d2af35d951061b3597",
+  "sent_at": "2026-09-23T14:59:22.549+00:00",
+  "received_at": "2026-09-23T14:59:46.014+00:00",
+  "sim_time_s": 0.5,
+  "images_sent": [
+    {
+      "camera": "head_camera",
+      "file": "obs/step-000/head_camera.png",
+      "sha256": "f524e29308948fafc9740070e6ee386c141147dce532eb8e38d7eb6a7782d68e"
+    },
+    {
+      "camera": "left_wrist_camera",
+      "file": "obs/step-000/left_wrist_camera.png",
+      "sha256": "46b1d1e756dbacb1785238bd22a8409bff63addb0a4227b5b4e6e9f7f4fe0e84"
+    },
+    {
+      "camera": "right_wrist_camera",
+      "file": "obs/step-000/right_wrist_camera.png",
+      "sha256": "d6f669c65a8b5e8a3324f72c4e7ef3abc13f46de11500e501f5d235f1cc7518f"
+    }
+  ],
+  "latency_s": 23.46,
+  "usage": {
+    "input_tokens": 1376,
+    "output_tokens": 149
+  },
+  "model_text": "(empty response)",
+  "observed": {
+    "palm": {
+      "position": [
+        0.18672,
+        -0.22595,
+        0.90596
+      ],
+      "quaternion_wxyz": [
+        0.982492,
+        -0.175626,
+        0.043489,
+        -0.044417
+      ]
+    },
+    "arm_joints_rad": [
+      0.06409,
+      -0.35,
+      -0.0632,
+      -0.09523,
+      -0.00209,
+      0.13248,
+      -0.01372
+    ],
+    "waist_yaw_rad": 0.0,
+    "gripper_closure": 0.0
+  },
+  "tool": "actuate",
+  "what_i_see": "Head view shows the white mug upright on the gray table beside the open right hand. Left wrist view shows tiled surface, glass panel and robot parts but no clear mug. Right wrist view shows the mug to the left of the open fingers; depth enclosure is not yet established.",
+  "arguments": {
+    "what_i_see": "Head view shows the white mug upright on the gray table beside the open right hand. Left wrist view shows tiled surface, glass panel and robot parts but no clear mug. Right wrist view shows the mug to the left of the open fingers; depth enclosure is not yet established.",
+    "reason": "Move a small distance left toward the mug with the fingers open, maintaining height to inspect side alignment before contact.",
+    "steps": 1,
+    "position": [
+      0.18672,
+      -0.21095,
+      0.90596
+    ],
+    "quaternion_wxyz": [
+      0.982492,
+      -0.175626,
+      0.043489,
+      -0.044417
+    ],
+    "gripper": "open"
+  },
+  "result": {
+    "status": "executed",
+    "frames": 6,
+    "requested_position": [
+      0.18672,
+      -0.21095,
+      0.90596
+    ],
+    "reached_position": [
+      0.18701,
+      -0.21045,
+      0.90646
+    ],
+    "position_gap_m": 0.0008,
+    "rotation_gap_rad": 0.0235,
+    "hand_table_contact": [],
+    "self_collision": [],
+    "ik_at_request": {
+      "position_error_m": 0.0001714814417857022,
+      "orientation_error_rad": 0.0006082841533832334,
+      "iterations": 4
+    }
+  }
+}

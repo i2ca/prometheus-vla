@@ -1,0 +1,44 @@
+{
+  "accepted": true,
+  "action": {
+    "reason": "Shift forward above the measured table to search the unseen tabletop with the wrist camera, maintaining hand clearance.",
+    "steps": 5,
+    "target": {
+      "position": [
+        0.467,
+        -0.04,
+        0.951
+      ],
+      "quaternion_wxyz": [
+        0.963662,
+        -0.094023,
+        -0.194495,
+        -0.157123
+      ],
+      "gripper": "open"
+    }
+  },
+  "executed": {
+    "status": "executed",
+    "frames": 30,
+    "requested_position": [
+      0.467,
+      -0.04,
+      0.951
+    ],
+    "reached_position": [
+      0.46671,
+      -0.03984,
+      0.9509
+    ],
+    "position_gap_m": 0.0003,
+    "rotation_gap_rad": 0.2836,
+    "hand_table_contact": [],
+    "self_collision": [],
+    "ik_at_request": {
+      "position_error_m": 0.00029470625899900756,
+      "orientation_error_rad": 0.0006329302308516151,
+      "iterations": 56
+    }
+  }
+}

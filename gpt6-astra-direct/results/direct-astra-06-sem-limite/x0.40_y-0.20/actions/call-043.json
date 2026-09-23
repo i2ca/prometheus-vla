@@ -1,0 +1,44 @@
+{
+  "accepted": true,
+  "action": {
+    "reason": "Move the open hand laterally 1 cm away from the mug-side working region without lowering it, seeking parallax to resolve the body-to-finger depth before attempting mid-height enclosure. Keep the orientation fixed to avoid sweeping fingers downward.",
+    "steps": 1,
+    "target": {
+      "position": [
+        0.23778,
+        -0.26308,
+        1.02378
+      ],
+      "quaternion_wxyz": [
+        0.979169,
+        -0.162581,
+        0.090119,
+        -0.081692
+      ],
+      "gripper": "open"
+    }
+  },
+  "executed": {
+    "status": "executed",
+    "frames": 6,
+    "requested_position": [
+      0.23778,
+      -0.26308,
+      1.02378
+    ],
+    "reached_position": [
+      0.23778,
+      -0.26347,
+      1.02341
+    ],
+    "position_gap_m": 0.0005,
+    "rotation_gap_rad": 0.0158,
+    "hand_table_contact": [],
+    "self_collision": [],
+    "ik_at_request": {
+      "position_error_m": 0.0002648266396666972,
+      "orientation_error_rad": 0.0007470477176181328,
+      "iterations": 4
+    }
+  }
+}

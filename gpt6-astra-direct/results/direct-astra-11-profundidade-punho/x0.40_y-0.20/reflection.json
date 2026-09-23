@@ -1,0 +1,87 @@
+{
+  "episode": "results/direct-astra-11-profundidade-punho/x0.40_y-0.20",
+  "at": "2026-09-23T15:46:08+00:00",
+  "critic_model": "gpt-6-astra",
+  "response_id": "chatcmpl-resp_0824bd546a4b26fa016ab3f3cb808c87d29ba70be28a035cab",
+  "usage": {
+    "input_tokens": 8460,
+    "output_tokens": 3825
+  },
+  "accepted": false,
+  "diagnosis": "The episode failed during approach, before any grasp was attempted. The hand contacted the mug while remaining open, and subsequent forward, lateral and downward corrections continued disturbing it rather than establishing an opposing grasp. Simulator truth shows substantial tilt by step 2, worsening at step 4 and reaching approximately sideways at step 6. The policy continued describing these motions as clear or non-pushing despite increasingly uncertain bracketing and visibility. Depth use was partly useful: it identified support and visible surface heights, and no hand–table collisions were reported. However, extensive probing did not produce a verified relationship between the target and the actual finger aperture. Surface samples were not effectively converted into contact-safe alignment or recovery decisions. As the mug became clipped in the head view and poorly visible from the wrist, the policy continued manipulating instead of restoring a useful view and reassessing its pose. There were no close commands, no verified lift and no sustained hold. The evaluator's reported height change was incidental motion, not a successful upright grasp.",
+  "failure_mode": "Repeated open-hand contact during unverified alignment toppled the target; inadequate visual reacquisition and ineffective use of depth prevented recovery and grasp acquisition.",
+  "lessons_review": [
+    {
+      "lesson": "Before translating or rotating, check the swept extent of the whole hand against the target, support, and nearby obstacles using available views. Reduce increments as clearance narrows and compare the target's pose relative to its support after each move. If the target shifts or tilts unexpectedly before secure control, relieve contact along a visibly clear path, reacquire its pose, and reorient in free space for an approach that places the intended grasp region inside the open aperture.",
+      "verdict": "neutral",
+      "why": "Steps 3–6 used smaller corrections, but the critical contact-response branch was not applied. Contact began at step 1, tilt increased through steps 2–4, and lowering at step 6 toppled the mug. Describing lateral or downward motion as avoiding forward pressure did not account for the whole hand's swept extent. The rule was not harmful; its geometric and recovery requirements need stronger emphasis."
+    },
+    {
+      "lesson": "Confirm in a clear view that opposing fingers bracket the intended grasp region; proximity or silhouette overlap alone is insufficient. If bracketing is unclear, obtain a better view or realign through free space rather than advancing into the target. Once aligned, hold the palm pose and close. Check measured closure and visual seating, then use a controlled test motion to verify that the target follows without slipping or unwanted rotation. If verification fails, return it to stable support before releasing and realigning.",
+      "verdict": "neutral",
+      "why": "The policy appropriately avoided closing with unclear bracketing, explicitly noted in steps 5–7. However, it substituted repeated open-hand nudging for the prescribed clear-space realignment. There were no close commands or verification motions. This was not evidence that the rule demanded premature stopping; the required alternative action was not executed."
+    },
+    {
+      "lesson": "Maintain the last visually confirmed target region from images and valid depth, treating it as uncertain after contact or loss of sight. When visibility is lost, use the last observed motion, frame-exit direction, and any remaining camera view to guide reacquisition. Reposition or reorient the wrist through known-clear space to inspect that region. After each viewing motion, check whether visibility improved; if not, change viewing direction or return toward a previously useful viewpoint instead of continuing an unsupported sweep.",
+      "verdict": "neutral",
+      "why": "The head view increasingly clipped the mug in steps 3–7, and step 6 lacked a clear wrist view of the aperture. Nevertheless, the policy kept issuing alignment motions rather than a deliberate viewing correction. The revised rule should trigger on insufficient visibility of the interaction region, not only complete loss of the target."
+    },
+    {
+      "lesson": "Use depth queries to resolve a specific uncertainty about a visibly identified target surface or a relevant support or obstacle. Interpret each return as a visible surface point, not the target's center, and combine it with images to choose the next alignment or clearance correction. If a target probe instead samples the hand or background, select a clearer target pixel or restore visibility. Reuse unchanged support geometry and refresh only measurements relevant to observed movement or the next planned interaction.",
+      "verdict": "helped",
+      "why": "Depth supplied useful support-height and surface-height information, reflected explicitly in the reasoning at steps 3 and 6; no hand–table contact was reported. Its benefit was limited: 43 queried pixels across the episode did not establish safe aperture alignment, and repeated sampling did not trigger recovery from worsening target pose and visibility. Retain the principle while requiring a concrete geometric decision from each query."
+    }
+  ],
+  "lessons": [
+    {
+      "lesson": "Check the swept extent of the whole hand before translating, lowering or rotating; an open gripper and a clear palm path do not establish finger clearance. Compare the target's pose relative to its support after each unverified interaction. If it shifts or tilts unexpectedly before secure control, relieve contact along a visibly clear path, observe its settled pose, and reorient in free space before trying a revised approach. Do not assume a lateral or downward correction is contact-free.",
+      "evidence_steps": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ],
+      "why": "The palm remained well away while extended fingers contacted the mug. Successive corrections increased tilt, and the allegedly non-advancing downward correction at step 6 produced a sideways object. Whole-hand clearance and an immediate recovery branch would have interrupted this progression."
+    },
+    {
+      "lesson": "Align the intended grasp region with the open finger aperture, not merely with the palm or a finger silhouette. Use available views and depth to confirm opposing contact surfaces bracket that region. If alignment would sweep a finger through the target, withdraw along a clear path and change the hand orientation before reapproaching. Once bracketing is confirmed, hold the palm pose and close rather than continuing to nudge. Check measured closure and visual seating, then test whether the target follows securely; if not, return it to stable support before releasing and realigning.",
+      "evidence_steps": [
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ],
+      "why": "The policy repeatedly translated an open hand without demonstrating enclosure or deliberately reorienting in free space. All seven commands left the gripper open. This rule preserves the necessary grasp check while making successful alignment lead directly to closure and verification."
+    },
+    {
+      "lesson": "Keep the target's interaction region and its relationship to nearby support visible enough to judge alignment and unintended motion. If clipping or occlusion makes that judgment unreliable, use another available camera or reposition the wrist through known-clear space, guided by the last confirmed target region and observed frame-exit direction. Check whether each viewing motion improves visibility and change direction if it does not. Reacquire the target's current pose before resuming contact-directed motion.",
+      "evidence_steps": [
+        3,
+        4,
+        5,
+        6,
+        7
+      ],
+      "why": "The target moved toward the edge of the head image while wrist views failed to show reliable bracketing. Continued manipulation under this degraded visibility prevented recognition and recovery from the changing pose. Earlier reacquisition would have been more useful than further blind alignment corrections."
+    },
+    {
+      "lesson": "Use each depth query to answer a specific pending alignment or clearance question at a visually identified surface in the depth camera's current image. Treat the result as a surface point, not a target center, and combine it with visible finger geometry and measured palm pose to choose the next correction. If the sample may belong to the hand or background, select an unambiguous surface or restore visibility. Reuse unchanged support geometry, and after acting verify that the intended spatial relationship improved before collecting more samples.",
+      "evidence_steps": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ],
+      "why": "Depth helped estimate heights but did not establish whether the target lay inside the aperture or whether the proposed motion would sweep fingers into it. Extensive sampling accompanied worsening alignment. Tying measurements to a specific action and checking its effect would improve both reliability and efficiency."
+    }
+  ],
+  "rejected_lessons": []
+}

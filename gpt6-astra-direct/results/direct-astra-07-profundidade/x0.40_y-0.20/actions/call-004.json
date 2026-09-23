@@ -1,0 +1,44 @@
+{
+  "accepted": true,
+  "action": {
+    "reason": "Maintain the current open-hand pose to obtain updated camera observations before any approach whose clearance is uncertain.",
+    "steps": 1,
+    "target": {
+      "position": [
+        0.29988,
+        -0.21369,
+        0.89283
+      ],
+      "quaternion_wxyz": [
+        0.973072,
+        -0.184629,
+        0.115548,
+        -0.075446
+      ],
+      "gripper": "open"
+    }
+  },
+  "executed": {
+    "status": "executed",
+    "frames": 6,
+    "requested_position": [
+      0.29988,
+      -0.21369,
+      0.89283
+    ],
+    "reached_position": [
+      0.29902,
+      -0.21547,
+      0.89374
+    ],
+    "position_gap_m": 0.0022,
+    "rotation_gap_rad": 0.0144,
+    "hand_table_contact": [],
+    "self_collision": [],
+    "ik_at_request": {
+      "position_error_m": 3.9462717950234375e-06,
+      "orientation_error_rad": 0.0,
+      "iterations": 1
+    }
+  }
+}

@@ -1,0 +1,138 @@
+{
+  "call": 1,
+  "step_id": 0,
+  "model": "gpt-6-astra",
+  "response_id": "chatcmpl-resp_035080f261fc5a84016ab3fa21312487d286552a11edaa8bbc",
+  "sent_at": "2026-09-23T16:11:08.952+00:00",
+  "received_at": "2026-09-23T16:11:19.798+00:00",
+  "sim_time_s": 0.5,
+  "images_sent": [
+    {
+      "camera": "head_camera",
+      "file": "obs/step-000/head_camera.png",
+      "sha256": "e65e23efc20c41bf2967e984c58a4336ab771bb5e6f51f358231564db3d5fccf"
+    },
+    {
+      "camera": "left_wrist_camera",
+      "file": "obs/step-000/left_wrist_camera.png",
+      "sha256": "7f4b394d20d4e7a874b542ee5e172a186d5a657d8721a68ca7860c31b584728e"
+    },
+    {
+      "camera": "right_wrist_camera",
+      "file": "obs/step-000/right_wrist_camera.png",
+      "sha256": "9d79e3adc2f0b4e7f697ee8d78cff340973ea35990de7b0bf7afa9264bb4d80a"
+    }
+  ],
+  "latency_s": 10.81,
+  "usage": {
+    "input_tokens": 3144,
+    "output_tokens": 148
+  },
+  "model_text": "(empty response)",
+  "depth_probes": [
+    {
+      "camera": "head_camera",
+      "points": [
+        [
+          646,
+          181
+        ],
+        [
+          626,
+          233
+        ],
+        [
+          550,
+          260
+        ]
+      ],
+      "result": [
+        {
+          "u": 646,
+          "v": 181,
+          "valid": true,
+          "depth_m": 0.6078,
+          "point": [
+            0.4329,
+            -0.2186,
+            0.7751
+          ]
+        },
+        {
+          "u": 626,
+          "v": 233,
+          "valid": true,
+          "depth_m": 0.5547,
+          "point": [
+            0.3631,
+            -0.1815,
+            0.8003
+          ]
+        },
+        {
+          "u": 550,
+          "v": 260,
+          "valid": true,
+          "depth_m": 0.6003,
+          "point": [
+            0.3597,
+            -0.1226,
+            0.7481
+          ]
+        }
+      ],
+      "response_id": "chatcmpl-resp_0a52456f98416a2e016ab3fa1d7c0887d29597d4ca6b2fd048"
+    }
+  ],
+  "observed": {
+    "palm": {
+      "position": [
+        0.18672,
+        -0.22595,
+        0.90596
+      ],
+      "quaternion_wxyz": [
+        0.982492,
+        -0.175626,
+        0.043489,
+        -0.044417
+      ]
+    },
+    "arm_joints_rad": [
+      0.06409,
+      -0.35,
+      -0.0632,
+      -0.09523,
+      -0.00209,
+      0.13248,
+      -0.01372
+    ],
+    "waist_yaw_rad": 0.0,
+    "gripper_closure": 0.0
+  },
+  "tool": "actuate",
+  "what_i_see": "Head shows upright white mug left of the open right hand on table. Right wrist shows mug beside fingers; left wrist shows robot and table without mug.",
+  "arguments": {
+    "what_i_see": "Head shows upright white mug left of the open right hand on table. Right wrist shows mug beside fingers; left wrist shows robot and table without mug.",
+    "reason": "Lower open hand toward mug midheight while keeping fingertips above table; align approach from near side.",
+    "steps": 5,
+    "position": [
+      0.204,
+      -0.225,
+      0.86
+    ],
+    "quaternion_wxyz": [
+      0.998,
+      0,
+      0.04,
+      -0.04
+    ],
+    "gripper": "open"
+  },
+  "result": {
+    "status": "rejected",
+    "errors": [
+      "rotacao de 0.353 rad; teto 0.35 rad"
+    ]
+  }
+}

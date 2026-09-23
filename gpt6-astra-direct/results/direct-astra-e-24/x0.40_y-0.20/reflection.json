@@ -1,0 +1,85 @@
+{
+  "episode": "results/direct-astra-e-24/x0.40_y-0.20",
+  "at": "2026-09-23T16:50:27+00:00",
+  "critic_model": "gpt-6-astra",
+  "response_id": "chatcmpl-resp_01fcfaa612136544016ab402d1a6b087d28d03f4aa61678976",
+  "usage": {
+    "input_tokens": 11748,
+    "output_tokens": 4251
+  },
+  "accepted": false,
+  "diagnosis": "The episode failed during acquisition, before any grasp or lift. Depth use was partially effective: it established the tabletop and several mug surfaces, supporting an initially sensible retreat and open-hand side approach. However, the policy repeatedly measured already-established geometry without resolving the limiting whole-hand clearance. It relied heavily on fingertip heights and asserted that intervening links were clear. Meanwhile, each command reused the latest measured quaternion, allowing attitude drift to accumulate rather than preserving the intended approach attitude. Later upward palm commands therefore did not reliably increase clearance for the entire hand. At step 8, an intermediate hand link contacted the table and triggered an abort. Earlier intermittent index contact had not produced an opposing grasp; the gripper remained open throughout. The evaluator recorded only 0.0012 m of lift and no retained hold. The nearly upright mug was still supported by the table, not successfully grasped. Sensor effort was substantial—83 depth samples across the recorded batches—but was not directed toward the uncertainty that ultimately caused failure.",
+  "failure_mode": "Table collision during an uncompleted open-hand approach: cumulative attitude drift and inadequate swept-clearance checking for intermediate links defeated fingertip-based clearance estimates.",
+  "lessons_review": [
+    {
+      "lesson": "Before moving near the target or a support surface, check the lowest and leading portions of the entire moving hand and arm using images and measured joints, including intermediate links and any held object.",
+      "verdict": "helped",
+      "why": "The initial retreat and open-hand approach in steps 1–3 were consistent with this rule and avoided descending directly onto the mug. Its crucial whole-link requirement was not successfully enforced: steps 5–8 emphasized fingertip clearance, and step 8 ended in intermediate-link table contact. Keep the principle, but make unresolved link clearance trigger a concrete viewing or approach change rather than another small advance."
+    },
+    {
+      "lesson": "Initialize commands from the measured pose while retaining a visually verified, task-compatible attitude reference; do not redefine the desired attitude merely because a different one was reached.",
+      "verdict": "neutral",
+      "why": "This safeguard was not followed. Each requested quaternion copied the current measured quaternion, so execution deviations became the next attitude target. Across steps 3–8 the hand tilted progressively even though the policy described the attitude as preserved. Retain and clarify the distinction between initializing position from measurement and retaining an independent attitude reference."
+    },
+    {
+      "lesson": "Use depth to resolve a specific uncertainty that determines the next action, such as an intended contact surface, support boundary, or obstructed approach.",
+      "verdict": "helped",
+      "why": "Depth provided useful support and target localization from step 1 onward, without access to simulator truth. However, steps 4–7 repeatedly sampled numerous surfaces, including hand, support, and target returns, without establishing the limiting link clearance or a feasible closing configuration. The reuse and action-specific probing portions need stronger emphasis; repeated measurements of known surfaces added substantial cost without resolving the failure condition."
+    },
+    {
+      "lesson": "After closure, test retention with a cautious, clearance-checked motion and confirm that identifiable object features move with the hand.",
+      "verdict": "neutral",
+      "why": "No closure occurred, and the episode aborted at step 8 before retention or task-completion checks could be exercised. This lesson neither caused the failure nor demonstrated a benefit here; retain it as a necessary safeguard for later stages."
+    }
+  ],
+  "lessons": [
+    {
+      "lesson": "Before moving near the target, a support, or an obstacle, check the swept envelope of the entire moving hand and arm, including intermediate links and any held object, using images and measured joints. Palm and fingertip clearance do not bound the rest of the geometry. If a limiting region is obscured or clearance is uncertain, inspect an informative available view or reposition through a checked clear path, then change the attitude or approach until the full envelope has clearance. During acquisition, choose an entry and closing path that place the intended contact region between opposing contact surfaces without pushing the object. Shorten motions near boundaries and close without advancing once bracketed. If an unsecured object moves, unload the unintended contact while preserving support, then realign.",
+      "evidence_steps": [
+        1,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8
+      ],
+      "why": "The initial retreat was useful, but subsequent advances never established a complete opposing grasp. Incidental index contact occurred at steps 4, 5, and 7, and the final motion collided with the table through right_hand_middle_1_link despite a reported fingertip gap. The missing check was the complete approach and closing envelope, not merely palm or endpoint placement."
+    },
+    {
+      "lesson": "Initialize position commands from the measured pose, but retain a visually verified, task-compatible attitude reference rather than replacing it with each reached attitude. Compare measured attitude with that reference and account for accumulated drift and observed tracking variation when checking clearance; raising the palm does not guarantee that every link rises. If attitude drift threatens clearance, use a checked path to obtain room, separate rotation from translation, and try a brief rotation-only adjustment. Reassess the full-hand geometry from the reached pose before resuming. If the reference cannot be held reliably, choose a stable attainable attitude and replan a compatible approach instead of repeatedly chasing it.",
+      "evidence_steps": [
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8
+      ],
+      "why": "Requested attitudes repeatedly matched the latest measured attitudes, incorporating rather than correcting execution drift. During the later approach, palm height increased while the measured lowest fingertip clearance narrowed. The abort demonstrates why upward translation and accurate palm position were insufficient when the hand's attitude and occupied envelope were changing."
+    },
+    {
+      "lesson": "Use depth to answer a specific question that changes the next action. Select identifiable features in the current depth-source image using its pixel convention, and classify each return against the available views before treating it as a target surface, support, or obstacle; returns through openings or on the robot are not exterior target measurements. Reuse established geometry while observations remain consistent. When the uncertainty is clearance or grasp alignment, inspect the limiting link, contact region, or boundary rather than repeatedly sampling known surfaces. If the needed region is obscured, choose an informative available view or make a clearance-checked viewing adjustment, then probe the missing boundary and use the result to select the next motion.",
+      "evidence_steps": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8
+      ],
+      "why": "The 83 recorded depth samples established the support and many mug surfaces, but repeated large batches did not prevent incidental target contact or the final support collision. Directing sensing toward the limiting hand geometry and approach feasibility would have improved both reliability and efficiency; the useful initial localization did not need to be repeatedly reconstructed."
+    },
+    {
+      "lesson": "After closure, test retention with a cautious, clearance-checked motion and verify that identifiable object features remain seated and move with the hand. Confirm secure retention, task-compatible attitude, and required displacement relative to the support separately; closure, palm motion, or an arbitrary depth return does not establish them. If a condition is uncertain, inspect an informative view or make a clearance-checked viewing adjustment, then correct the missing condition. If retention becomes unstable, guide the object to stable support and reacquire it. Begin any required hold only after all conditions are established, restart it if they are lost, and recheck them before declaring completion.",
+      "evidence_steps": [
+        8
+      ],
+      "why": "The final state contained neither a closed grasp nor meaningful lift or retention. The evaluator's upright label reflected the mug remaining nearly upright on its support, not successful acquisition. This untested safeguard remains necessary to distinguish actual task completion from palm movement or apparent object attitude in future episodes."
+    }
+  ],
+  "rejected_lessons": []
+}

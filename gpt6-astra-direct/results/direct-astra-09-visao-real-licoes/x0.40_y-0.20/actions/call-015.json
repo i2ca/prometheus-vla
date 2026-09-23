@@ -1,0 +1,44 @@
+{
+  "accepted": true,
+  "action": {
+    "reason": "Move toward the measured table region at constant clearance to reveal target geometry in the wrist view, without lowering the fingers toward the surface.",
+    "steps": 5,
+    "target": {
+      "position": [
+        0.4525,
+        0.111,
+        0.9248
+      ],
+      "quaternion_wxyz": [
+        0.97305,
+        -0.17253,
+        -0.106585,
+        -0.10976
+      ],
+      "gripper": "open"
+    }
+  },
+  "executed": {
+    "status": "executed",
+    "frames": 30,
+    "requested_position": [
+      0.4525,
+      0.111,
+      0.9248
+    ],
+    "reached_position": [
+      0.45221,
+      0.11139,
+      0.92448
+    ],
+    "position_gap_m": 0.0006,
+    "rotation_gap_rad": 0.1432,
+    "hand_table_contact": [],
+    "self_collision": [],
+    "ik_at_request": {
+      "position_error_m": 0.00029720754704687987,
+      "orientation_error_rad": 0.0006389662113386604,
+      "iterations": 33
+    }
+  }
+}

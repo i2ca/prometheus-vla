@@ -1,0 +1,35 @@
+{
+  "accepted": false,
+  "errors": [
+    "trajetoria passa perto demais do proprio corpo (right_elbow_link x torso_link, folga abaixo da margem de seguranca) em 94% do movimento; nada foi executado. Escolha um alvo ou orientacao que afaste a mao e o punho do tronco."
+  ],
+  "ik": {
+    "position_error_m": 9.292355008632369e-05,
+    "orientation_error_rad": 0.00033130092944170955,
+    "iterations": 6,
+    "predicted_self_collision": [
+      "right_elbow_link",
+      "torso_link"
+    ],
+    "clearance_m": 0.0249,
+    "at_fraction": 0.94
+  },
+  "action": {
+    "reason": "Tilt the elevated open hand toward a more horizontal viewing and side-approach attitude to locate the mug without advancing into unseen contact.",
+    "steps": 3,
+    "target": {
+      "position": [
+        0.25758,
+        -0.16154,
+        0.85766
+      ],
+      "quaternion_wxyz": [
+        0.943,
+        -0.125,
+        -0.223,
+        -0.213
+      ],
+      "gripper": "open"
+    }
+  }
+}

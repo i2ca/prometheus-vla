@@ -1,0 +1,44 @@
+{
+  "accepted": true,
+  "action": {
+    "reason": "Lower the open aperture toward mug midheight and reduce hand pitch while maintaining table clearance.",
+    "steps": 5,
+    "target": {
+      "position": [
+        0.25,
+        -0.233,
+        0.799
+      ],
+      "quaternion_wxyz": [
+        0.99875,
+        0,
+        -0.05,
+        0
+      ],
+      "gripper": "open"
+    }
+  },
+  "executed": {
+    "status": "executed",
+    "frames": 30,
+    "requested_position": [
+      0.25,
+      -0.233,
+      0.799
+    ],
+    "reached_position": [
+      0.25006,
+      -0.24543,
+      0.83839
+    ],
+    "position_gap_m": 0.0413,
+    "rotation_gap_rad": 0.3006,
+    "hand_table_contact": [],
+    "self_collision": [],
+    "ik_at_request": {
+      "position_error_m": 0.013418344445029418,
+      "orientation_error_rad": 0.010847488825123675,
+      "iterations": 200
+    }
+  }
+}

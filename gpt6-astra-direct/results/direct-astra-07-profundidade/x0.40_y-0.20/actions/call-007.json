@@ -1,0 +1,44 @@
+{
+  "accepted": true,
+  "action": {
+    "reason": "Keep the open hand stationary to obtain an actionable image for pixel-based depth measurement; do not approach or close without establishing the mug's position and finger clearance.",
+    "steps": 1,
+    "target": {
+      "position": [
+        0.29621,
+        -0.2195,
+        0.89338
+      ],
+      "quaternion_wxyz": [
+        0.97135,
+        -0.183437,
+        0.117617,
+        -0.094848
+      ],
+      "gripper": "open"
+    }
+  },
+  "executed": {
+    "status": "executed",
+    "frames": 6,
+    "requested_position": [
+      0.29621,
+      -0.2195,
+      0.89338
+    ],
+    "reached_position": [
+      0.29482,
+      -0.22143,
+      0.89314
+    ],
+    "position_gap_m": 0.0024,
+    "rotation_gap_rad": 0.0124,
+    "hand_table_contact": [],
+    "self_collision": [],
+    "ik_at_request": {
+      "position_error_m": 4.279363319996765e-06,
+      "orientation_error_rad": 0.0,
+      "iterations": 1
+    }
+  }
+}

@@ -51,6 +51,8 @@ CAMERAS = ("head_camera", "left_wrist_camera", "right_wrist_camera")
 VIDEO_GRID = ("left_wrist_camera", "head_camera", "right_wrist_camera",
               "view_left", "view_center", "side_view")
 TILT_LIMIT_DEG = 15.0
+# faixa util da D435i: o minimo cai com a resolucao (Intel: ~0,195 m em 848x480, ~0,105 m em 424x240)
+DEPTH_MIN_BY_WIDTH, DEPTH_MAX_M = {848: 0.195, 424: 0.105}, 3.0
 TRUNK = {"torso_link", "pelvis", "waist_yaw_link", "waist_roll_link", "head_link"}
 # Folga minima entre cotovelo/punho/mao e tronco/braco esquerdo na trajetoria planejada. Calibrada no
 # direct-astra-03: a chamada 7 passava a 4,2 cm no plano e encostou na execucao (mao com kp baixo cede,
@@ -216,6 +218,125 @@ class DirectEpisode:
         path = self.dir / "frames" / f"{self.meta['frames']:06d}.jpg"
         cv2.imwrite(str(path), cv2.cvtColor(img, cv2.COLOR_RGB2BGR), [cv2.IMWRITE_JPEG_QUALITY, 88])
 
+    # ---------- sensor de profundidade ----------
+    def depth_probe(self, points, cam="head_camera", size=(848, 480)):
+        """Ponto 3D (referencial do ambiente, o mesmo da palma) sob cada pixel (u, v) da camera da cabeca.
+        E o que uma RealSense D435i (a camera de profundidade real da cabeca do G1) entrega: sai do buffer de
+        profundidade renderizado, nao da pose de objeto nenhum. Ruido tipo D435 (sigma cresce com z^2) com
+        semente fixa por passo e pixel, e sem retorno abaixo do alcance minimo ou fora da imagem."""
+        w, h = size
+        r = self._renderer(w, h)
+        r.enable_depth_rendering()
+        r.update_scene(self.d, camera=cam)
+        depth = r.render().copy()
+        r.disable_depth_rendering()
+        c = self.m.camera(cam)
+        fovy = np.radians(self.m.cam_fovy[c.id])
+        f = (h / 2) / np.tan(fovy / 2)
+        pos, mat = self.d.cam_xpos[c.id], self.d.cam_xmat[c.id].reshape(3, 3)
+        out = []
+        for u, v in points:
+            u, v = int(round(u)), int(round(v))
+            if not (0 <= u < w and 0 <= v < h):
+                out.append({"u": u, "v": v, "valid": False, "why": "fora da imagem (848x480)"}); continue
+            z = float(depth[v, u])
+            if z < DEPTH_MIN_BY_WIDTH.get(w, 0.195) or z > DEPTH_MAX_M:
+                out.append({"u": u, "v": v, "valid": False, "why": "sem retorno (perto ou longe demais)"}); continue
+            rng = np.random.default_rng(abs(hash((self.meta["calls"], u, v))) % (2 ** 32))
+            z = z + rng.normal(0.0, 0.001 + 0.002 * z * z)
+            # camera do MuJoCo olha para -z, x para a direita, y para cima
+            ray = np.array([(u - w / 2) / f, -(v - h / 2) / f, -1.0]) * z
+            world = pos + mat @ ray
+            out.append({"u": u, "v": v, "valid": True, "depth_m": round(z, 4),
+                        "point": [round(float(x), 4) for x in world]})
+        return out
+
+    def _hand_meshes(self):
+        """Vertices das geometrias de colisao da mao direita, no referencial de cada geom (modelo do proprio robo)."""
+        if not hasattr(self, "_hm"):
+            m, out = self.m, []
+            for g in range(m.ngeom):
+                name = m.body(int(m.geom_bodyid[g])).name
+                if not name.startswith("right_hand") or not (m.geom_contype[g] or m.geom_conaffinity[g]):
+                    continue
+                if m.geom_type[g] == mujoco.mjtGeom.mjGEOM_MESH:
+                    mid = m.geom_dataid[g]
+                    v = m.mesh_vert[m.mesh_vertadr[mid]:m.mesh_vertadr[mid] + m.mesh_vertnum[mid]].copy()
+                else:  # primitiva: aproxima pelos cantos da caixa envolvente
+                    h = m.geom_size[g][:3] if m.geom_type[g] == mujoco.mjtGeom.mjGEOM_BOX else np.full(3, m.geom_rbound[g])
+                    v = np.array([[sx, sy, sz] for sx in (-1, 1) for sy in (-1, 1) for sz in (-1, 1)]) * h
+                out.append((g, name, v))
+            self._hm = out
+        return self._hm
+
+    def _geometry_of(self, d2):
+        """Geometria da mao a partir da malha do proprio robo, lida de um MjData qualquer: ponta de cada dedo = vertice
+        do elo distal mais longe da base do dedo; lowest_point = ponto mais baixo da mao inteira."""
+        m = self.m
+        pts = {}
+        for g, name, v in self._hand_meshes():
+            pts.setdefault(name, []).append(d2.geom_xpos[g] + (d2.geom_xmat[g].reshape(3, 3) @ v.T).T)
+        pts = {k: np.vstack(v) for k, v in pts.items()}
+        base = lambda n: d2.xpos[m.body(f"right_hand_{n}_link").id]
+        far = lambda distal, root: pts[f"right_hand_{distal}_link"][
+            np.argmax(np.linalg.norm(pts[f"right_hand_{distal}_link"] - base(root), axis=1))]
+        allp = np.vstack(list(pts.values()))
+        opp = (base("index_1") + base("middle_1")) / 2
+        return {"thumb_tip": far("thumb_2", "thumb_0"), "index_tip": far("index_1", "index_0"),
+                "middle_tip": far("middle_1", "middle_0"), "aperture_center": (base("thumb_2") + opp) / 2,
+                "lowest_point": allp[np.argmin(allp[:, 2])]}
+
+    def preview(self, position, quaternion_wxyz, steps=3, gripper="keep"):
+        """Planejamento da propria mao, sem mover o robo: roda o mesmo comando que act() executaria numa COPIA do
+        robo com a dinamica e os controladores dele (inclusive o punho de 5 Nm que cede sob o peso da mao), mas com
+        TODOS os contatos desligados, entao a previsao nao sabe nada do ambiente. Devolve a geometria no fim e o
+        ponto mais baixo das pontas dos dedos ao longo do caminho."""
+        pos = np.asarray(position, float)
+        target_mat = mat_of(quaternion_wxyz)
+        cur_pos, cur_mat = self._palm_pose()
+        dist, rot = float(np.linalg.norm(pos - cur_pos)), quat_angle(quat_of(cur_mat), quaternion_wxyz)
+        e2 = DirectEpisode(self.dir).load()
+        e2.meta["video"] = False
+        # desliga so o contato com o AMBIENTE (mesa, objetos, chao); os contatos do robo com ele mesmo continuam,
+        # senao a mao (dedos que encostam entre si e na palma) se comporta diferente do real
+        pelvis_root = e2.m.body_rootid[e2.m.body("pelvis").id]
+        for g in range(e2.m.ngeom):
+            if e2.m.body_rootid[e2.m.geom_bodyid[g]] != pelvis_root:
+                e2.m.geom_contype[g] = 0; e2.m.geom_conaffinity[g] = 0
+        sim = e2.sim
+        start_pos, start_mat = e2._palm_pose()          # pose medida da copia, igual ao que _execute usa
+        rot_vec = cv2.Rodrigues(target_mat @ start_mat.T)[0].ravel()
+        hand_now, hand_goal = sim.q(HAND_JOINTS), e2._hand_goal(gripper)
+        frames = max(1, int(round(int(steps) * STEP_SECONDS * FPS)))
+        max_step = np.radians(MAX_JOINT_SPEED_DEG_S) / FPS
+        q, lowest = sim.q(IK_JOINTS), (np.inf, None)
+        for i in range(frames + SETTLE_FRAMES):
+            if i < frames:
+                u = (i + 1) / frames; su = u * u * (3 - 2 * u)
+                q, _ = e2.ik.solve(start_pos + su * (pos - start_pos), cv2.Rodrigues(rot_vec * su)[0] @ start_mat,
+                                   q, q, iterations=60, max_step=max_step)
+                sim.set_targets(IK_JOINTS, q)
+                sim.set_targets(HAND_JOINTS, hand_now + su * (hand_goal - hand_now))
+            e2._substeps(1)
+            lp = e2._geometry_of(e2.d)["lowest_point"]
+            if lp[2] < lowest[0]:
+                lowest = (float(lp[2]), [round(float(x), 4) for x in lp])
+        end = e2._geometry_of(e2.d)
+        palm_end, _ = e2._palm_pose()
+        r = lambda v: [round(float(x), 4) for x in v]
+        return {"within_limits": dist <= MAX_TARGET_DISTANCE_M and rot <= MAX_TARGET_ROTATION_RAD,
+                "distance_m": round(dist, 4), "rotation_rad": round(rot, 3),
+                "predicted_palm_end": r(palm_end), "end": {k: r(v) for k, v in end.items()},
+                "lowest_hand_point_along_path": {"z": round(lowest[0], 4), "point": lowest[1]},
+                "note": "own-body dynamics (self-contacts kept, contacts with anything else removed): it does not know about the table or objects"}
+
+    def _hand_geometry(self):
+        """Propriocepcao da mao (angulos medidos das juntas + malha do proprio robo). Nao usa nada do objeto."""
+        r = lambda v: [round(float(x), 4) for x in v]
+        g = {k: r(v) for k, v in self._geometry_of(self.d).items()}
+        g["note"] = "from measured joint angles and the robot's own hand mesh; same frame as palm and depth probes"
+        return g
+
     # ---------- observacao ----------
     def _palm_pose(self):
         pos = self.sim.body_pos(PALM)
@@ -246,6 +367,7 @@ class DirectEpisode:
             "current_palm": {"position": [round(v, 5) for v in pos.tolist()],
                              "quaternion_wxyz": [round(v, 6) for v in quat_of(mat).tolist()]},
             "arm_joints_rad": [round(v, 5) for v in self.sim.q(ARM_JOINTS).tolist()],
+            "hand_geometry": self._hand_geometry(),
             "waist_yaw_rad": round(float(self.sim.q(["waist_yaw_joint"])[0]), 5),
             "gripper_closure": round(closure, 3),
             "previous_reason": reason_of_previous,

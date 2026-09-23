@@ -1,0 +1,44 @@
+{
+  "accepted": true,
+  "action": {
+    "reason": "Move back just 5 mm at constant height to obtain depth parallax and gently relieve possible rim contact. Check whether the mug follows or stays fixed relative to the table before attempting closure.",
+    "steps": 1,
+    "target": {
+      "position": [
+        0.23721,
+        -0.24194,
+        1.00661
+      ],
+      "quaternion_wxyz": [
+        0.978756,
+        -0.163629,
+        0.084185,
+        -0.090419
+      ],
+      "gripper": "keep"
+    }
+  },
+  "executed": {
+    "status": "executed",
+    "frames": 6,
+    "requested_position": [
+      0.23721,
+      -0.24194,
+      1.00661
+    ],
+    "reached_position": [
+      0.23749,
+      -0.24195,
+      1.00732
+    ],
+    "position_gap_m": 0.0008,
+    "rotation_gap_rad": 0.0204,
+    "hand_table_contact": [],
+    "self_collision": [],
+    "ik_at_request": {
+      "position_error_m": 0.000258310472447605,
+      "orientation_error_rad": 0.0007623499951937105,
+      "iterations": 7
+    }
+  }
+}

@@ -1,0 +1,46 @@
+{
+  "accepted": true,
+  "action": {
+    "reason": "Advance the open aperture above the visible mug while preserving height to improve alignment and visibility before side entry.",
+    "steps": 5,
+    "target": {
+      "position": [
+        0.307,
+        -0.216,
+        0.862
+      ],
+      "quaternion_wxyz": [
+        0.992,
+        -0.02,
+        -0.025,
+        -0.12
+      ],
+      "gripper": "open"
+    }
+  },
+  "executed": {
+    "status": "aborted_on_contact",
+    "frames": 22,
+    "requested_position": [
+      0.307,
+      -0.216,
+      0.862
+    ],
+    "reached_position": [
+      0.29938,
+      -0.22285,
+      0.86634
+    ],
+    "position_gap_m": 0.0111,
+    "rotation_gap_rad": 0.5139,
+    "hand_table_contact": [
+      "right_hand_middle_1_link"
+    ],
+    "self_collision": [],
+    "ik_at_request": {
+      "position_error_m": 0.00029661192945693455,
+      "orientation_error_rad": 0.0007904880380806443,
+      "iterations": 31
+    }
+  }
+}

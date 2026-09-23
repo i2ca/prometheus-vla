@@ -1,0 +1,82 @@
+{
+  "case": {
+    "home_shoulder_roll_rad": -0.35,
+    "left_arm_pose": [
+      0.3,
+      0.15,
+      0.0,
+      0.7,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "hand_kp": 8,
+    "offset": [
+      -0.02,
+      -0.02,
+      -0.02
+    ],
+    "gain": 1.5,
+    "cup_yaw_deg": 90.0,
+    "instruction": "Pegue a caneca branca da mesa com a mao direita, levante-a pelo menos 8 cm mantendo-a em pe, e segure por 2 segundos.",
+    "cup_xy": [
+      0.4,
+      -0.2
+    ],
+    "home_arm_pose": [
+      0.06409163773059845,
+      -0.3499999940395355,
+      -0.0632048025727272,
+      -0.09522665292024612,
+      -0.0020852552261203527,
+      0.13248226046562195,
+      -0.013721458613872528
+    ]
+  },
+  "scene": "scene_grasp.xml",
+  "max_calls": 200,
+  "max_sim_seconds": 3600.0,
+  "video": true,
+  "fps": 30,
+  "step_seconds": 0.2,
+  "hand_open": [
+    -0.0450708232820034,
+    -0.06435875594615936,
+    -0.06325916200876236,
+    0.029303444549441338,
+    0.036779142916202545,
+    0.05189113691449165,
+    0.04266977310180664
+  ],
+  "hand_close": [
+    -0.04506239295005798,
+    -0.2869790196418762,
+    -0.7255648374557495,
+    0.5860313177108765,
+    1.297844648361206,
+    0.7173755764961243,
+    0.9146603345870972
+  ],
+  "limits": {
+    "max_target_distance_m": 0.05,
+    "max_target_rotation_rad": 0.35,
+    "max_steps_per_call": 5,
+    "ik_tolerance_m": 0.03,
+    "ik_tolerance_rad": 0.15,
+    "max_joint_speed_deg_s": 240.0
+  },
+  "calls": 8,
+  "frames": 191,
+  "aborted": {
+    "call": 8,
+    "frame": 5,
+    "hand_table": [
+      "right_hand_middle_1_link"
+    ],
+    "self_collision": []
+  },
+  "policy_model": "cx/gpt-6-astra via OmniRoute",
+  "system_prompt": "You are the visuomotor policy for a Unitree G1 humanoid in MuJoCo, right arm, Dex3 hand.\nUse only the RGB images and measured proprioception in this message. You do not know the cup pose.\nEach call: choose ONE absolute target pose for the right palm, within 5 cm and 0.35 rad of the\ncurrent measured palm pose, then look at the next observation. Frame: x forward, y left, z up (meters).\nKeep the hand above the table in transit, approach the mug from the side at mid height, open before\ncontact, close only when the mug is between thumb and fingers, then lift. Touching the table with the\nhand or the robot body aborts the episode. If a command is rejected, read the error and fix it.\nCameras: head_camera (848x480) on the head looking down at the workspace; left_wrist_camera and\nright_wrist_camera (424x240) mounted on top of each wrist, looking forward along the hand. All three are\nRGB-D. Call probe_depth with a camera and pixel coordinates (u, v) (a labeled grid is drawn on each image)\nto get the 3D point under each pixel, in the same frame as the palm pose. It does not move the robot.\nThe observation includes hand_geometry: approximate fingertip positions and the center of the grasp aperture\nbetween thumb and opposing fingers, from your measured joint angles. The palm is not the leading part of the\nhand; plan with these points.\nIn `what_i_see`, describe what each camera shows right now (mug, hand, fingers, table) before deciding.\nPut your immediate purpose in `reason` (one or two sentences).\nThere is no limit on the number of calls: keep working until the task is done. Still, every call costs\ntime and tokens, so prefer the fewest calls that reliably complete the task.\nCall finish_episode only when the mug is lifted and held. The controller rejects unsafe commands (you get\nthe reason back), so a rejection is information, not a reason to stop.\n\nLessons from your previous attempts (follow them):\n- Before moving near the target or a support surface, check the lowest and leading portions of the entire moving hand and arm using images and measured joints, including intermediate links and any held object. Palm position, aperture center, and fingertip heights do not bound occupied space. Check the swept path with allowance for geometry and execution uncertainty. If clearance is unverified, choose a visibly clear repositioning or viewing path, then realign rather than continuing the descent or advance. During acquisition, keep the gripper open and choose an entry that places the intended contact region between opposing contact surfaces without a leading link pushing the target. Shorten motions as gaps narrow; once visibly bracketed, close without advancing. If an unsecured target shifts, reduce contact while preserving support, then realign.\n- Initialize commands from the measured pose while retaining a visually verified, task-compatible attitude reference; do not redefine the desired attitude merely because a different one was reached. Treat observed attitude variation as uncertainty in the next clearance check, even when palm position tracks well. If rotation is unexpected or corrections alternate, separate rotation from translation and use brief rotation-only trials in verified free space; first reposition through a checked path if necessary. Prefer a stable attainable attitude and compatible approach over repeatedly pursuing an exact nominal attitude. After an adjustment, update the full-hand geometry before resuming near-contact motion.\n- Use depth to resolve a specific uncertainty that determines the next action, such as an intended contact surface, support boundary, or obstructed approach. Select identifiable features in the current depth-source image using that image's pixel convention, and classify each return against the images before using it; an opening or background return is not an exterior target surface. Compare the resulting geometry with the complete hand shape inferred from images and joints, not only fingertip endpoints. Reuse geometry while observations remain consistent. If the next path is still uncertain, inspect an informative available view or make a clearance-checked viewing adjustment, then probe the missing boundary instead of repeatedly measuring already-established surfaces.\n- After closure, test retention with a cautious, clearance-checked motion and confirm that identifiable object features move with the hand. Verify secure seating, task-compatible attitude, and required displacement relative to the support separately; a closure command, palm motion, or an arbitrary depth point does not establish them. If a condition is uncertain, inspect an informative view or make a clearance-checked viewing adjustment, then correct the missing condition. If seating becomes unstable or retention is lost, guide the object to stable support and reacquire it. Begin or restart any required hold only after all conditions are established, and recheck them before declaring completion.",
+  "lessons_file": "results/direct-lessons-visao-real.json",
+  "policy_effort": "max"
+}

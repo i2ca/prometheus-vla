@@ -1,0 +1,44 @@
+{
+  "accepted": true,
+  "action": {
+    "reason": "Move the open hand 1 cm left toward the mug-side working region while maintaining height and orientation. This reverses the previous lateral withdrawal to improve alignment without sweeping the fingers downward; check the next view before descending or closing.",
+    "steps": 1,
+    "target": {
+      "position": [
+        0.23778,
+        -0.25347,
+        1.02341
+      ],
+      "quaternion_wxyz": [
+        0.978491,
+        -0.16175,
+        0.097875,
+        -0.08254
+      ],
+      "gripper": "open"
+    }
+  },
+  "executed": {
+    "status": "executed",
+    "frames": 6,
+    "requested_position": [
+      0.23778,
+      -0.25347,
+      1.02341
+    ],
+    "reached_position": [
+      0.23803,
+      -0.2528,
+      1.0239
+    ],
+    "position_gap_m": 0.0009,
+    "rotation_gap_rad": 0.0186,
+    "hand_table_contact": [],
+    "self_collision": [],
+    "ik_at_request": {
+      "position_error_m": 0.0002871913036582489,
+      "orientation_error_rad": 0.0008273145575502404,
+      "iterations": 3
+    }
+  }
+}

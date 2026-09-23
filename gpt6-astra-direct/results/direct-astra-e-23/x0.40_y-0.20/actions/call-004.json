@@ -1,0 +1,46 @@
+{
+  "accepted": true,
+  "action": {
+    "reason": "Lower the open hand toward mug mid-height while advancing only slightly in the clear side lane. The lowest fingertip will remain about 5 cm above the table.",
+    "steps": 2,
+    "target": {
+      "position": [
+        0.20285,
+        -0.25159,
+        0.82938
+      ],
+      "quaternion_wxyz": [
+        0.997953,
+        -0.010889,
+        -0.000942,
+        -0.06301
+      ],
+      "gripper": "open"
+    }
+  },
+  "executed": {
+    "status": "aborted_on_contact",
+    "frames": 10,
+    "requested_position": [
+      0.20285,
+      -0.25159,
+      0.82938
+    ],
+    "reached_position": [
+      0.19603,
+      -0.25125,
+      0.82755
+    ],
+    "position_gap_m": 0.0071,
+    "rotation_gap_rad": 0.2074,
+    "hand_table_contact": [
+      "right_hand_middle_1_link"
+    ],
+    "self_collision": [],
+    "ik_at_request": {
+      "position_error_m": 0.0002938581809838368,
+      "orientation_error_rad": 0.0009093861569908114,
+      "iterations": 71
+    }
+  }
+}

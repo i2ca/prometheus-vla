@@ -1,0 +1,44 @@
+{
+  "accepted": true,
+  "action": {
+    "reason": "Move the open hand slightly outward to the robot's right at constant height to reduce mug occlusion and distinguish side alignment from projected overlap before closing. This changes the viewing baseline rather than repeating the previous upward viewing motion.",
+    "steps": 1,
+    "target": {
+      "position": [
+        0.25263,
+        -0.22653,
+        0.96151
+      ],
+      "quaternion_wxyz": [
+        0.978952,
+        -0.162727,
+        0.084901,
+        -0.089247
+      ],
+      "gripper": "open"
+    }
+  },
+  "executed": {
+    "status": "executed",
+    "frames": 6,
+    "requested_position": [
+      0.25263,
+      -0.22653,
+      0.96151
+    ],
+    "reached_position": [
+      0.25247,
+      -0.22752,
+      0.96105
+    ],
+    "position_gap_m": 0.0011,
+    "rotation_gap_rad": 0.0196,
+    "hand_table_contact": [],
+    "self_collision": [],
+    "ik_at_request": {
+      "position_error_m": 0.00025962011349622035,
+      "orientation_error_rad": 0.0007647323648255118,
+      "iterations": 3
+    }
+  }
+}

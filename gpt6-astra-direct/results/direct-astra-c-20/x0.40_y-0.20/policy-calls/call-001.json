@@ -1,0 +1,223 @@
+{
+  "call": 1,
+  "step_id": 0,
+  "model": "gpt-6-astra",
+  "response_id": "chatcmpl-resp_093dc50a8e98640a016ab3fc24fbbc87d2967c1db96e411eba",
+  "sent_at": "2026-09-23T16:19:37.197+00:00",
+  "received_at": "2026-09-23T16:19:54.677+00:00",
+  "sim_time_s": 0.5,
+  "images_sent": [
+    {
+      "camera": "head_camera",
+      "file": "obs/step-000/head_camera.png",
+      "sha256": "c776f82492a78fefd7fa876c225028be4708bb62d5814294f9522f40da53e894"
+    },
+    {
+      "camera": "left_wrist_camera",
+      "file": "obs/step-000/left_wrist_camera.png",
+      "sha256": "4c59820eb7da338c81b7b2960a8443e843d576ab382f6170afde1ac80d5f4d12"
+    },
+    {
+      "camera": "right_wrist_camera",
+      "file": "obs/step-000/right_wrist_camera.png",
+      "sha256": "ac9e61117ef11e73289572a3d584f58253f6ae6f160f4b7534ba731226671cfb"
+    }
+  ],
+  "latency_s": 17.44,
+  "usage": {
+    "input_tokens": 4384,
+    "output_tokens": 233
+  },
+  "model_text": "(empty response)",
+  "depth_probes": [
+    {
+      "camera": "head_camera",
+      "points": [
+        [
+          645,
+          192
+        ],
+        [
+          627,
+          235
+        ],
+        [
+          580,
+          208
+        ],
+        [
+          547,
+          270
+        ]
+      ],
+      "result": [
+        {
+          "u": 645,
+          "v": 192,
+          "valid": true,
+          "depth_m": 0.6218,
+          "point": [
+            0.4302,
+            -0.2226,
+            0.7582
+          ]
+        },
+        {
+          "u": 627,
+          "v": 235,
+          "valid": true,
+          "depth_m": 0.5575,
+          "point": [
+            0.3627,
+            -0.1834,
+            0.797
+          ]
+        },
+        {
+          "u": 580,
+          "v": 208,
+          "valid": true,
+          "depth_m": 0.5964,
+          "point": [
+            0.4034,
+            -0.1507,
+            0.7735
+          ]
+        },
+        {
+          "u": 547,
+          "v": 270,
+          "valid": true,
+          "depth_m": 0.5931,
+          "point": [
+            0.3481,
+            -0.1182,
+            0.7505
+          ]
+        }
+      ],
+      "response_id": "chatcmpl-resp_058f0dfc04ef443f016ab3fc1b1e9487d2853db47a95a965f2"
+    },
+    {
+      "camera": "head_camera",
+      "points": [
+        [
+          647,
+          142
+        ],
+        [
+          690,
+          175
+        ],
+        [
+          606,
+          214
+        ]
+      ],
+      "result": [
+        {
+          "u": 647,
+          "v": 142,
+          "valid": true,
+          "depth_m": 0.5571,
+          "point": [
+            0.4382,
+            -0.2012,
+            0.8339
+          ]
+        },
+        {
+          "u": 690,
+          "v": 175,
+          "valid": true,
+          "depth_m": 0.5477,
+          "point": [
+            0.4064,
+            -0.236,
+            0.829
+          ]
+        },
+        {
+          "u": 606,
+          "v": 214,
+          "valid": true,
+          "depth_m": 0.56,
+          "point": [
+            0.381,
+            -0.1651,
+            0.8031
+          ]
+        }
+      ],
+      "response_id": "chatcmpl-resp_0d65e625e43ee72c016ab3fc1f912887d29c7519300a719039"
+    }
+  ],
+  "observed": {
+    "palm": {
+      "position": [
+        0.18672,
+        -0.22595,
+        0.90596
+      ],
+      "quaternion_wxyz": [
+        0.982492,
+        -0.175626,
+        0.043489,
+        -0.044417
+      ]
+    },
+    "arm_joints_rad": [
+      0.06409,
+      -0.35,
+      -0.0632,
+      -0.09523,
+      -0.00209,
+      0.13248,
+      -0.01372
+    ],
+    "waist_yaw_rad": 0.0,
+    "gripper_closure": 0.0
+  },
+  "tool": "actuate",
+  "what_i_see": "Head shows upright white mug on table ahead of open right fingers; right wrist shows mug left of fingers, left wrist shows table and other arm. Depth identifies rim near z .83 and table .75.",
+  "arguments": {
+    "what_i_see": "Head shows upright white mug on table ahead of open right fingers; right wrist shows mug left of fingers, left wrist shows table and other arm. Depth identifies rim near z .83 and table .75.",
+    "reason": "Move open aperture forward and down toward mug mid-height, retaining clearance above table.",
+    "steps": 5,
+    "position": [
+      0.219,
+      -0.22,
+      0.87
+    ],
+    "quaternion_wxyz": [
+      0.982492,
+      -0.175626,
+      0.043489,
+      -0.044417
+    ],
+    "gripper": "open"
+  },
+  "result": {
+    "status": "executed",
+    "frames": 30,
+    "requested_position": [
+      0.219,
+      -0.22,
+      0.87
+    ],
+    "reached_position": [
+      0.21874,
+      -0.22093,
+      0.87013
+    ],
+    "position_gap_m": 0.001,
+    "rotation_gap_rad": 0.1549,
+    "hand_table_contact": [],
+    "self_collision": [],
+    "ik_at_request": {
+      "position_error_m": 0.00029898388175580184,
+      "orientation_error_rad": 0.0009634372449676086,
+      "iterations": 65
+    }
+  }
+}

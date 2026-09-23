@@ -1,0 +1,44 @@
+{
+  "accepted": true,
+  "action": {
+    "reason": "Shift the open hand 2 cm to the robot's right at unchanged height to obtain lateral separation and resolve the mug's depth relative to the fingers. Avoid further upward withdrawal or closure until the side approach and opposing contact surfaces can be aligned.",
+    "steps": 1,
+    "target": {
+      "position": [
+        0.24211,
+        -0.23118,
+        0.99602
+      ],
+      "quaternion_wxyz": [
+        0.980096,
+        -0.163775,
+        0.06183,
+        -0.093625
+      ],
+      "gripper": "open"
+    }
+  },
+  "executed": {
+    "status": "executed",
+    "frames": 6,
+    "requested_position": [
+      0.24211,
+      -0.23118,
+      0.99602
+    ],
+    "reached_position": [
+      0.24212,
+      -0.23208,
+      0.9959
+    ],
+    "position_gap_m": 0.0009,
+    "rotation_gap_rad": 0.0295,
+    "hand_table_contact": [],
+    "self_collision": [],
+    "ik_at_request": {
+      "position_error_m": 0.0001753836474906455,
+      "orientation_error_rad": 0.0005205018413244424,
+      "iterations": 3
+    }
+  }
+}

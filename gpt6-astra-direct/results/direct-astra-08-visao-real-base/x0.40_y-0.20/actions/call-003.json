@@ -1,0 +1,46 @@
+{
+  "accepted": true,
+  "action": {
+    "reason": "Move open palm forward toward mug side at mid height, keeping clearance above measured table height 0.749.",
+    "steps": 5,
+    "target": {
+      "position": [
+        0.311,
+        -0.23,
+        0.839
+      ],
+      "quaternion_wxyz": [
+        0.977912,
+        -0.180545,
+        0.077995,
+        -0.070775
+      ],
+      "gripper": "open"
+    }
+  },
+  "executed": {
+    "status": "aborted_on_contact",
+    "frames": 30,
+    "requested_position": [
+      0.311,
+      -0.23,
+      0.839
+    ],
+    "reached_position": [
+      0.31078,
+      -0.23592,
+      0.83646
+    ],
+    "position_gap_m": 0.0064,
+    "rotation_gap_rad": 0.0166,
+    "hand_table_contact": [
+      "right_hand_middle_1_link"
+    ],
+    "self_collision": [],
+    "ik_at_request": {
+      "position_error_m": 0.000297102980576557,
+      "orientation_error_rad": 0.000771658705960979,
+      "iterations": 52
+    }
+  }
+}

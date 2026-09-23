@@ -1,0 +1,27 @@
+Traceback (most recent call last):
+  File "/home/fercout/g1-cup-grasp/scripts/direct_reflect.py", line 180, in <module>
+    main()
+  File "/home/fercout/g1-cup-grasp/scripts/direct_reflect.py", line 153, in main
+    resp = ask(a.model, content)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/fercout/g1-cup-grasp/scripts/direct_reflect.py", line 137, in ask
+    return json.load(urllib.request.urlopen(req, timeout=600))
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/fercout/.local/share/uv/python/cpython-3.11.16-linux-aarch64-gnu/lib/python3.11/urllib/request.py", line 216, in urlopen
+    return opener.open(url, data, timeout)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/fercout/.local/share/uv/python/cpython-3.11.16-linux-aarch64-gnu/lib/python3.11/urllib/request.py", line 525, in open
+    response = meth(req, response)
+               ^^^^^^^^^^^^^^^^^^^
+  File "/home/fercout/.local/share/uv/python/cpython-3.11.16-linux-aarch64-gnu/lib/python3.11/urllib/request.py", line 634, in http_response
+    response = self.parent.error(
+               ^^^^^^^^^^^^^^^^^^
+  File "/home/fercout/.local/share/uv/python/cpython-3.11.16-linux-aarch64-gnu/lib/python3.11/urllib/request.py", line 563, in error
+    return self._call_chain(*args)
+           ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/fercout/.local/share/uv/python/cpython-3.11.16-linux-aarch64-gnu/lib/python3.11/urllib/request.py", line 496, in _call_chain
+    result = func(*args)
+             ^^^^^^^^^^^
+  File "/home/fercout/.local/share/uv/python/cpython-3.11.16-linux-aarch64-gnu/lib/python3.11/urllib/request.py", line 643, in http_error_default
+    raise HTTPError(req.full_url, code, msg, hdrs, fp)
+urllib.error.HTTPError: HTTP Error 400: Bad Request

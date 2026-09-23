@@ -1,0 +1,5 @@
+{
+  "what_i_see": "The head camera shows the floor and a narrow dark furniture edge at the right, but no mug or usable tabletop surface. The left wrist camera shows robot parts and floor; the right wrist camera shows the back of the hand against the distant floor and background, with no mug or tabletop visible. The gripper is open. Depth probes locate the visible edge but do not establish a safe approach to the mug.",
+  "reason": "The mug is not localized and none of the views establishes the swept clearance of the fingers and arm relative to the tabletop. Continuing blind searching near the furniture risks prohibited contact; stopping without claiming a grasp or lift.",
+  "outcome": "unsafe"
+}

@@ -1,0 +1,33 @@
+{
+  "episode": "x0.40_y-0.20",
+  "policy": "direct",
+  "model": "cx/gpt-6-astra via OmniRoute",
+  "cup_xy_privileged": [
+    0.4,
+    -0.2
+  ],
+  "calls_used": 15,
+  "calls_budget": 200,
+  "rejected_calls": 2,
+  "sim_seconds": 15.2,
+  "lift_m": 0.0005,
+  "retained_for_2s": false,
+  "cup_tilt_deg_before_close": 0.33,
+  "cup_tilt_deg_at_hold": 0.03,
+  "upright_grasp": true,
+  "aborted": {
+    "call": 15,
+    "frame": 20,
+    "hand_table": [
+      "right_hand_middle_1_link"
+    ],
+    "self_collision": []
+  },
+  "accepted": false,
+  "criteria": {
+    "tilt_limit_deg": 15.0,
+    "min_lift_m": 0.048,
+    "hold_seconds": 2.0,
+    "source": "run_attempt.py (mesmos criterios do controlador scriptado)"
+  }
+}

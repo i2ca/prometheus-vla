@@ -1,0 +1,44 @@
+{
+  "accepted": true,
+  "action": {
+    "reason": "Advance above the table toward the measured object region to obtain an actual updated camera view for precise alignment.",
+    "steps": 3,
+    "target": {
+      "position": [
+        0.299,
+        -0.211,
+        0.889
+      ],
+      "quaternion_wxyz": [
+        0.971963,
+        -0.179637,
+        0.14055,
+        -0.057127
+      ],
+      "gripper": "open"
+    }
+  },
+  "executed": {
+    "status": "executed",
+    "frames": 18,
+    "requested_position": [
+      0.299,
+      -0.211,
+      0.889
+    ],
+    "reached_position": [
+      0.29988,
+      -0.21369,
+      0.89283
+    ],
+    "position_gap_m": 0.0048,
+    "rotation_gap_rad": 0.0628,
+    "hand_table_contact": [],
+    "self_collision": [],
+    "ik_at_request": {
+      "position_error_m": 0.000298702076886236,
+      "orientation_error_rad": 0.0008161544273474333,
+      "iterations": 69
+    }
+  }
+}

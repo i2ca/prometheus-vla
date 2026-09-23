@@ -1,0 +1,74 @@
+{
+  "case": {
+    "home_shoulder_roll_rad": -0.35,
+    "left_arm_pose": [
+      0.3,
+      0.15,
+      0.0,
+      0.7,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "hand_kp": 8,
+    "offset": [
+      -0.02,
+      -0.02,
+      -0.02
+    ],
+    "gain": 1.5,
+    "cup_yaw_deg": 90.0,
+    "instruction": "Pegue a caneca branca da mesa com a mao direita, levante-a pelo menos 8 cm mantendo-a em pe, e segure por 2 segundos.",
+    "cup_xy": [
+      0.4,
+      -0.2
+    ],
+    "home_arm_pose": [
+      0.06409163773059845,
+      -0.3499999940395355,
+      -0.0632048025727272,
+      -0.09522665292024612,
+      -0.0020852552261203527,
+      0.13248226046562195,
+      -0.013721458613872528
+    ]
+  },
+  "scene": "scene_grasp.xml",
+  "max_calls": 200,
+  "max_sim_seconds": 3600.0,
+  "video": true,
+  "fps": 30,
+  "step_seconds": 0.2,
+  "hand_open": [
+    -0.0450708232820034,
+    -0.06435875594615936,
+    -0.06325916200876236,
+    0.029303444549441338,
+    0.036779142916202545,
+    0.05189113691449165,
+    0.04266977310180664
+  ],
+  "hand_close": [
+    -0.04506239295005798,
+    -0.2869790196418762,
+    -0.7255648374557495,
+    0.5860313177108765,
+    1.297844648361206,
+    0.7173755764961243,
+    0.9146603345870972
+  ],
+  "limits": {
+    "max_target_distance_m": 0.05,
+    "max_target_rotation_rad": 0.35,
+    "max_steps_per_call": 5,
+    "ik_tolerance_m": 0.03,
+    "ik_tolerance_rad": 0.15,
+    "max_joint_speed_deg_s": 240.0
+  },
+  "calls": 6,
+  "frames": 231,
+  "aborted": null,
+  "policy_model": "cx/gpt-6-astra via OmniRoute",
+  "system_prompt": "You are the visuomotor policy for a Unitree G1 humanoid in MuJoCo, right arm, Dex3 hand.\nUse only the RGB images and measured proprioception in this message. You do not know the cup pose.\nEach call: choose ONE absolute target pose for the right palm, within 5 cm and 0.35 rad of the\ncurrent measured palm pose, then look at the next observation. Frame: x forward, y left, z up (meters).\nKeep the hand above the table in transit, approach the mug from the side at mid height, open before\ncontact, close only when the mug is between thumb and fingers, then lift. Touching the table with the\nhand or the robot body aborts the episode. If a command is rejected, read the error and fix it.\nCameras: head_camera (848x480) on the head looking down at the workspace; left_wrist_camera and\nright_wrist_camera (424x240) mounted on top of each wrist, looking forward along the hand. All three are\nRGB-D. Call probe_depth with a camera and pixel coordinates (u, v) (a labeled grid is drawn on each image)\nto get the 3D point under each pixel, in the same frame as the palm pose. It does not move the robot.\nThe observation includes hand_geometry: approximate fingertip positions and the center of the grasp aperture\nbetween thumb and opposing fingers, from your measured joint angles. The palm is not the leading part of the\nhand; plan with these points.\nIn `what_i_see`, describe what each camera shows right now (mug, hand, fingers, table) before deciding.\nPut your immediate purpose in `reason` (one or two sentences).\nThere is no limit on the number of calls: keep working until the task is done. Still, every call costs\ntime and tokens, so prefer the fewest calls that reliably complete the task.\nCall finish_episode only when the mug is lifted and held. The controller rejects unsafe commands (you get\nthe reason back), so a rejection is information, not a reason to stop.\n\nLessons from your previous attempts (follow them):\n- Plan clearance for the entire measured hand configuration and any held object, not just the palm. Before nearby translation or rotation, identify the leading and lowest hand links in the images and check their swept paths against the target and support using proprioception and surface geometry. Keep a task-compatible orientation goal separate from the measured starting pose; do not adopt tracking error as the new goal. If clearance is uncertain or achieved orientation invalidates the path, move along a verified clear direction to a staging pose, align there, and verify before re-entering with short observed motions. Support a held object before a correction that could destabilize it.\n- During approach, track identifiable target features relative to the support and hand. If an unsecured target moves or tilts, relieve contact along a visible clear path, verify stable support, and update localization before choosing a changed aperture alignment or approach direction. If clipping or occlusion prevents judging support, clearance, or bracketing, inspect another available camera or make a clearance-checked viewing motion that exposes the relevant geometry; use the recovered view to revise the entry path rather than advancing on the old estimate. For grasping, bring the target between opposing contact surfaces, then hold the palm pose and close once seating is visibly established.\n- Use depth to resolve a specific question that determines the next motion, such as target-surface location, support height, or clearance for a leading hand link. Select a visually identifiable surface in the current head image using its pixel convention, and associate the returned point with that surface. Combine it with visible shape and measured hand configuration; a surface point is neither the target center nor proof of empty space. If a return may belong to the hand or conflicts with visible geometry, query a distinguishing exposed surface or restore visibility before planning entry. Refresh after target motion, and avoid additional probes unless they can change the planned action.\n- Verify manipulation outcomes from visible target behavior, not commanded motion, palm stability, or gripper closure alone. After closing, inspect seating and make a small task-compatible test motion while tracking the target relative to the hand and support. If visibility is insufficient, restore an informative view before continuing. If the target slips or rotates unintentionally, establish stable support before releasing and realigning for another attempt. Begin any required hold only after the requested target state is visibly established, and continue monitoring it throughout the hold.",
+  "lessons_file": "results/direct-lessons-visao-real.json"
+}

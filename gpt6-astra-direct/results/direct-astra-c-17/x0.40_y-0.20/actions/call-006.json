@@ -1,0 +1,44 @@
+{
+  "accepted": true,
+  "action": {
+    "reason": "Test the seated grasp with a small vertical lift, preserving orientation, and observe whether the mug follows the hand.",
+    "steps": 3,
+    "target": {
+      "position": [
+        0.29289,
+        -0.2059,
+        0.89246
+      ],
+      "quaternion_wxyz": [
+        0.953785,
+        -0.185776,
+        0.117269,
+        -0.20501
+      ],
+      "gripper": "closed"
+    }
+  },
+  "executed": {
+    "status": "executed",
+    "frames": 18,
+    "requested_position": [
+      0.29289,
+      -0.2059,
+      0.89246
+    ],
+    "reached_position": [
+      0.29129,
+      -0.20728,
+      0.89061
+    ],
+    "position_gap_m": 0.0028,
+    "rotation_gap_rad": 0.067,
+    "hand_table_contact": [],
+    "self_collision": [],
+    "ik_at_request": {
+      "position_error_m": 0.00029937805683206964,
+      "orientation_error_rad": 0.000836486239941278,
+      "iterations": 40
+    }
+  }
+}

@@ -1,0 +1,100 @@
+{
+  "episode": "results/direct-astra-09-visao-real-licoes/x0.40_y-0.20",
+  "at": "2026-09-23T15:35:45+00:00",
+  "critic_model": "gpt-6-astra",
+  "response_id": "chatcmpl-resp_085f154978e36141016ab3f16494ec87d2a2c6a6c9f45f45b4",
+  "usage": {
+    "input_tokens": 19156,
+    "output_tokens": 3558
+  },
+  "accepted": false,
+  "diagnosis": "The episode failed through an unsafe open-hand approach followed by loss of target tracking. Early depth probes usefully distinguished the mug, hand, and tabletop, but the policy did not turn those measurements into a reliable estimate of finger clearance and grasp enclosure. The open fingers contacted the mug during steps 2–4, increasing its tilt from 13.4 to 30.6 to 92.2 degrees while the policy continued describing an upright target and advancing. After the target disappeared from the head view, repeated depth probes measured table, markers, edges, or floor rather than the target. Fifteen subsequent motions sought better visibility without recovering usable target geometry; the policy followed the visible workspace instead of its last target observations and informative hand poses. This consumed substantial effort: 20 calls and an 86.1 cm palm path, with no gripper-close command. The evaluator's transient 4.25 cm elevation was not a retained, upright lift. Ending without claiming success was appropriate, but the earlier collision and ineffective recovery prevented completion.",
+  "failure_mode": "Unplanned open-finger contact toppled the target; loss of target-relative localization then led to prolonged, uninformative searching and termination without a grasp.",
+  "lessons_review": [
+    {
+      "lesson": "Maintain a temporally consistent object–hand/support estimate and verify a grasp through object–hand co-motion.",
+      "verdict": "neutral",
+      "why": "No closure or grasp test occurred, so the post-grasp safeguards were untested. The policy did not falsely claim success, but the temporal-estimation requirement was not applied effectively to the changing target orientation during steps 2–4 or to localization after visibility was lost. Retain grasp verification while making pre-contact tracking more explicit."
+    },
+    {
+      "lesson": "Establish spatial enclosure by opposing grasp surfaces, and correct alignment rather than cycling the gripper.",
+      "verdict": "neutral",
+      "why": "The policy never closed without confirmed enclosure, but remaining open did not make the approach safe. Steps 2–4 pushed against the target before a valid closing configuration existed. The revised set must connect enclosure planning with the clearance of the approaching fingers."
+    },
+    {
+      "lesson": "Choose informative viewing motions, avoid ineffective searching, and return toward an informative working pose.",
+      "verdict": "neutral",
+      "why": "Steps 5–19 repeatedly invoked view recovery without obtaining target geometry. The policy did not enforce the lesson's information-gain check or use its earlier informative pose history. This was failure to apply the rule, not evidence that returning toward an informative pose was harmful. Strengthen the requirement to predict and verify a specific visibility improvement."
+    },
+    {
+      "lesson": "Check whole-hand swept clearance and respond to unexpected object motion with contact relief and revised alignment.",
+      "verdict": "neutral",
+      "why": "No hand-table or self-collisions were reported, and the elevated recovery motions avoided further target contact. However, the critical target-clearance and unexpected-motion checks were missed during steps 2–4. The rule should prioritize clearance to the target as well as to its support and require a revised approach after observable disturbance."
+    }
+  ],
+  "lessons": [
+    {
+      "lesson": "Before moving near the target, check the swept space of the fingers, hand, arm, and any held object using current images, measured pose, and joints; palm clearance alone is insufficient. Route approaching grasp surfaces around the target rather than through it, and shorten motions as clearance narrows. Compare the target's orientation and support relationship against scene references after each close approach. If unexpected displacement or tilt indicates unintended contact, gently unload along a visibly clear path, reassess the target's current pose, and choose a revised contact alignment that supports the required orientation.",
+      "evidence_steps": [
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "why": "The initial approach had useful target visibility and depth, yet the open hand progressively tipped the mug. Responding to the changing target geometry before continuing forward would have prevented the primary failure."
+    },
+    {
+      "lesson": "Select depth probes on identifiable target surfaces and nearby support or obstacles relevant to the next action, and keep each measurement associated with the surface actually sampled. Combine these measurements with images and measured hand pose to estimate target-relative clearance; a surface point is not automatically an object center or grasp pose. Carry the last supported target estimate forward with uncertainty, increasing that uncertainty after possible contact. Background measurements cannot relocate an unseen target: recover a target-bearing view instead of repeatedly probing already understood background geometry.",
+      "evidence_steps": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        13,
+        19,
+        20
+      ],
+      "why": "Initial probes contained useful target information, whereas later probes mostly reconfirmed tabletop or floor geometry. The policy discarded the practical value of its earlier localization and spent calls measuring surfaces that could not resolve target location."
+    },
+    {
+      "lesson": "Choose each viewing motion to reveal a specific missing target feature or contact relationship, using the last informative view, measured pose history, achieved wrist orientation, and scene-reference motion across cameras. After moving, check whether that feature became more visible. If not, change the viewing strategy rather than extending the same search toward arbitrary visible workspace: use a clearance-checked return toward an informative working pose or a wrist reorientation that should reveal the last-observed target region. Preserve any possible grasp and resume task-directed alignment as soon as a relevant camera supports the next safe action.",
+      "evidence_steps": [
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20
+      ],
+      "why": "The target moved out of view, and repeated translations produced no useful recovery. Measured orientation also changed during the search. An explicit predicted-and-observed visibility test would have redirected recovery instead of allowing a long blind sweep."
+    },
+    {
+      "lesson": "For a grasp, verify that the target occupies the closing space of opposing contact surfaces in depth, not merely between their image outlines; resolve uncertainty with complementary views or clearance-checked parallax. Once alignment supports closure, close and perform a small, clearance-checked test motion. Continue transport only when the target follows the hand relative to the surroundings and remains stable within it. If the target stays supported and does not follow, reopen, revise alignment, and verify improved enclosure before retrying. If the result is ambiguous, preserve the possible grasp while obtaining a discriminating view, then verify continued retention and the required orientation before reporting completion.",
+      "evidence_steps": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        20
+      ],
+      "why": "No grasp was established, and incidental target elevation did not satisfy the task. This retains the useful safeguards from the existing enclosure and grasp-verification lessons while explicitly directing progression from validated alignment to closure, testing, and transport."
+    }
+  ],
+  "rejected_lessons": []
+}

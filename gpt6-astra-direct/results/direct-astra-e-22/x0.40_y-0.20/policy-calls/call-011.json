@@ -1,0 +1,60 @@
+{
+  "call": 11,
+  "step_id": 10,
+  "model": "gpt-6-astra",
+  "response_id": "chatcmpl-resp_0f564b450cce68b5016ab3ff3dda8087d2ba387a52085a551c",
+  "sent_at": "2026-09-23T16:33:00.993+00:00",
+  "received_at": "2026-09-23T16:33:09.189+00:00",
+  "sim_time_s": 12.37,
+  "images_sent": [
+    {
+      "camera": "head_camera",
+      "file": "obs/step-010/head_camera.png",
+      "sha256": "b1fa9cfb568c52ec0f1e2a30bf5407d44797753c8a10b129e3dc8d4fea7c616d"
+    },
+    {
+      "camera": "left_wrist_camera",
+      "file": "obs/step-010/left_wrist_camera.png",
+      "sha256": "a5748e1054d04283881dd39d12da6088d43d34d3ae2a6a6ea8321d1ac160b060"
+    },
+    {
+      "camera": "right_wrist_camera",
+      "file": "obs/step-010/right_wrist_camera.png",
+      "sha256": "0e311ef77ae50fca69b09d1751446767b0b704ce5281193a0451ed32d417cadf"
+    }
+  ],
+  "latency_s": 8.16,
+  "usage": {
+    "input_tokens": 2554,
+    "output_tokens": 190
+  },
+  "model_text": "(empty response)",
+  "depth_probes": [],
+  "observed": {
+    "palm": {
+      "position": [
+        0.28063,
+        -0.3041,
+        0.87062
+      ],
+      "quaternion_wxyz": [
+        0.998104,
+        -0.019798,
+        0.001435,
+        -0.058254
+      ]
+    },
+    "arm_joints_rad": [
+      -0.0004,
+      -0.54027,
+      -0.92908,
+      0.88253,
+      0.29205,
+      -0.42877,
+      0.44406
+    ],
+    "waist_yaw_rad": 0.56137,
+    "gripper_closure": 0.0
+  },
+  "error": "modelo devolveu 2 tool calls"
+}

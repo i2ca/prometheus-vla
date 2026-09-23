@@ -1,0 +1,85 @@
+{
+  "episode": "results/direct-astra-c-15/x0.40_y-0.20",
+  "at": "2026-09-23T16:02:41+00:00",
+  "critic_model": "gpt-6-astra",
+  "response_id": "chatcmpl-resp_0bd9e3c269894dc1016ab3f7b180b887d29430a3197ce5e96b",
+  "usage": {
+    "input_tokens": 7416,
+    "output_tokens": 3659
+  },
+  "accepted": false,
+  "diagnosis": "The episode failed during open-hand placement, before a grasp was established. All six commands kept the gripper open. The hand repeatedly contacted and disturbed the mug while the policy reasoned mainly about palm height and approximate approach direction rather than the swept clearance of the fingers and the actual aperture orientation. Simulator truth recorded substantial transient tilting, including 64.1 degrees during step 5. Step 6 ended in a finger–table collision despite the intention to preserve height. Depth sensing provided useful surface and tabletop estimates, but its use was not sufficiently decision-directed: 32 sampled points did not resolve whether the target was bracketed, whether returns near the hand belonged to the intended surface, or whether the whole hand could clear the support. Visibility also degraded, and the temporary withdrawal at step 4 was followed by further approach without clearly restoring an informative view. Reusing achieved orientations and then correcting orientation near the target compounded the clearance problem. The evaluator's measured rise was below the required lift and was neither upright nor retained.",
+  "failure_mode": "Open-hand approach with unresolved aperture alignment, orientation drift, and whole-hand clearance; repeated unintended object contact followed by a terminal hand–table collision before grasp closure.",
+  "lessons_review": [
+    {
+      "lesson": "Judge object pose and unintended motion by tracking identifiable features relative to the support and hand across observations, not by alignment with the image frame. If an unsecured object moves or tilts during approach, relieve contact along a visibly clear path, confirm stable support, then re-localize and change aperture alignment or approach direction before continuing. If the relevant features become occluded or clipped, inspect another available view or make a clearance-checked viewing motion rather than advancing on the previous pose estimate.",
+      "verdict": "helped",
+      "why": "The withdrawal at step 4 was consistent with this rule and interrupted an approach whose views no longer supported a bracketing judgment. Its benefit was temporary: steps 5–6 resumed nearby motion while the target remained poorly visible. Retain the principle, but make restored visibility and a revised entry path explicit prerequisites for resuming."
+    },
+    {
+      "lesson": "Use the measured pose as the motion starting point, not as a replacement for the task-compatible orientation reference. Check the swept extent of the whole hand and any held object. Align the open aperture in clear space so entry brings the target between opposing contact surfaces without sweeping fingertips through it. If only one side is aligned or achieved pose error invalidates the entry path, change the approach or correct orientation with clearance, verify the result, then resume. Support any held object before a destabilizing correction. Once the intended grasp region is visibly bracketed, hold the palm pose and close.",
+      "verdict": "neutral",
+      "why": "This addressed the main failure but was not reliably applied. Steps 2–4 reused achieved orientations despite tracking errors; step 5 combined nearby translation with an orientation correction and substantial target disturbance. Step 6 preserved palm height yet collided with the table. The rule did not cause the failure, but needs a more concrete check of leading and lowest hand links before each nearby motion."
+    },
+    {
+      "lesson": "Choose depth-query pixels from the current head-camera image using that image's pixel convention; do not transfer wrist-view pixels directly. Query a visually identified surface to answer a specific pending geometry or clearance question. Treat the result as a point on that surface, not an object center or evidence of empty space. Combine it with visible features and measured hand configuration to choose the next motion. For missing, inconsistent, or possibly hand-occluded returns, select a distinguishing visible surface or restore an informative view before proceeding. Refresh localization after visible object movement.",
+      "verdict": "neutral",
+      "why": "The probes supplied plausible support and object-surface information, but the action rationales did not demonstrate how those measurements established aperture or finger clearance. Step 5 included high returns near the hand whose surface identity required clarification. There is insufficient evidence to attribute the failure to an incorrect pixel convention. Revise toward fewer, explicitly decision-linked queries rather than additional broad sampling."
+    },
+    {
+      "lesson": "Verify manipulation outcomes from visible object behavior rather than commanded motion, palm stability, or gripper closure alone. After closing, inspect seating and make a small task-compatible test motion while tracking the object relative to the hand and support. If visibility is inadequate, restore an informative view; if the object slips or rotates unintentionally, establish stable support before releasing and realigning. Begin any required hold only after the requested object state is visibly verified, and monitor that state throughout.",
+      "verdict": "neutral",
+      "why": "The episode never reached closure or a deliberate grasp test, so this rule was not exercised. It remains necessary: incidental upward object motion during approach would not establish a successful lift or hold."
+    }
+  ],
+  "lessons": [
+    {
+      "lesson": "Plan clearance for the entire measured hand configuration and any held object, not just the palm. Before nearby translation or rotation, identify the leading and lowest hand links in the images and check their swept paths against the target and support using proprioception and surface geometry. Keep a task-compatible orientation goal separate from the measured starting pose; do not adopt tracking error as the new goal. If clearance is uncertain or achieved orientation invalidates the path, move along a verified clear direction to a staging pose, align there, and verify before re-entering with short observed motions. Support a held object before a correction that could destabilize it.",
+      "evidence_steps": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6
+      ],
+      "why": "Palm-position tracking was generally good, yet unintended object contacts occurred throughout. Nearby orientation correction at step 5 accompanied severe tilting, and step 6 collided with the support despite a high palm target. Whole-hand swept clearance and a stable orientation reference were the missing controls."
+    },
+    {
+      "lesson": "During approach, track identifiable target features relative to the support and hand. If an unsecured target moves or tilts, relieve contact along a visible clear path, verify stable support, and update localization before choosing a changed aperture alignment or approach direction. If clipping or occlusion prevents judging support, clearance, or bracketing, inspect another available camera or make a clearance-checked viewing motion that exposes the relevant geometry; use the recovered view to revise the entry path rather than advancing on the old estimate. For grasping, bring the target between opposing contact surfaces, then hold the palm pose and close once seating is visibly established.",
+      "evidence_steps": [
+        2,
+        3,
+        4,
+        5,
+        6
+      ],
+      "why": "Views became clipped and the policy explicitly could not verify bracketing at step 4. A withdrawal alone did not resolve the problem: subsequent nearby motions disturbed the target and ended in collision. This revision connects recovery to an observable alignment change and a concrete transition to closure."
+    },
+    {
+      "lesson": "Use depth to resolve a specific question that determines the next motion, such as target-surface location, support height, or clearance for a leading hand link. Select a visually identifiable surface in the current head image using its pixel convention, and associate the returned point with that surface. Combine it with visible shape and measured hand configuration; a surface point is neither the target center nor proof of empty space. If a return may belong to the hand or conflicts with visible geometry, query a distinguishing exposed surface or restore visibility before planning entry. Refresh after target motion, and avoid additional probes unless they can change the planned action.",
+      "evidence_steps": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6
+      ],
+      "why": "The policy collected 32 depth points, including repeated target/support samples, without establishing the clearance needed for its motions. Step 5's ambiguous near-hand returns illustrate why surface identity matters. Decision-linked sensing would improve both safety and efficiency without relying on simulator object positions."
+    },
+    {
+      "lesson": "Verify manipulation outcomes from visible target behavior, not commanded motion, palm stability, or gripper closure alone. After closing, inspect seating and make a small task-compatible test motion while tracking the target relative to the hand and support. If visibility is insufficient, restore an informative view before continuing. If the target slips or rotates unintentionally, establish stable support before releasing and realigning for another attempt. Begin any required hold only after the requested target state is visibly established, and continue monitoring it throughout the hold.",
+      "evidence_steps": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6
+      ],
+      "why": "No closure occurred, and the evaluator rejected both upright grasp and retention despite some measured upward motion. The existing verification principle remains essential for distinguishing incidental contact-induced motion from controlled manipulation once placement succeeds."
+    }
+  ],
+  "rejected_lessons": []
+}

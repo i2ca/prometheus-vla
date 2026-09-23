@@ -1,0 +1,46 @@
+{
+  "accepted": true,
+  "action": {
+    "reason": "Advance the open hand a short distance along the outside of the mug, slightly upward to increase table clearance, bringing the trailing thumb toward the near side without closing.",
+    "steps": 2,
+    "target": {
+      "position": [
+        0.27252,
+        -0.23036,
+        0.87094
+      ],
+      "quaternion_wxyz": [
+        0.963482,
+        -0.1886,
+        0.183844,
+        -0.048315
+      ],
+      "gripper": "open"
+    }
+  },
+  "executed": {
+    "status": "aborted_on_contact",
+    "frames": 6,
+    "requested_position": [
+      0.27252,
+      -0.23036,
+      0.87094
+    ],
+    "reached_position": [
+      0.24711,
+      -0.23925,
+      0.86321
+    ],
+    "position_gap_m": 0.028,
+    "rotation_gap_rad": 0.0621,
+    "hand_table_contact": [
+      "right_hand_middle_1_link"
+    ],
+    "self_collision": [],
+    "ik_at_request": {
+      "position_error_m": 0.000298482397229859,
+      "orientation_error_rad": 0.0008361421838757139,
+      "iterations": 41
+    }
+  }
+}

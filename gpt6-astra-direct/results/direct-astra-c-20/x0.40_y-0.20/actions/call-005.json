@@ -1,0 +1,44 @@
+{
+  "accepted": true,
+  "action": {
+    "reason": "Test retention with a small vertical lift while preserving the grasp attitude.",
+    "steps": 3,
+    "target": {
+      "position": [
+        0.27075,
+        -0.21008,
+        0.90587
+      ],
+      "quaternion_wxyz": [
+        0.970056,
+        -0.179239,
+        0.039227,
+        -0.15914
+      ],
+      "gripper": "closed"
+    }
+  },
+  "executed": {
+    "status": "executed",
+    "frames": 18,
+    "requested_position": [
+      0.27075,
+      -0.21008,
+      0.90587
+    ],
+    "reached_position": [
+      0.26965,
+      -0.21109,
+      0.90431
+    ],
+    "position_gap_m": 0.0022,
+    "rotation_gap_rad": 0.055,
+    "hand_table_contact": [],
+    "self_collision": [],
+    "ik_at_request": {
+      "position_error_m": 0.00029513084063371086,
+      "orientation_error_rad": 0.0008616585338103841,
+      "iterations": 55
+    }
+  }
+}

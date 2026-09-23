@@ -1,0 +1,184 @@
+{
+  "call": 1,
+  "step_id": 0,
+  "model": "gpt-6-astra",
+  "response_id": "chatcmpl-resp_0381d5f7b86ccab0016ab3f051553c87d282a0cd5220a3c117",
+  "sent_at": "2026-09-23T15:29:16.562+00:00",
+  "received_at": "2026-09-23T15:29:26.583+00:00",
+  "sim_time_s": 0.5,
+  "images_sent": [
+    {
+      "camera": "head_camera",
+      "file": "obs/step-000/head_camera.png",
+      "sha256": "5baf7a8409f2a4584d82c77ccc9d18c6d94f971180051292e5296034df21ca94"
+    },
+    {
+      "camera": "left_wrist_camera",
+      "file": "obs/step-000/left_wrist_camera.png",
+      "sha256": "7f4b394d20d4e7a874b542ee5e172a186d5a657d8721a68ca7860c31b584728e"
+    },
+    {
+      "camera": "right_wrist_camera",
+      "file": "obs/step-000/right_wrist_camera.png",
+      "sha256": "0565c1a4533b1490b4ae519d77701e78df30d7889991b6ca30e1210cb9ad5781"
+    }
+  ],
+  "latency_s": 10.0,
+  "usage": {
+    "input_tokens": 3053,
+    "output_tokens": 161
+  },
+  "model_text": "(empty response)",
+  "depth_probes": [
+    {
+      "points": [
+        [
+          644,
+          199
+        ],
+        [
+          640,
+          240
+        ],
+        [
+          560,
+          260
+        ],
+        [
+          748,
+          246
+        ],
+        [
+          650,
+          280
+        ]
+      ],
+      "result": [
+        {
+          "u": 644,
+          "v": 199,
+          "valid": true,
+          "depth_m": 0.6196,
+          "point": [
+            0.4228,
+            -0.2209,
+            0.757
+          ]
+        },
+        {
+          "u": 640,
+          "v": 240,
+          "valid": true,
+          "depth_m": 0.5573,
+          "point": [
+            0.3586,
+            -0.195,
+            0.7953
+          ]
+        },
+        {
+          "u": 560,
+          "v": 260,
+          "valid": true,
+          "depth_m": 0.5979,
+          "point": [
+            0.3587,
+            -0.1318,
+            0.7503
+          ]
+        },
+        {
+          "u": 748,
+          "v": 246,
+          "valid": true,
+          "depth_m": 0.4022,
+          "point": [
+            0.2876,
+            -0.2112,
+            0.9332
+          ]
+        },
+        {
+          "u": 650,
+          "v": 280,
+          "valid": true,
+          "depth_m": 0.5873,
+          "point": [
+            0.3374,
+            -0.2151,
+            0.7517
+          ]
+        }
+      ],
+      "response_id": "chatcmpl-resp_0feb383015ff5a93016ab3f04d053087d2ba3042cd32db502b"
+    }
+  ],
+  "observed": {
+    "palm": {
+      "position": [
+        0.18672,
+        -0.22595,
+        0.90596
+      ],
+      "quaternion_wxyz": [
+        0.982492,
+        -0.175626,
+        0.043489,
+        -0.044417
+      ]
+    },
+    "arm_joints_rad": [
+      0.06409,
+      -0.35,
+      -0.0632,
+      -0.09523,
+      -0.00209,
+      0.13248,
+      -0.01372
+    ],
+    "waist_yaw_rad": 0.0,
+    "gripper_closure": 0.0
+  },
+  "tool": "actuate",
+  "what_i_see": "Head shows upright white mug ahead of open right hand on table; right wrist sees mug left of fingers; left wrist sees robot and floor. Depth places tabletop at .75 and mug near x .39.",
+  "arguments": {
+    "what_i_see": "Head shows upright white mug ahead of open right hand on table; right wrist sees mug left of fingers; left wrist sees robot and floor. Depth places tabletop at .75 and mug near x .39.",
+    "reason": "Move forward above table toward side approach, keeping fingers clear.",
+    "steps": 5,
+    "position": [
+      0.232,
+      -0.226,
+      0.892
+    ],
+    "quaternion_wxyz": [
+      0.982492,
+      -0.175626,
+      0.043489,
+      -0.044417
+    ],
+    "gripper": "open"
+  },
+  "result": {
+    "status": "executed",
+    "frames": 30,
+    "requested_position": [
+      0.232,
+      -0.226,
+      0.892
+    ],
+    "reached_position": [
+      0.23111,
+      -0.22606,
+      0.8917
+    ],
+    "position_gap_m": 0.0009,
+    "rotation_gap_rad": 0.1393,
+    "hand_table_contact": [],
+    "self_collision": [],
+    "ik_at_request": {
+      "position_error_m": 0.00029566319471165835,
+      "orientation_error_rad": 0.0009129172843812055,
+      "iterations": 64
+    }
+  }
+}

@@ -1,0 +1,69 @@
+{
+  "episode": "results/direct-astra-c-21/x0.40_y-0.20",
+  "at": "2026-09-23T16:26:13+00:00",
+  "critic_model": "gpt-6-astra",
+  "response_id": "chatcmpl-resp_0ed71ffff1937ca9016ab3fd296c3c87d2a545f4da18629946",
+  "usage": {
+    "input_tokens": 4135,
+    "output_tokens": 4079
+  },
+  "accepted": false,
+  "diagnosis": "The episode failed during grasp acquisition. The first open-hand approach left the mug upright but already produced index contact. The next forward-and-downward motion contacted it with the index and middle fingers and tipped it to about 94 degrees while it remained table-supported. There was no gripper-close command, secure lift, or retention hold; the reported 4.15 cm height change was not a successful upright lift. Depth was partly useful: the policy obtained plausible rim, body, and table heights. However, it did not turn those measurements into a verified clearance and opposing-contact plan. Before the second motion, measured hand geometry placed the distal fingers near the object while the thumb and aperture center remained farther back, and the preceding motion had a measurable orientation-tracking error. These inputs called for checking the full hand's entry path and changing alignment, rather than another open-hand advance. The strongest supported sensor failure is inadequate use of depth together with measured hand geometry, not a proven wrong-camera query.",
+  "failure_mode": "Premature open-hand contact during an unverified approach toppled the object before opposing contact and grasp closure were established.",
+  "lessons_review": [
+    {
+      "lesson": "Preserve a visually verified orientation reference for the intended task phase separately from the latest measured pose; update the goal only for a deliberate task-required attitude change, not to absorb tracking error.",
+      "verdict": "neutral",
+      "why": "The policy retained a similar commanded orientation and described a deliberate adjustment, but no secure grasp or hold occurred. The missing safeguard was using the measured orientation and resulting fingertip geometry to reassess entry clearance before combining further approach with attitude correction. There is no evidence that preserving the reference itself caused the failure."
+    },
+    {
+      "lesson": "Align the intended contact region inside the actual grasp aperture using visible opposing surfaces and measured hand geometry, not palm proximity alone.",
+      "verdict": "neutral",
+      "why": "This principle was not successfully enforced. Step 1 produced index contact without opposing thumb contact; step 2 continued advancing with the gripper open and toppled the object. The revision should explicitly check the swept entry path before contact, rather than relying mainly on recovery after visible displacement."
+    },
+    {
+      "lesson": "Verify retention, task-compatible attitude, and required object displacement separately using identifiable object features and their relationship to the support.",
+      "verdict": "neutral",
+      "why": "The episode ended before grasp closure, retention testing, or a hold. This remains a necessary downstream rule: the evaluator's positive height change occurred during toppling and did not establish an upright lift. The policy did not falsely declare completion."
+    },
+    {
+      "lesson": "Probe depth only on an identifiable feature in the current image from the depth-source camera, using that image's pixel convention; never transfer pixels from another view.",
+      "verdict": "helped",
+      "why": "The probes supplied plausible object-surface and support heights that grounded the initial approach. However, repeated sampling did not establish safe fingertip passage or opposed seating. Source correspondence cannot be fully audited from the record, so the revision preserves that safeguard while emphasizing how depth must change the contact plan."
+    }
+  ],
+  "lessons": [
+    {
+      "lesson": "Before moving near the target, check the swept path of the hand and arm, including any held object, using current images and measured geometry. During acquisition, verify that the intended contact region can enter between opposing contact surfaces without an extended digit pushing it first. If that entry path is not clear, keep the gripper open and realign through visible free space rather than advancing into contact. Shorten motions as visible gaps narrow and reobserve. If an unsecured object shifts or tilts, make a separating motion that visibly reduces contact while preserving support, revise the direction if the object follows, and establish stable support before realigning. Once visibly bracketed, close without further advance and test retention.",
+      "evidence_steps": [
+        1,
+        2
+      ],
+      "why": "The first motion already caused index contact. The second open-hand advance added middle-finger contact and produced a roughly 94-degree topple, with no thumb contact or closure. Checking whether the leading fingers could pass around the target before advancing would have addressed the failure earlier than a post-displacement recovery rule."
+    },
+    {
+      "lesson": "Base each next motion on the measured pose and updated hand geometry, not the previously requested pose. Preserve a visually verified attitude reference for the task phase separately from measured tracking error. After motion or holding, compare measured rotation and visible object attitude with that reference and reassess clearance. If correcting attitude would sweep contact surfaces through the target or support, choose a clear repositioning path before correcting and resuming approach. With a securely held object, make bounded corrections only after checking swept clearance; if seating changes, guide the object to stable support and reseat before continuing.",
+      "evidence_steps": [
+        1,
+        2
+      ],
+      "why": "Step 1 ended with a 0.173 rad orientation gap, and the next measured geometry showed substantial fingertip-height changes relative to the palm motion. Step 2 combined further translation and attitude adjustment and ended about 2.2 cm from its requested position. Tracking differences were relevant to collision clearance even though the intended palm targets satisfied the per-call motion limits."
+    },
+    {
+      "lesson": "Probe depth only on an identifiable feature in the current depth-source image using that image's pixel convention; never transfer pixels from another view. Distinguish visible target surfaces from openings, background, and support, then compare the returned geometry with the measured grasp aperture and contact surfaces, not just the palm. If correspondence or clearance is ambiguous, reidentify the feature or choose a clearance-checked viewing adjustment before making a near-contact move. Reuse geometry while observations remain consistent, and probe again only to resolve uncertainty that changes the next action.",
+      "evidence_steps": [
+        1,
+        2
+      ],
+      "why": "The policy collected plausible rim, side, and support samples across several batches, but these did not prevent entry contact. The needed inference was the relationship between target surfaces and the entire approaching hand. Additional height samples alone could not establish that relationship."
+    },
+    {
+      "lesson": "After acquisition, test retention with a cautious, clearance-checked motion while observing whether identifiable object features move consistently with the hand. Verify retention, task-compatible attitude, and required displacement relative to the support separately; do not substitute palm motion or an arbitrary surface-depth point for these conditions. If uncertain, inspect an informative available view or make a clearance-checked viewing adjustment, then correct attitude, displacement, or seating as indicated. If retention is lost, guide the object to stable support and reacquire it. Begin or restart any required hold only after all conditions are established, and recheck them before declaring completion.",
+      "evidence_steps": [
+        2
+      ],
+      "why": "The evaluator recorded a 4.15 cm height change, but the object remained table-supported, was severely tilted, and was never retained by a closed grasp. Independent verification prevents displacement caused by tipping or pushing from being mistaken for task progress."
+    }
+  ],
+  "rejected_lessons": []
+}

@@ -1,0 +1,223 @@
+{
+  "call": 1,
+  "step_id": 0,
+  "model": "gpt-6-astra",
+  "response_id": "chatcmpl-resp_0f1089021285576a016ab3fad2973c87d296a0134e2f58c07b",
+  "sent_at": "2026-09-23T16:14:01.315+00:00",
+  "received_at": "2026-09-23T16:14:17.163+00:00",
+  "sim_time_s": 0.5,
+  "images_sent": [
+    {
+      "camera": "head_camera",
+      "file": "obs/step-000/head_camera.png",
+      "sha256": "ce9a3343ebf733302d600a592cffe9785c6502b290547bbb83a818a76fc91dee"
+    },
+    {
+      "camera": "left_wrist_camera",
+      "file": "obs/step-000/left_wrist_camera.png",
+      "sha256": "886d25866e19c59fc3157adee92a6c603372ccffbea7a6453f3d2c00fbf60f62"
+    },
+    {
+      "camera": "right_wrist_camera",
+      "file": "obs/step-000/right_wrist_camera.png",
+      "sha256": "e496471356a6c208b813a59e1c19c9815aa78027bfb0244914e7302f1fd8fe3a"
+    }
+  ],
+  "latency_s": 15.81,
+  "usage": {
+    "input_tokens": 4373,
+    "output_tokens": 261
+  },
+  "model_text": "(empty response)",
+  "depth_probes": [
+    {
+      "camera": "head_camera",
+      "points": [
+        [
+          647,
+          192
+        ],
+        [
+          632,
+          239
+        ],
+        [
+          551,
+          253
+        ]
+      ],
+      "result": [
+        {
+          "u": 647,
+          "v": 192,
+          "valid": true,
+          "depth_m": 0.6199,
+          "point": [
+            0.4292,
+            -0.2239,
+            0.7599
+          ]
+        },
+        {
+          "u": 632,
+          "v": 239,
+          "valid": true,
+          "depth_m": 0.5611,
+          "point": [
+            0.361,
+            -0.1891,
+            0.7923
+          ]
+        },
+        {
+          "u": 551,
+          "v": 253,
+          "valid": true,
+          "depth_m": 0.602,
+          "point": [
+            0.3665,
+            -0.1239,
+            0.7495
+          ]
+        }
+      ],
+      "response_id": "chatcmpl-resp_088687beb7f9c751016ab3faca190487d2b1cc81773a3dceb4"
+    },
+    {
+      "camera": "head_camera",
+      "points": [
+        [
+          645,
+          143
+        ],
+        [
+          685,
+          177
+        ],
+        [
+          602,
+          213
+        ],
+        [
+          650,
+          250
+        ]
+      ],
+      "result": [
+        {
+          "u": 645,
+          "v": 143,
+          "valid": true,
+          "depth_m": 0.5576,
+          "point": [
+            0.4376,
+            -0.1996,
+            0.8331
+          ]
+        },
+        {
+          "u": 685,
+          "v": 177,
+          "valid": true,
+          "depth_m": 0.5583,
+          "point": [
+            0.4104,
+            -0.2361,
+            0.8191
+          ]
+        },
+        {
+          "u": 602,
+          "v": 213,
+          "valid": true,
+          "depth_m": 0.5614,
+          "point": [
+            0.3825,
+            -0.1619,
+            0.8022
+          ]
+        },
+        {
+          "u": 650,
+          "v": 250,
+          "valid": true,
+          "depth_m": 0.5825,
+          "point": [
+            0.3611,
+            -0.2133,
+            0.7684
+          ]
+        }
+      ],
+      "response_id": "chatcmpl-resp_027e9c8a60700765016ab3facd9d1887d29e37a758fbcf0cee"
+    }
+  ],
+  "observed": {
+    "palm": {
+      "position": [
+        0.18672,
+        -0.22595,
+        0.90596
+      ],
+      "quaternion_wxyz": [
+        0.982492,
+        -0.175626,
+        0.043489,
+        -0.044417
+      ]
+    },
+    "arm_joints_rad": [
+      0.06409,
+      -0.35,
+      -0.0632,
+      -0.09523,
+      -0.00209,
+      0.13248,
+      -0.01372
+    ],
+    "waist_yaw_rad": 0.0,
+    "gripper_closure": 0.0
+  },
+  "tool": "actuate",
+  "what_i_see": "Head shows upright white mug beside the open right hand on the table. Right wrist shows mug at lower left and fingers to its right; left wrist shows robot and table edge.",
+  "arguments": {
+    "what_i_see": "Head shows upright white mug beside the open right hand on the table. Right wrist shows mug at lower left and fingers to its right; left wrist shows robot and table edge.",
+    "reason": "Move open hand toward a side grasp, lowering only partway while keeping all fingertips above the table.",
+    "steps": 5,
+    "position": [
+      0.218,
+      -0.224,
+      0.868
+    ],
+    "quaternion_wxyz": [
+      0.99,
+      -0.125,
+      0.043,
+      -0.044
+    ],
+    "gripper": "open"
+  },
+  "result": {
+    "status": "executed",
+    "frames": 30,
+    "requested_position": [
+      0.218,
+      -0.224,
+      0.868
+    ],
+    "reached_position": [
+      0.21921,
+      -0.22355,
+      0.86964
+    ],
+    "position_gap_m": 0.0021,
+    "rotation_gap_rad": 0.0158,
+    "hand_table_contact": [],
+    "self_collision": [],
+    "ik_at_request": {
+      "position_error_m": 0.00029731906303091517,
+      "orientation_error_rad": 0.000951588510819841,
+      "iterations": 64
+    }
+  }
+}

@@ -1,0 +1,44 @@
+{
+  "accepted": true,
+  "action": {
+    "reason": "Keep the fingers open and retract slightly toward the robot to uncover the mug in the wrist view and resolve finger-to-mug depth before further alignment. Maintain height and orientation to avoid sweeping the fingers toward the tabletop.",
+    "steps": 1,
+    "target": {
+      "position": [
+        0.22217,
+        -0.22317,
+        0.95131
+      ],
+      "quaternion_wxyz": [
+        0.979921,
+        -0.167487,
+        0.067266,
+        -0.084729
+      ],
+      "gripper": "open"
+    }
+  },
+  "executed": {
+    "status": "executed",
+    "frames": 6,
+    "requested_position": [
+      0.22217,
+      -0.22317,
+      0.95131
+    ],
+    "reached_position": [
+      0.22185,
+      -0.22372,
+      0.95108
+    ],
+    "position_gap_m": 0.0007,
+    "rotation_gap_rad": 0.051,
+    "hand_table_contact": [],
+    "self_collision": [],
+    "ik_at_request": {
+      "position_error_m": 0.0002582981385322631,
+      "orientation_error_rad": 0.0008202050642886738,
+      "iterations": 10
+    }
+  }
+}

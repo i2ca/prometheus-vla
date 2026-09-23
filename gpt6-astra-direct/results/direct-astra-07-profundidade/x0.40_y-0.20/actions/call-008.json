@@ -1,0 +1,44 @@
+{
+  "accepted": true,
+  "action": {
+    "reason": "Hold the open hand at its measured pose to obtain a fresh camera observation before selecting mug and table pixels for depth measurement. Do not approach or close based only on apparent overlap in the descriptions.",
+    "steps": 1,
+    "target": {
+      "position": [
+        0.29482,
+        -0.22143,
+        0.89314
+      ],
+      "quaternion_wxyz": [
+        0.970524,
+        -0.183371,
+        0.119702,
+        -0.100651
+      ],
+      "gripper": "open"
+    }
+  },
+  "executed": {
+    "status": "executed",
+    "frames": 6,
+    "requested_position": [
+      0.29482,
+      -0.22143,
+      0.89314
+    ],
+    "reached_position": [
+      0.29347,
+      -0.22334,
+      0.89289
+    ],
+    "position_gap_m": 0.0024,
+    "rotation_gap_rad": 0.0128,
+    "hand_table_contact": [],
+    "self_collision": [],
+    "ik_at_request": {
+      "position_error_m": 5.243134658718369e-06,
+      "orientation_error_rad": 0.0,
+      "iterations": 1
+    }
+  }
+}

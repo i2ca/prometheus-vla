@@ -1,0 +1,44 @@
+{
+  "accepted": true,
+  "action": {
+    "reason": "Rotate toward a level side-entry attitude in the clear space above and behind the mug. The measured hand geometry and probed table height leave ample clearance during this rotation.",
+    "steps": 5,
+    "target": {
+      "position": [
+        0.16487,
+        -0.23849,
+        0.93976
+      ],
+      "quaternion_wxyz": [
+        0.81285,
+        0.3273,
+        -0.11993,
+        0.46645
+      ],
+      "gripper": "open"
+    }
+  },
+  "executed": {
+    "status": "executed",
+    "frames": 30,
+    "requested_position": [
+      0.16487,
+      -0.23849,
+      0.93976
+    ],
+    "reached_position": [
+      0.16485,
+      -0.23871,
+      0.93936
+    ],
+    "position_gap_m": 0.0005,
+    "rotation_gap_rad": 2.5024,
+    "hand_table_contact": [],
+    "self_collision": [],
+    "ik_at_request": {
+      "position_error_m": 1.604481212183493e-06,
+      "orientation_error_rad": 0.0,
+      "iterations": 4
+    }
+  }
+}

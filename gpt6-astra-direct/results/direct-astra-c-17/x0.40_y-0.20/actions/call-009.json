@@ -1,0 +1,44 @@
+{
+  "accepted": true,
+  "action": {
+    "reason": "Raise the grasped mug another 3 cm to ensure adequate clearance, maintaining the current orientation and checking that the mug remains seated.",
+    "steps": 5,
+    "target": {
+      "position": [
+        0.28978,
+        -0.20775,
+        1.00076
+      ],
+      "quaternion_wxyz": [
+        0.904194,
+        -0.169134,
+        0.28145,
+        -0.273152
+      ],
+      "gripper": "closed"
+    }
+  },
+  "executed": {
+    "status": "executed",
+    "frames": 30,
+    "requested_position": [
+      0.28978,
+      -0.20775,
+      1.00076
+    ],
+    "reached_position": [
+      0.28946,
+      -0.20734,
+      0.99866
+    ],
+    "position_gap_m": 0.0022,
+    "rotation_gap_rad": 0.1997,
+    "hand_table_contact": [],
+    "self_collision": [],
+    "ik_at_request": {
+      "position_error_m": 0.0002997025524893447,
+      "orientation_error_rad": 0.0008405309359721843,
+      "iterations": 10
+    }
+  }
+}

@@ -1,0 +1,44 @@
+{
+  "accepted": true,
+  "action": {
+    "reason": "Make a small elevated lateral viewing motion to resolve the mug's depth relative to the open fingers without lowering toward the table. Keep the gripper open until opposing grasp surfaces demonstrably bracket the mug.",
+    "steps": 1,
+    "target": {
+      "position": [
+        0.21196,
+        -0.22821,
+        1.06273
+      ],
+      "quaternion_wxyz": [
+        0.980681,
+        -0.180683,
+        0.043845,
+        -0.060804
+      ],
+      "gripper": "open"
+    }
+  },
+  "executed": {
+    "status": "executed",
+    "frames": 6,
+    "requested_position": [
+      0.21196,
+      -0.22821,
+      1.06273
+    ],
+    "reached_position": [
+      0.21256,
+      -0.22641,
+      1.0642
+    ],
+    "position_gap_m": 0.0024,
+    "rotation_gap_rad": 0.022,
+    "hand_table_contact": [],
+    "self_collision": [],
+    "ik_at_request": {
+      "position_error_m": 0.0002820964925180906,
+      "orientation_error_rad": 0.0009047220419486443,
+      "iterations": 3
+    }
+  }
+}

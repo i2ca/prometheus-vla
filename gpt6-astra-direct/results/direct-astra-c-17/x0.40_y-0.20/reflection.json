@@ -1,0 +1,87 @@
+{
+  "episode": "results/direct-astra-c-17/x0.40_y-0.20",
+  "at": "2026-09-23T16:11:07+00:00",
+  "critic_model": "gpt-6-astra",
+  "response_id": "chatcmpl-resp_0e579ada23cb2452016ab3f9932a6487d2b08f4a331295b055",
+  "usage": {
+    "input_tokens": 13364,
+    "output_tokens": 4474
+  },
+  "accepted": false,
+  "diagnosis": "The grasp, lift height, and retention succeeded, but the required upright attitude did not. The evaluator measured a 9.74 cm lift and confirmed two-second retention, while simulator truth recorded tilt reaching 45.1° during the hold. The dominant failure was cumulative orientation drift: the policy repeatedly used the newly measured palm quaternion as the next orientation goal, thereby accepting tracking error instead of maintaining a fixed task-compatible reference. Even stationary hold commands continued this drift. Depth was useful for locating exposed surfaces and the table, but it was not used effectively to verify the disputed object pose. A wall point above the table, a separated shadow, and a visible opening establish neither uprightness nor displacement of a consistent object landmark. The policy repeatedly described the changing pose as upright and finished without resolving that discrepancy.",
+  "failure_mode": "Orientation-reference drift combined with inadequate visual and depth verification of the required object attitude; not a failure to retain or elevate the object.",
+  "lessons_review": [
+    {
+      "lesson": "Plan nearby motion for the full measured hand and any held object, including leading links and swept paths. For grasping, use images and proprioception to align the aperture so opposing contact surfaces can reach opposite sides of the target without a leading link pushing into or underneath it; support clearance alone is insufficient. Keep the task-compatible orientation goal separate from measured tracking error. If achieved alignment blocks entry, move through verified clearance to a staging pose and realign. Enter with short observed motions, then hold the palm pose and close when seating is visible rather than continuing to push.",
+      "verdict": "helped",
+      "why": "Holding position and closing at step 5 produced a retained grasp, and no hand-table or self-collisions were recorded. However, approach contact caused transient rocking at steps 2–4. More importantly, the orientation-reference instruction was not operationalized: steps 6–11 repeatedly adopted measured orientation as the new goal. Preserve the approach guidance and make reference retention a separate, prominent rule."
+    },
+    {
+      "lesson": "Track identifiable target features relative to both the hand and support during nearby motion. If an unsecured target shifts or tilts, replace further entry with a short contact-relief motion chosen to increase an observed hand-target gap while preserving stable support. Do not assume reversing the palm path will separate contact. Reobserve immediately; if the target follows or pivots, revise the separating direction from the visible contact geometry rather than extending the same withdrawal. If contact or support is obscured, inspect another camera or make a clearance-checked viewing adjustment first. Once support is stable, relocalize and choose a changed entry alignment or direction.",
+      "verdict": "neutral",
+      "why": "No contact-relief sequence was attempted despite transient tilt during steps 2–4; the policy continued describing the target as upright. There is no evidence that this rule caused harmful retreat or stalling. The evaluator reported only 0.4° tilt before closure, so the early rocking was not the decisive final failure. Retain the recovery principle within the approach rule."
+    },
+    {
+      "lesson": "Use depth to answer the unresolved geometric question that selects the next action, such as an exposed target boundary, support level, or clearance around a leading link. Select the surface in the current head image using that camera's pixel convention, and reconcile the return with visible shape and measured hand configuration. A surface point is neither the target center nor evidence of free space. For missing, ambiguous, or inconsistent returns, verify the image-to-query correspondence and probe a distinguishing exposed surface or restore visibility before planning contact motion. Refresh geometry after visible target movement; avoid repeating established measurements unless they can change the plan.",
+      "verdict": "helped",
+      "why": "Depth established useful support and surface geometry during steps 1–5. However, 31 points were sampled before closure without clearly resolving the observed contact-induced motion. At steps 8 and 10, wall and table samples supported clearance reasoning but did not establish uprightness or landmark displacement. Keep targeted probing, and explicitly require semantic correspondence between the measurement and the property being verified."
+    },
+    {
+      "lesson": "Verify manipulation from visible target behavior rather than commanded motion, palm stability, or gripper closure alone. After visible seating and closure, make a small task-compatible test motion while tracking the target relative to the hand and support. If that relationship cannot be judged, restore an informative view before continuing. If the target slips or rotates unintentionally, establish stable support before releasing or making a correction that could destabilize it, then realign for another attempt. Begin any required hold only after the requested target state is visibly established, and monitor it throughout.",
+      "verdict": "helped",
+      "why": "The test lift at step 6 genuinely established retention and separation from the table. Subsequent verification was incomplete: tilt increased through steps 7–11, yet the policy continued lifting and counted the hold as successful. Preserve the test-and-monitor procedure, but distinguish retention, displacement, and attitude rather than treating apparent grasp stability as evidence for all requirements."
+    }
+  ],
+  "lessons": [
+    {
+      "lesson": "During a segment requiring a maintained target attitude, retain the palm-orientation reference associated with a visually verified task-compatible target pose. Do not replace that reference with each newly measured orientation. After motion and during holds, compare measured palm orientation and visible target features against the intended attitude. If the target remains seated, correct deviations with short, clearance-checked motions before continuing. If the target moves within the grasp or correction would destabilize contact, guide it to stable support and realign before resuming.",
+      "evidence_steps": [
+        6,
+        7,
+        8,
+        9,
+        10,
+        11
+      ],
+      "why": "Each command reused the measured quaternion, allowing orientation error to accumulate. Recorded tilt increased from 8.4° during the test lift to 45.1° during the final hold, including further rotation while palm position was nominally held. A persistent orientation reference would expose this drift instead of incorporating it into the goal."
+    },
+    {
+      "lesson": "Verify retention, target displacement, and target attitude separately from visible features relative to the hand and support. After grasping or changing contact, use a short task-compatible test motion and continue only when the target response supports the intended action. If the relevant features are obscured or ambiguous, inspect an informative camera or make a clearance-checked viewing adjustment. If seating changes, establish stable support and reseat; if attitude is wrong but seating is stable, correct the attitude safely. Begin or resume a required hold only after all requested conditions are established, and monitor them throughout.",
+      "evidence_steps": [
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12
+      ],
+      "why": "The target followed the hand and remained retained, but those successes were incorrectly treated as confirmation of uprightness. Visibility of the opening and a separated shadow did not resolve attitude. The final completion claim ignored the increasingly tilted pose."
+    },
+    {
+      "lesson": "Use depth to resolve the uncertainty that determines the next action. Select identifiable exposed features in the current head image using the camera's pixel convention, and reconcile each return with visible shape and measured hand configuration. For displacement, compare corresponding target features against support; for attitude, choose features whose spatial relationship distinguishes the relevant orientations. An arbitrary surface elevation is not target displacement, target attitude, or free space. If returns are ambiguous, verify correspondence and probe a distinguishing surface or restore visibility. Reuse established geometry unless observed motion or a new decision makes another measurement useful.",
+      "evidence_steps": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        8,
+        10
+      ],
+      "why": "Early probing supplied useful geometry but repeatedly sampled broad surface sets. Later queries compared an exposed wall point with the table without establishing a consistent landmark or orientation. More discriminating queries could have tested the actual unresolved requirement while avoiding redundant sampling."
+    },
+    {
+      "lesson": "Plan nearby motion for the full measured hand, any held object, and their swept paths. Before entering a grasp, use images and proprioception to align opposing contact surfaces around the target rather than merely clearing the support. Enter with short observed motions and track target features relative to the hand and support. If an unsecured target shifts or tilts, choose a contact-relief motion that visibly opens a gap while preserving support; reobserve and revise the separating direction if the target follows. Restore an informative view when contact is unclear, then relocalize and change the entry alignment. Once seating is visible, hold the palm pose and close rather than pushing farther.",
+      "evidence_steps": [
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "why": "Support clearance was maintained, but leading-hand contact still caused transient tilt during entry. The successful transition was holding the palm and closing at step 5. This retains that useful behavior while combining full-hand planning with an actionable response to target motion."
+    }
+  ],
+  "rejected_lessons": []
+}

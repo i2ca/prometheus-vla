@@ -1,0 +1,44 @@
+{
+  "accepted": true,
+  "action": {
+    "reason": "Increase vertical clearance by 4 cm while retaining the current upright grasp, then verify retention before the timed hold.",
+    "steps": 5,
+    "target": {
+      "position": [
+        0.26894,
+        -0.21151,
+        0.98702
+      ],
+      "quaternion_wxyz": [
+        0.957411,
+        -0.172529,
+        0.092134,
+        -0.212391
+      ],
+      "gripper": "closed"
+    }
+  },
+  "executed": {
+    "status": "executed",
+    "frames": 30,
+    "requested_position": [
+      0.26894,
+      -0.21151,
+      0.98702
+    ],
+    "reached_position": [
+      0.26856,
+      -0.21153,
+      0.98458
+    ],
+    "position_gap_m": 0.0025,
+    "rotation_gap_rad": 0.1763,
+    "hand_table_contact": [],
+    "self_collision": [],
+    "ik_at_request": {
+      "position_error_m": 0.00029786427731713156,
+      "orientation_error_rad": 0.0008708499589737702,
+      "iterations": 19
+    }
+  }
+}

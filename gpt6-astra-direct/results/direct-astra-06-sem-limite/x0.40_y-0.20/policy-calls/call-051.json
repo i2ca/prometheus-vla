@@ -1,0 +1,100 @@
+{
+  "call": 51,
+  "step_id": 50,
+  "model": "gpt-6-astra",
+  "response_id": "chatcmpl-resp_012e5afaafd71d31016ab3ed6e1a0487d2848c5b8551bea66b",
+  "sent_at": "2026-09-23T15:16:53.905+00:00",
+  "received_at": "2026-09-23T15:17:11.944+00:00",
+  "sim_time_s": 24.3,
+  "images_sent": [
+    {
+      "camera": "head_camera",
+      "file": "obs/step-050/head_camera.png",
+      "sha256": "81e52f9bdd236735228213a2af141bdf156a6ed104b79613ca47c6d22e221274"
+    },
+    {
+      "camera": "left_wrist_camera",
+      "file": "obs/step-050/left_wrist_camera.png",
+      "sha256": "71f6c19c413953d5c3746bbd667df5f540e9cbf8741b430b30ee6bb2ce5ef11b"
+    },
+    {
+      "camera": "right_wrist_camera",
+      "file": "obs/step-050/right_wrist_camera.png",
+      "sha256": "3d67038fae5803a451ff0309d071d76573eef3bcdd3ee3964d104c2cca29319a"
+    }
+  ],
+  "latency_s": 18.04,
+  "usage": {
+    "input_tokens": 1552,
+    "output_tokens": 260
+  },
+  "model_text": "(empty response)",
+  "observed": {
+    "palm": {
+      "position": [
+        0.21256,
+        -0.22641,
+        1.0642
+      ],
+      "quaternion_wxyz": [
+        0.980604,
+        -0.184817,
+        0.035804,
+        -0.054559
+      ]
+    },
+    "arm_joints_rad": [
+      -0.50111,
+      -0.52294,
+      -0.1112,
+      -0.50864,
+      0.10606,
+      1.07427,
+      0.1091
+    ],
+    "waist_yaw_rad": -0.08525,
+    "gripper_closure": 0.0
+  },
+  "tool": "actuate",
+  "what_i_see": "The head camera shows the open right hand against the rim or upper side of the upright white mug, which remains supported on the gray table; secure enclosure is not established. The left wrist camera shows the right arm and hand, feet, and tiled floor but no mug. The right wrist camera shows the hand and forearm over the checkered surface, also without visible mug geometry.",
+  "arguments": {
+    "what_i_see": "The head camera shows the open right hand against the rim or upper side of the upright white mug, which remains supported on the gray table; secure enclosure is not established. The left wrist camera shows the right arm and hand, feet, and tiled floor but no mug. The right wrist camera shows the hand and forearm over the checkered surface, also without visible mug geometry.",
+    "reason": "Ease slightly backward from the rim and lower only 8 mm toward a side approach at mid height. Keep the fingers open and inspect the resulting clearance and mug position before moving closer or closing.",
+    "steps": 1,
+    "position": [
+      0.20256,
+      -0.22641,
+      1.0562
+    ],
+    "quaternion_wxyz": [
+      0.980604,
+      -0.184817,
+      0.035804,
+      -0.054559
+    ],
+    "gripper": "open"
+  },
+  "result": {
+    "status": "executed",
+    "frames": 6,
+    "requested_position": [
+      0.20256,
+      -0.22641,
+      1.0562
+    ],
+    "reached_position": [
+      0.20343,
+      -0.22627,
+      1.05559
+    ],
+    "position_gap_m": 0.0011,
+    "rotation_gap_rad": 0.0369,
+    "hand_table_contact": [],
+    "self_collision": [],
+    "ik_at_request": {
+      "position_error_m": 0.0002673811666687817,
+      "orientation_error_rad": 0.0008800075787077388,
+      "iterations": 8
+    }
+  }
+}

@@ -1,0 +1,44 @@
+{
+  "accepted": true,
+  "action": {
+    "reason": "Raise the open hand only 1 cm to obtain vertical parallax and check whether the mug stays fixed relative to the table or follows the hand. Preserve orientation and avoid closing until the mug's depth between opposing contact surfaces is established.",
+    "steps": 1,
+    "target": {
+      "position": [
+        0.2421,
+        -0.24242,
+        1.00534
+      ],
+      "quaternion_wxyz": [
+        0.979129,
+        -0.163362,
+        0.082762,
+        -0.088147
+      ],
+      "gripper": "keep"
+    }
+  },
+  "executed": {
+    "status": "executed",
+    "frames": 6,
+    "requested_position": [
+      0.2421,
+      -0.24242,
+      1.00534
+    ],
+    "reached_position": [
+      0.24221,
+      -0.24194,
+      1.00661
+    ],
+    "position_gap_m": 0.0014,
+    "rotation_gap_rad": 0.0054,
+    "hand_table_contact": [],
+    "self_collision": [],
+    "ik_at_request": {
+      "position_error_m": 0.00023405423878585736,
+      "orientation_error_rad": 0.0006832501238947543,
+      "iterations": 6
+    }
+  }
+}

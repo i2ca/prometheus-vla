@@ -1,0 +1,54 @@
+{
+  "reflections": [
+    {
+      "episode": "results/direct-astra-08-visao-real-base/x0.40_y-0.20",
+      "at": "2026-09-23T15:35:02+00:00",
+      "critic_model": "gpt-6-astra",
+      "response_id": "chatcmpl-resp_09c29f83a14cb4ad016ab3f15d6b4487d296e7e53b33bc8c26",
+      "usage": {
+        "input_tokens": 4370,
+        "output_tokens": 2333
+      },
+      "accepted": false,
+      "diagnosis": "The episode failed during the open-hand approach, before a grasp was established. Depth sensing usefully located the support surface and parts of the target, but the policy did not turn those measurements into clearance for the entire hand or alignment of the grasp aperture. It judged safety primarily from palm height while advancing and lowering extended fingers. At step 2, contact already tilted the mug by 20.1 degrees. The next forward-and-down movement tipped it past horizontal and triggered a hand–table collision abort. No gripper-close command was issued, and the observed height change was not a controlled upright lift or sustained hold. The main problem was not a demonstrated gross localization error, but inadequate hand geometry and near-contact feedback in the approach plan.",
+      "failure_mode": "Open-hand collision during approach: palm-only clearance reasoning and continued forward/down motion disturbed the target before opposing grasp contacts were established, culminating in tipping and support-surface contact.",
+      "lessons_review": [],
+      "lessons": [
+        {
+          "lesson": "Plan translations and rotations using the visible extent of the entire hand, not palm position alone. Check the leading and lowest fingers against the target, supporting surface, and nearby obstacles using head and wrist views. If the swept path is obstructed, reposition or reorient through visible free space, then approach with the target aligned to the open grasp aperture.",
+          "evidence_steps": [
+            2,
+            3
+          ],
+          "why": "The policy explicitly used palm height above the measured table to justify its approach. Nevertheless, extended fingers contacted the mug at step 2, and a hand link contacted the table at step 3."
+        },
+        {
+          "lesson": "Probe clearly identified, unoccluded target surfaces and nearby support surfaces, and interpret each depth return as a visible surface point rather than the object's center. Combine those samples with head and wrist images to choose a grasp region and place it between opposing fingers. Refresh the relevant measurements when the target visibly moves or the probed region becomes obscured.",
+          "evidence_steps": [
+            1,
+            2,
+            3
+          ],
+          "why": "The probes supplied useful support-height and target-surface information, alongside returns on the hand. The missing application was relating these surfaces to the hand's aperture and finger envelope; repeated depth sampling alone did not produce a safe grasp approach."
+        },
+        {
+          "lesson": "Shorten motion increments as visible clearance to the target or surrounding surfaces narrows, and compare the target's pose before and after each increment. If it shifts or rotates unexpectedly before a grasp is established, relieve the unintended contact, reassess its pose, and select a newly aligned, unobstructed approach rather than continuing toward the previous estimate.",
+          "evidence_steps": [
+            2,
+            3
+          ],
+          "why": "Step 2 disturbed the mug while the hand remained open. Step 3 continued the same forward-and-down approach and greatly increased the tilt. Smaller near-contact movements and explicit visual change checks would provide an opportunity to correct the approach before substantial tipping."
+        },
+        {
+          "lesson": "During grasp acquisition, use the images to confirm that opposing fingers bracket the intended grasp region. Once aligned, close the gripper instead of continuing to push the open hand toward the target. Check closure and visual seating, then make a controlled test motion to verify that the object follows the hand without slipping or losing the required orientation. If verification fails, return it to stable support and realign for another grasp.",
+          "evidence_steps": [
+            2,
+            3
+          ],
+          "why": "Every movement retained an open hand, so the early contacts pushed the mug without securing it. This rule distinguishes approaching from grasping and requires observed retention before committing to the requested lift and hold."
+        }
+      ],
+      "rejected_lessons": []
+    }
+  ]
+}

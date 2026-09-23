@@ -1,0 +1,44 @@
+{
+  "accepted": true,
+  "action": {
+    "reason": "Move open grasp toward mug from side while lowering gradually; retain initial orientation reference.",
+    "steps": 5,
+    "target": {
+      "position": [
+        0.2217,
+        -0.222,
+        0.874
+      ],
+      "quaternion_wxyz": [
+        0.982492,
+        -0.175626,
+        0.043489,
+        -0.044417
+      ],
+      "gripper": "open"
+    }
+  },
+  "executed": {
+    "status": "executed",
+    "frames": 30,
+    "requested_position": [
+      0.2217,
+      -0.222,
+      0.874
+    ],
+    "reached_position": [
+      0.22108,
+      -0.22265,
+      0.87427
+    ],
+    "position_gap_m": 0.0009,
+    "rotation_gap_rad": 0.1729,
+    "hand_table_contact": [],
+    "self_collision": [],
+    "ik_at_request": {
+      "position_error_m": 0.0002995125631045109,
+      "orientation_error_rad": 0.0009549009852810251,
+      "iterations": 65
+    }
+  }
+}

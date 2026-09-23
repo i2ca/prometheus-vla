@@ -1,0 +1,97 @@
+{
+  "episode": "results/direct-astra-10-visao-real-licoes-v1/x0.40_y-0.20",
+  "at": "2026-09-23T15:41:46+00:00",
+  "critic_model": "gpt-6-astra",
+  "response_id": "chatcmpl-resp_0b0b5bf547ea93b2016ab3f2ba53b887d2bb94a67c1c5653dc",
+  "usage": {
+    "input_tokens": 15772,
+    "output_tokens": 4143
+  },
+  "accepted": false,
+  "diagnosis": "The episode failed because the open hand repeatedly contacted and displaced the mug without establishing an opposing-finger grasp. Depth provided useful target-surface and tabletop measurements, but the policy used them mainly to maintain table clearance rather than verify the entire hand's approach and grasp alignment. Simulator truth shows contact from the first action and increasing disturbance, eventually tipping the mug onto its side. The policy never commanded gripper closure. After losing target visibility, it repeatedly sampled the already-known tabletop and moved through unrelated search regions instead of reacquiring the last observed target region. Palm tracking was generally accurate, with no recorded hand-table or self collisions; the main problems were contact-aware perception, grasp planning, and ineffective visual recovery. The evaluator's height excursion was not a retained upright lift.",
+  "failure_mode": "Uncontrolled open-hand contact toppled the target before grasp acquisition, followed by loss of visual tracking and an unproductive search with no closure, verified lift, or hold.",
+  "lessons_review": [
+    {
+      "lesson": "Plan translations and rotations using the visible extent of the entire hand, not palm position alone. Check the leading and lowest fingers against the target, supporting surface, and nearby obstacles using head and wrist views. If the swept path is obstructed, reposition or reorient through visible free space, then approach with the target aligned to the open grasp aperture.",
+      "verdict": "helped",
+      "why": "The support-clearance portion helped: the policy explicitly considered the table and avoided recorded hand-table and self collisions. However, it did not effectively apply the same swept-hand reasoning to the target, which was contacted throughout steps 1–7. Retain this principle and connect it more directly to target-motion feedback."
+    },
+    {
+      "lesson": "Probe clearly identified, unoccluded target surfaces and nearby support surfaces, and interpret each depth return as a visible surface point rather than the object's center. Combine those samples with head and wrist images to choose a grasp region and place it between opposing fingers. Refresh the relevant measurements when the target visibly moves or the probed region becomes obscured.",
+      "verdict": "neutral",
+      "why": "Early probes established useful surface geometry, but they did not produce confirmed grasp alignment. During steps 7–16, support-only probes could not recover the missing target. Preserve surface-point interpretation, but make queries uncertainty-driven and require visual identification before target probing."
+    },
+    {
+      "lesson": "Shorten motion increments as visible clearance to the target or surrounding surfaces narrows, and compare the target's pose before and after each increment. If it shifts or rotates unexpectedly before a grasp is established, relieve the unintended contact, reassess its pose, and select a newly aligned, unobstructed approach rather than continuing toward the previous estimate.",
+      "verdict": "neutral",
+      "why": "The policy reduced some motion increments but did not effectively respond to the accumulating target disturbance in steps 2–6. Contact relief came only after the mug had toppled. Subsequent recovery lacked a criterion for improving target visibility, enabling a prolonged search detour."
+    },
+    {
+      "lesson": "During grasp acquisition, use the images to confirm that opposing fingers bracket the intended grasp region. Once aligned, close the gripper instead of continuing to push the open hand toward the target. Check closure and visual seating, then make a controlled test motion to verify that the object follows the hand without slipping or losing the required orientation. If verification fails, return it to stable support and realign for another grasp.",
+      "verdict": "neutral",
+      "why": "This rule was not carried out: all sixteen actions kept the gripper open, and no grasp verification occurred. It remains necessary, but should explicitly specify how to obtain a clearer view or change alignment when bracketing cannot be confirmed, rather than allowing continued open-hand advancement."
+    }
+  ],
+  "lessons": [
+    {
+      "lesson": "Before translating or rotating, check the swept extent of the whole hand against the target, support, and nearby obstacles using available views. Reduce increments as clearance narrows and compare the target's pose relative to its support after each move. If the target shifts or tilts unexpectedly before secure control, relieve contact along a visibly clear path, reacquire its pose, and reorient in free space for an approach that places the intended grasp region inside the open aperture.",
+      "evidence_steps": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6
+      ],
+      "why": "Accurate palm motion and table clearance did not prevent finger-target collisions. Repeated open-hand advancement increased peak tilt from nearly upright to over ninety degrees. Earlier whole-hand clearance checks and contact-responsive realignment would have prevented continued tipping."
+    },
+    {
+      "lesson": "Confirm in a clear view that opposing fingers bracket the intended grasp region; proximity or silhouette overlap alone is insufficient. If bracketing is unclear, obtain a better view or realign through free space rather than advancing into the target. Once aligned, hold the palm pose and close. Check measured closure and visual seating, then use a controlled test motion to verify that the target follows without slipping or unwanted rotation. If verification fails, return it to stable support before releasing and realigning.",
+      "evidence_steps": [
+        2,
+        3,
+        4,
+        5,
+        6,
+        16
+      ],
+      "why": "The hand repeatedly contacted the mug but never established or tested a grasp. There were zero closure commands. This rule makes the transition from approach to acquisition explicit without encouraging blind closure on an improperly aligned target."
+    },
+    {
+      "lesson": "Maintain the last visually confirmed target region from images and valid depth, treating it as uncertain after contact or loss of sight. When visibility is lost, use the last observed motion, frame-exit direction, and any remaining camera view to guide reacquisition. Reposition or reorient the wrist through known-clear space to inspect that region. After each viewing motion, check whether visibility improved; if not, change viewing direction or return toward a previously useful viewpoint instead of continuing an unsupported sweep.",
+      "evidence_steps": [
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        11,
+        13,
+        16
+      ],
+      "why": "The target progressively left the head image and was still partially visible in the right wrist view at step 7. Later actions did not exploit that information. Repeated search translations failed to restore visibility and increased palm-target separation substantially."
+    },
+    {
+      "lesson": "Use depth queries to resolve a specific uncertainty about a visibly identified target surface or a relevant support or obstacle. Interpret each return as a visible surface point, not the target's center, and combine it with images to choose the next alignment or clearance correction. If a target probe instead samples the hand or background, select a clearer target pixel or restore visibility. Reuse unchanged support geometry and refresh only measurements relevant to observed movement or the next planned interaction.",
+      "evidence_steps": [
+        1,
+        2,
+        3,
+        4,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16
+      ],
+      "why": "Initial target and support probes were useful, but later queries repeatedly returned tabletop geometry while the target was absent. These measurements did not justify the search direction or improve grasp alignment. Targeted, event-driven probing would preserve reliability while eliminating substantial redundant sensing."
+    }
+  ],
+  "rejected_lessons": []
+}

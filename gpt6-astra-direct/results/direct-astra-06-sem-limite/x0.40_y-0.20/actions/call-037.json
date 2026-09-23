@@ -1,0 +1,44 @@
+{
+  "accepted": true,
+  "action": {
+    "reason": "Shift the open hand 1 cm to the robot's right at unchanged height and orientation to expose the mug\u2013finger depth relationship in the head view. This small lateral motion avoids a downward finger sweep; do not close until opposing contact surfaces visibly enclose the mug.",
+    "steps": 1,
+    "target": {
+      "position": [
+        0.2421,
+        -0.24201,
+        0.99583
+      ],
+      "quaternion_wxyz": [
+        0.979778,
+        -0.163,
+        0.07543,
+        -0.088184
+      ],
+      "gripper": "open"
+    }
+  },
+  "executed": {
+    "status": "executed",
+    "frames": 6,
+    "requested_position": [
+      0.2421,
+      -0.24201,
+      0.99583
+    ],
+    "reached_position": [
+      0.2421,
+      -0.24242,
+      0.99534
+    ],
+    "position_gap_m": 0.0006,
+    "rotation_gap_rad": 0.0147,
+    "hand_table_contact": [],
+    "self_collision": [],
+    "ik_at_request": {
+      "position_error_m": 0.0002366768599698611,
+      "orientation_error_rad": 0.0006916645334557969,
+      "iterations": 3
+    }
+  }
+}

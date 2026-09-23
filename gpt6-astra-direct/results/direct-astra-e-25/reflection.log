@@ -1,0 +1,74 @@
+{
+  "episode": "results/direct-astra-e-25/x0.40_y-0.20",
+  "at": "2026-09-23T16:54:55+00:00",
+  "critic_model": "gpt-6-astra",
+  "response_id": "chatcmpl-resp_0c83dac800dbd6a5016ab403d5f24487d28dea338a38326aa4",
+  "usage": {
+    "input_tokens": 6079,
+    "output_tokens": 4524
+  },
+  "accepted": false,
+  "diagnosis": "The episode failed before grasp acquisition. Depth sensing established the tabletop and mug geometry reasonably well, including the distinction between exterior surfaces and returns inside the opening. However, the policy did not resolve the clearance question that controlled its descent: whether the lowest intermediate hand links would clear the table. The initial retraction avoided the mug, but clearance from the mug did not establish clearance from its support. On step 3, a proximal middle-finger link contacted the table and the episode was aborted. Orientation tracking variation was also left unaccounted for: subsequent commands copied the reached attitude rather than retaining a separately verified reference. Across three actions, 41 depth samples repeatedly characterized mostly known geometry without establishing the limiting link's clearance. No closure or lift occurred; the mug simply remained upright on the table.",
+  "failure_mode": "Pre-grasp hand–support collision caused by unverified whole-hand swept clearance, with orientation tracking variation not incorporated into the clearance assessment.",
+  "lessons_review": [
+    {
+      "lesson": "Check the entire moving assembly's swept envelope, including intermediate links; acquire through a bracketed, non-pushing contact path.",
+      "verdict": "neutral",
+      "why": "The initial retraction was consistent with avoiding the target, but the central whole-envelope requirement was not operationalized. At step 3, the policy described the space behind the mug as checked and clear, yet an intermediate hand link struck the table. The principle remains sound; revise it into an explicit check of the boundary-limiting part before reducing clearance."
+    },
+    {
+      "lesson": "Retain a verified attitude reference, account for tracking variation, and correct or replan in clear space.",
+      "verdict": "neutral",
+      "why": "Steps 2 and 3 used the preceding measured quaternion as their attitude command. Command-to-reached rotation discrepancies were about 0.078, 0.101, and 0.157 radians across the episode. The record does not establish attitude error as the sole collision cause, but the policy did not preserve the reference or demonstrate that the resulting geometry retained clearance. Keep this rule with a more explicit pre-descent comparison."
+    },
+    {
+      "lesson": "Use depth for action-changing questions, classify returns, reuse established geometry, and inspect the limiting boundary.",
+      "verdict": "helped",
+      "why": "The policy correctly estimated the support and target surfaces and explicitly recognized that samples inside the opening were not exterior walls. However, it did not follow the reuse and limiting-boundary portions: six probe batches across steps 1–3 produced 41 samples without resolving the impending hand–table collision. Preserve classification while emphasizing decision-driven probing, including robot-surface returns when checking robot clearance."
+    },
+    {
+      "lesson": "Verify retention, object attitude, displacement, and any required hold separately after closure.",
+      "verdict": "neutral",
+      "why": "The episode ended at step 3 with no closure command, so this rule was not exercised. Retain it in the replacement set, together with the acquisition-alignment requirements that were previously bundled into the clearance lesson."
+    }
+  ],
+  "lessons": [
+    {
+      "lesson": "Before reducing clearance to a support or obstacle, identify which part of the entire moving assembly would reach that boundary first, including intermediate hand links, arm links, and any held object. Check that part's swept path using available views and measured joints; palm, fingertip, or target clearance is not a substitute. If the limiting region is hidden or uncertain, inspect an informative available view or make a clearance-checked viewing or attitude adjustment in free space, then choose an approach with verifiable clearance. Shorten motions near boundaries and allow for observed tracking variation.",
+      "evidence_steps": [
+        1,
+        2,
+        3
+      ],
+      "why": "The policy successfully moved away from the mug but then lowered toward the support without establishing the lowest hand-link clearance. Step 3 ended in right_hand_middle_1_link contact with the table, despite the palm and approximate fingertips appearing higher than the support."
+    },
+    {
+      "lesson": "Keep a separate, visually verified, task-compatible attitude reference. Initialize position commands from the measured palm position, but do not silently replace the attitude reference with each reached attitude. Before a clearance-reducing move, compare measured attitude with the reference and reassess the limiting geometry using current joints. If tracking variation threatens clearance, obtain room through a checked path and try an orientation-only correction before resuming translation. If that attitude cannot be held reliably, choose an observed stable attainable attitude and replan a compatible approach rather than repeatedly chasing the reference.",
+      "evidence_steps": [
+        1,
+        2,
+        3
+      ],
+      "why": "Each later command adopted the preceding measured attitude even though the rationale claimed attitude preservation. Nonzero orientation errors therefore changed the geometry without a demonstrated update to the clearance assessment. Separating the reference from the measurement would make these discrepancies explicit."
+    },
+    {
+      "lesson": "Before probing depth, state which uncertainty the result will resolve and how it will change the next action. Select identifiable features in the current depth-source image and distinguish object exterior, openings or background, support, and robot returns. Robot returns may inform robot clearance but must not be treated as target surfaces. Reuse established geometry while current observations remain consistent. Once target location and support are known, direct further sensing toward the limiting moving part or intended contact boundary, then use the result to choose the next clearance or alignment adjustment.",
+      "evidence_steps": [
+        1,
+        2,
+        3
+      ],
+      "why": "The initial probes supplied useful geometry, but subsequent batches largely repeated object and support measurements. The decisive uncertainty was the moving hand's minimum support clearance. Redirecting sensing to that uncertainty would improve both safety and efficiency."
+    },
+    {
+      "lesson": "For acquisition, place the intended contact region between opposing contact surfaces before closing, and close without advancing into the object. Test retention with a cautious, clearance-checked motion and verify that identifiable object features remain seated and move with the hand. Check task-compatible object attitude and required displacement relative to the support separately from closure and palm motion. If alignment or retention is uncertain, obtain an informative view and correct it; if unintended contact moves an unsecured object, unload while preserving support and realign. Return an unstable held object to stable support and reacquire it. Begin any required hold only after all task conditions are established, and recheck them before declaring completion.",
+      "evidence_steps": [
+        1,
+        2,
+        3
+      ],
+      "why": "Acquisition and post-grasp verification were never reached, so there is no evidence against these existing safeguards. This retains them in the complete replacement set without treating the object's unchanged upright posture as evidence of a successful grasp."
+    }
+  ],
+  "rejected_lessons": []
+}

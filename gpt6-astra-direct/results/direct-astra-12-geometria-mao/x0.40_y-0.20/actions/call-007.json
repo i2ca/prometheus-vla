@@ -1,0 +1,44 @@
+{
+  "accepted": true,
+  "action": {
+    "reason": "Test the seated grasp with a small vertical lift, without lateral sweeping, and check whether the mug follows upright.",
+    "steps": 3,
+    "target": {
+      "position": [
+        0.33221,
+        -0.19332,
+        0.91053
+      ],
+      "quaternion_wxyz": [
+        0.963406,
+        -0.147057,
+        0.057921,
+        -0.216489
+      ],
+      "gripper": "closed"
+    }
+  },
+  "executed": {
+    "status": "executed",
+    "frames": 18,
+    "requested_position": [
+      0.33221,
+      -0.19332,
+      0.91053
+    ],
+    "reached_position": [
+      0.33103,
+      -0.19464,
+      0.90839
+    ],
+    "position_gap_m": 0.0028,
+    "rotation_gap_rad": 0.084,
+    "hand_table_contact": [],
+    "self_collision": [],
+    "ik_at_request": {
+      "position_error_m": 0.00029587132349230316,
+      "orientation_error_rad": 0.0007701588707952725,
+      "iterations": 55
+    }
+  }
+}

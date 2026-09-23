@@ -1,0 +1,46 @@
+{
+  "accepted": true,
+  "action": {
+    "reason": "Move the open aperture toward the mug laterally while reducing roll toward a level side grasp; stay above support.",
+    "steps": 5,
+    "target": {
+      "position": [
+        0.237,
+        -0.253,
+        0.833
+      ],
+      "quaternion_wxyz": [
+        0.959,
+        0.276,
+        -0.026,
+        0.067
+      ],
+      "gripper": "open"
+    }
+  },
+  "executed": {
+    "status": "aborted_on_contact",
+    "frames": 24,
+    "requested_position": [
+      0.237,
+      -0.253,
+      0.833
+    ],
+    "reached_position": [
+      0.23752,
+      -0.24447,
+      0.83688
+    ],
+    "position_gap_m": 0.0094,
+    "rotation_gap_rad": 1.3507,
+    "hand_table_contact": [
+      "right_hand_thumb_2_link"
+    ],
+    "self_collision": [],
+    "ik_at_request": {
+      "position_error_m": 0.0002953945147270348,
+      "orientation_error_rad": 0.0008513341503264926,
+      "iterations": 66
+    }
+  }
+}

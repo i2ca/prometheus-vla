@@ -1,0 +1,44 @@
+{
+  "accepted": true,
+  "action": {
+    "reason": "Hold the existing closed grasp stationary for one second to verify the lifted mug remains seated upright.",
+    "steps": 5,
+    "target": {
+      "position": [
+        0.32937,
+        -0.19586,
+        0.97307
+      ],
+      "quaternion_wxyz": [
+        0.919595,
+        -0.135871,
+        0.241245,
+        -0.278718
+      ],
+      "gripper": "closed"
+    }
+  },
+  "executed": {
+    "status": "executed",
+    "frames": 30,
+    "requested_position": [
+      0.32937,
+      -0.19586,
+      0.97307
+    ],
+    "reached_position": [
+      0.32935,
+      -0.19565,
+      0.97476
+    ],
+    "position_gap_m": 0.0017,
+    "rotation_gap_rad": 0.0035,
+    "hand_table_contact": [],
+    "self_collision": [],
+    "ik_at_request": {
+      "position_error_m": 3.983730245582757e-06,
+      "orientation_error_rad": 0.0,
+      "iterations": 1
+    }
+  }
+}

@@ -1,0 +1,170 @@
+{
+  "call": 1,
+  "step_id": 0,
+  "model": "gpt-6-astra",
+  "response_id": "chatcmpl-resp_063529548d927835016ab3f63ffa6887d2a8f8700f2da00575",
+  "sent_at": "2026-09-23T15:54:35.914+00:00",
+  "received_at": "2026-09-23T15:54:46.940+00:00",
+  "sim_time_s": 0.5,
+  "images_sent": [
+    {
+      "camera": "head_camera",
+      "file": "obs/step-000/head_camera.png",
+      "sha256": "17de2439ceaf2c665ec1e29988e57c667b232a150baf77daf86d2ce8cecd425e"
+    },
+    {
+      "camera": "left_wrist_camera",
+      "file": "obs/step-000/left_wrist_camera.png",
+      "sha256": "46b1d1e756dbacb1785238bd22a8409bff63addb0a4227b5b4e6e9f7f4fe0e84"
+    },
+    {
+      "camera": "right_wrist_camera",
+      "file": "obs/step-000/right_wrist_camera.png",
+      "sha256": "854067cd4eac4b5b1972b58c19828ccde81b72e83d7ca011912d8641376b88b9"
+    }
+  ],
+  "latency_s": 10.99,
+  "usage": {
+    "input_tokens": 3244,
+    "output_tokens": 226
+  },
+  "model_text": "(empty response)",
+  "depth_probes": [
+    {
+      "camera": "head_camera",
+      "points": [
+        [
+          644,
+          185
+        ],
+        [
+          626,
+          236
+        ],
+        [
+          557,
+          270
+        ],
+        [
+          688,
+          265
+        ]
+      ],
+      "result": [
+        {
+          "u": 644,
+          "v": 185,
+          "valid": true,
+          "depth_m": 0.6123,
+          "point": [
+            0.4317,
+            -0.2182,
+            0.7695
+          ]
+        },
+        {
+          "u": 626,
+          "v": 236,
+          "valid": true,
+          "depth_m": 0.5596,
+          "point": [
+            0.3629,
+            -0.1832,
+            0.7947
+          ]
+        },
+        {
+          "u": 557,
+          "v": 270,
+          "valid": true,
+          "depth_m": 0.5962,
+          "point": [
+            0.3494,
+            -0.1285,
+            0.7476
+          ]
+        },
+        {
+          "u": 688,
+          "v": 265,
+          "valid": true,
+          "depth_m": 0.5976,
+          "point": [
+            0.3543,
+            -0.2556,
+            0.7485
+          ]
+        }
+      ],
+      "response_id": "chatcmpl-resp_0c53c9621c9c1395016ab3f63c7dc887d2ad0a1821e01872fe"
+    }
+  ],
+  "observed": {
+    "palm": {
+      "position": [
+        0.18672,
+        -0.22595,
+        0.90596
+      ],
+      "quaternion_wxyz": [
+        0.982492,
+        -0.175626,
+        0.043489,
+        -0.044417
+      ]
+    },
+    "arm_joints_rad": [
+      0.06409,
+      -0.35,
+      -0.0632,
+      -0.09523,
+      -0.00209,
+      0.13248,
+      -0.01372
+    ],
+    "waist_yaw_rad": 0.0,
+    "gripper_closure": 0.0
+  },
+  "tool": "actuate",
+  "what_i_see": "Head shows upright white mug to the left of the open right hand on tabletop. Right wrist shows mug beside fingers; left wrist shows table and other arm, not mug. Depth places table near z .748 and visible mug wall near .795.",
+  "arguments": {
+    "what_i_see": "Head shows upright white mug to the left of the open right hand on tabletop. Right wrist shows mug beside fingers; left wrist shows table and other arm, not mug. Depth places table near z .748 and visible mug wall near .795.",
+    "reason": "Advance the open aperture toward the mug while remaining above its rim before the side approach.",
+    "steps": 5,
+    "position": [
+      0.2307,
+      -0.2259,
+      0.89
+    ],
+    "quaternion_wxyz": [
+      0.982492,
+      -0.175626,
+      0.043489,
+      -0.044417
+    ],
+    "gripper": "open"
+  },
+  "result": {
+    "status": "executed",
+    "frames": 30,
+    "requested_position": [
+      0.2307,
+      -0.2259,
+      0.89
+    ],
+    "reached_position": [
+      0.2298,
+      -0.22596,
+      0.88968
+    ],
+    "position_gap_m": 0.001,
+    "rotation_gap_rad": 0.1439,
+    "hand_table_contact": [],
+    "self_collision": [],
+    "ik_at_request": {
+      "position_error_m": 0.0002960229265811625,
+      "orientation_error_rad": 0.0009168898425740324,
+      "iterations": 64
+    }
+  }
+}

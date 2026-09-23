@@ -1,0 +1,44 @@
+{
+  "accepted": true,
+  "action": {
+    "reason": "Move open aperture forward and down toward mug mid-height, retaining clearance above table.",
+    "steps": 5,
+    "target": {
+      "position": [
+        0.219,
+        -0.22,
+        0.87
+      ],
+      "quaternion_wxyz": [
+        0.982492,
+        -0.175626,
+        0.043489,
+        -0.044417
+      ],
+      "gripper": "open"
+    }
+  },
+  "executed": {
+    "status": "executed",
+    "frames": 30,
+    "requested_position": [
+      0.219,
+      -0.22,
+      0.87
+    ],
+    "reached_position": [
+      0.21874,
+      -0.22093,
+      0.87013
+    ],
+    "position_gap_m": 0.001,
+    "rotation_gap_rad": 0.1549,
+    "hand_table_contact": [],
+    "self_collision": [],
+    "ik_at_request": {
+      "position_error_m": 0.00029898388175580184,
+      "orientation_error_rad": 0.0009634372449676086,
+      "iterations": 65
+    }
+  }
+}

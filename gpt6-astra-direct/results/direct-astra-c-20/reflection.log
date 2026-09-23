@@ -1,0 +1,84 @@
+{
+  "episode": "results/direct-astra-c-20/x0.40_y-0.20",
+  "at": "2026-09-23T16:23:29+00:00",
+  "critic_model": "gpt-6-astra",
+  "response_id": "chatcmpl-resp_0cff3f4909bf6eba016ab3fc8cec6c87d2a63dc876dd109c2a",
+  "usage": {
+    "input_tokens": 11110,
+    "output_tokens": 3826
+  },
+  "accepted": false,
+  "diagnosis": "The episode achieved grasp retention and a credited 9.8 cm lift, but failed the upright requirement. Entry disturbed the unsecured mug, and the evaluator measured 19.44 degrees of tilt before closure. After lifting, the policy repeatedly used the latest measured wrist quaternion as the next orientation target, allowing tracking error to redefine the intended attitude. Mug tilt increased from 19.9 degrees at step 7 to 34.6 degrees at step 9, including during nominally stationary hold commands. The policy noticed little positional change but overlooked substantial rotational change and repeatedly described the mug as upright. Depth sensing helped establish approximate object and support geometry, but was not consistently correspondence-checked: step 3's pixels appear inconsistent with the target's location in the head view. The later body-surface depth measurement supported elevation, not independently verified base clearance or upright attitude. The decisive failure was treating retention and approximate height as sufficient evidence of task completion.",
+  "failure_mode": "Uncorrected attitude drift and premature completion: an initially disturbed grasp was retained, but measured wrist rotation was adopted as the goal and object uprightness was never independently established throughout the hold.",
+  "lessons_review": [
+    {
+      "lesson": "Probe depth only on an identifiable feature in the current image from the camera supplying it, using that image's pixel convention. Reconcile each return with the visible feature, support, and measured hand before using it; a valid return does not establish target identity. If correspondence is ambiguous, use an informative RGB view to choose a clearance-checked action, restoring depth-source visibility when needed rather than transferring pixels or sampling blindly. Reuse verified geometry until observed motion makes it stale, and probe only uncertainty that changes the next action.",
+      "verdict": "helped",
+      "why": "Initial probes supplied useful support and object-surface geometry, and the policy reused geometry during lifting without probing every motion. Application was incomplete: step 3's pixel selection appears drawn from a different view, and step 8 treated a visible body point as stronger clearance evidence than its feature identity justified. Retain the principle with explicit correspondence and feature-reference checks."
+    },
+    {
+      "lesson": "For grasp acquisition, place the intended contact region inside the actual grasp aperture with visible opposing surfaces aligned, using images and measured hand geometry rather than palm proximity alone. If the unsecured object shifts or tilts during entry, make a small separating motion that visibly reduces contact while preserving support, then change alignment before re-entry. If the object follows, revise the separating direction. Once the target is visibly bracketed, hold the palm pose and close, then test retention rather than advancing farther.",
+      "verdict": "helped",
+      "why": "Closing without further translation at step 4 and testing retention at step 5 produced a retained grasp. However, entry caused substantial tilt at steps 2–3 without the prescribed separating and realignment response. Strengthen the requirement to establish stable acquisition geometry before closure."
+    },
+    {
+      "lesson": "After each motion, compare measured pose and visible geometry with the intended result. Build increments from measured state while preserving a separate visually verified task-attitude reference. When tracking worsens or the target leaves view, inspect the other views and use the last verified geometry, allowing for uncertainty, to move the entire hand into visibly clear space. Check the swept paths of the hand, arm, and any held object before rotating to search or restore attitude; a stationary palm does not guarantee clearance. If visibility or clearance does not improve, revise the viewing or approach direction instead of repeating the same adjustment.",
+      "verdict": "neutral",
+      "why": "The policy built position commands from measured state but did not preserve the separate attitude reference. Steps 5–9 repeatedly adopted the latest measured quaternion, and the final assessment emphasized positional stability while ignoring cumulative rotation. The rule did not cause harm; its most important safeguard was not implemented and should be made more explicit."
+    },
+    {
+      "lesson": "After grasping or changing contact, verify retention, object motion relative to support, and task-compatible attitude separately using visible features and a short task-compatible test motion. If evidence is ambiguous, select an informative view or make a swept-path-checked viewing adjustment. If the object slips or changes seating, guide it to stable support and reseat; if seating is secure but attitude is wrong, correct toward the preserved task attitude with observed motions. Begin any required hold only after its conditions are visibly established, and monitor them throughout.",
+      "verdict": "helped",
+      "why": "The retention test and subsequent hold established that the object remained grasped. The independent attitude check was ineffective: steps 8–10 asserted uprightness despite changing wrist orientation and visible geometry. Retain separate condition verification, but require feature-based evidence and corrective action before counting or completing a hold."
+    }
+  ],
+  "lessons": [
+    {
+      "lesson": "Preserve a visually verified orientation reference for the intended task phase separately from the latest measured pose; update the goal only for a deliberate task-required attitude change, not to absorb tracking error. After every motion or hold, compare measured rotation and visible object attitude with that reference even when position is stable. If seating remains secure but attitude drifts, make bounded corrections toward the reference after checking swept clearance for the hand, arm, and held object. If seating changes, guide the object to stable support and reseat before continuing.",
+      "evidence_steps": [
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "why": "Successive commands copied measured wrist orientation rather than maintaining a fixed verified goal. Tilt increased during both lifting and stationary holds, while the completion assessment cited only small positional tracking changes. Correcting attitude drift was the most direct missing action."
+    },
+    {
+      "lesson": "Align the intended contact region inside the actual grasp aperture using visible opposing surfaces and measured hand geometry, not palm proximity alone. If entry unintentionally shifts or tilts an unsecured object, make a small separating motion that visibly reduces contact while preserving support, then change the approach alignment. If the object follows, revise the separating direction. Establish stable support and intended acquisition geometry before closing; once visibly bracketed, close without further advance and test retention.",
+      "evidence_steps": [
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "why": "Early entry tipped the mug substantially, and the next action continued alignment through contact rather than separating and resetting. The evaluator recorded a tilted pre-closure state. Closing at a fixed palm pose and testing retention did help, so those behaviors should be retained."
+    },
+    {
+      "lesson": "Verify retention, task-compatible attitude, and required object displacement separately using identifiable object features and their relationship to the support. Do not substitute palm motion, an upward-facing surface, or an arbitrary surface-depth point for the required object condition. If a condition is uncertain, inspect an informative view or make a swept-clearance-checked viewing adjustment, then correct the attitude, displacement, or seating as indicated. Start or restart any required hold only after all conditions are established, and recheck them throughout before declaring completion.",
+      "evidence_steps": [
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "why": "The object remained retained, but this was repeatedly conflated with uprightness. Step 8 compared a visible body point with the table, and the final assessment relied on palm stability despite continuing rotation. Independent object-based checks would have prevented premature completion."
+    },
+    {
+      "lesson": "Probe depth only on an identifiable feature in the current image from the depth-source camera, using that image's pixel convention; never transfer pixels from another view. Reconcile each return with the intended surface, visible support, and measured hand before using it. If correspondence is inconsistent or ambiguous, reidentify the feature in the source image or use an informative RGB view to choose a clearance-checked visibility adjustment. Reuse geometry while observations remain consistent with it, and probe only unresolved uncertainty that changes the next action.",
+      "evidence_steps": [
+        1,
+        2,
+        3,
+        4,
+        8
+      ],
+      "why": "Depth provided useful approach geometry, but some samples returned support or other surfaces rather than the presumed target feature. Step 3's sampled pixels appear inconsistent with the head-view target location. Explicit source-image correspondence would preserve useful depth sensing without accepting plausible but unidentified points."
+    }
+  ],
+  "rejected_lessons": []
+}

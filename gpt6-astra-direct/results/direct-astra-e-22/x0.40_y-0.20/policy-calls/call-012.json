@@ -1,0 +1,114 @@
+{
+  "call": 12,
+  "step_id": 11,
+  "model": "gpt-6-astra",
+  "response_id": "chatcmpl-resp_05eade1333a72cd0016ab3ff4fb0fc87d28d78d1e52b34d208",
+  "sent_at": "2026-09-23T16:33:09.819+00:00",
+  "received_at": "2026-09-23T16:33:29.241+00:00",
+  "sim_time_s": 12.37,
+  "images_sent": [
+    {
+      "camera": "head_camera",
+      "file": "obs/step-011/head_camera.png",
+      "sha256": "b1fa9cfb568c52ec0f1e2a30bf5407d44797753c8a10b129e3dc8d4fea7c616d"
+    },
+    {
+      "camera": "left_wrist_camera",
+      "file": "obs/step-011/left_wrist_camera.png",
+      "sha256": "32f8f9555cf5ce46102010eb87d3b50277c6aec5123fdcc86dbd370a21fa6b02"
+    },
+    {
+      "camera": "right_wrist_camera",
+      "file": "obs/step-011/right_wrist_camera.png",
+      "sha256": "3225a26949340af4b9fcd452056bf80bb399640aeec0ced32d84a0979e12a491"
+    }
+  ],
+  "latency_s": 19.39,
+  "usage": {
+    "input_tokens": 3320,
+    "output_tokens": 343
+  },
+  "model_text": "(empty response)",
+  "depth_probes": [
+    {
+      "camera": "head_camera",
+      "points": [
+        [
+          837,
+          399
+        ],
+        [
+          832,
+          370
+        ],
+        [
+          756,
+          370
+        ]
+      ],
+      "result": [
+        {
+          "u": 837,
+          "v": 399,
+          "valid": true,
+          "depth_m": 0.5154,
+          "point": [
+            0.3711,
+            -0.1739,
+            0.7759
+          ]
+        },
+        {
+          "u": 832,
+          "v": 370,
+          "valid": true,
+          "depth_m": 0.5172,
+          "point": [
+            0.3883,
+            -0.1596,
+            0.7849
+          ]
+        },
+        {
+          "u": 756,
+          "v": 370,
+          "valid": true,
+          "depth_m": 0.5544,
+          "point": [
+            0.3729,
+            -0.1175,
+            0.7482
+          ]
+        }
+      ],
+      "response_id": "chatcmpl-resp_09c590df4a71e2ef016ab3ff488eec87d2bd4e9b06ab977d62"
+    }
+  ],
+  "observed": {
+    "palm": {
+      "position": [
+        0.28063,
+        -0.3041,
+        0.87062
+      ],
+      "quaternion_wxyz": [
+        0.998104,
+        -0.019798,
+        0.001435,
+        -0.058254
+      ]
+    },
+    "arm_joints_rad": [
+      -0.0004,
+      -0.54027,
+      -0.92908,
+      0.88253,
+      0.29205,
+      -0.42877,
+      0.44406
+    ],
+    "waist_yaw_rad": 0.56137,
+    "gripper_closure": 0.0
+  },
+  "error": "modelo devolveu 2 tool calls"
+}

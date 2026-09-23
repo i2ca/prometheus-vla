@@ -1,0 +1,185 @@
+{
+  "call": 1,
+  "step_id": 0,
+  "model": "gpt-6-astra",
+  "response_id": "chatcmpl-resp_02618b13fab7d048016ab3f3494de487d28f289c95cf188e7c",
+  "sent_at": "2026-09-23T15:41:56.910+00:00",
+  "received_at": "2026-09-23T15:42:07.315+00:00",
+  "sim_time_s": 0.5,
+  "images_sent": [
+    {
+      "camera": "head_camera",
+      "file": "obs/step-000/head_camera.png",
+      "sha256": "6e49dbbf35a8b0056fb40a79b3bb3f1dd15a29a7267fd57bf92d56ed855442bf"
+    },
+    {
+      "camera": "left_wrist_camera",
+      "file": "obs/step-000/left_wrist_camera.png",
+      "sha256": "46b1d1e756dbacb1785238bd22a8409bff63addb0a4227b5b4e6e9f7f4fe0e84"
+    },
+    {
+      "camera": "right_wrist_camera",
+      "file": "obs/step-000/right_wrist_camera.png",
+      "sha256": "73fc0c16b0b83ba2264b5427a13d8d1e4e10958cbbe3501bbd05e0040f33ad67"
+    }
+  ],
+  "latency_s": 10.37,
+  "usage": {
+    "input_tokens": 3012,
+    "output_tokens": 170
+  },
+  "model_text": "(empty response)",
+  "depth_probes": [
+    {
+      "camera": "head_camera",
+      "points": [
+        [
+          640,
+          210
+        ],
+        [
+          645,
+          150
+        ],
+        [
+          560,
+          270
+        ],
+        [
+          750,
+          260
+        ],
+        [
+          635,
+          245
+        ]
+      ],
+      "result": [
+        {
+          "u": 640,
+          "v": 210,
+          "valid": true,
+          "depth_m": 0.5194,
+          "point": [
+            0.3648,
+            -0.1818,
+            0.8404
+          ]
+        },
+        {
+          "u": 645,
+          "v": 150,
+          "valid": true,
+          "depth_m": 0.5665,
+          "point": [
+            0.437,
+            -0.2028,
+            0.8229
+          ]
+        },
+        {
+          "u": 560,
+          "v": 270,
+          "valid": true,
+          "depth_m": 0.5925,
+          "point": [
+            0.3479,
+            -0.1306,
+            0.751
+          ]
+        },
+        {
+          "u": 750,
+          "v": 260,
+          "valid": true,
+          "depth_m": 0.4016,
+          "point": [
+            0.2792,
+            -0.2122,
+            0.9298
+          ]
+        },
+        {
+          "u": 635,
+          "v": 245,
+          "valid": true,
+          "depth_m": 0.5707,
+          "point": [
+            0.3602,
+            -0.1951,
+            0.7812
+          ]
+        }
+      ],
+      "response_id": "chatcmpl-resp_0d9471d0560f6031016ab3f34580ec87d29704a2eabeed049f"
+    }
+  ],
+  "observed": {
+    "palm": {
+      "position": [
+        0.18672,
+        -0.22595,
+        0.90596
+      ],
+      "quaternion_wxyz": [
+        0.982492,
+        -0.175626,
+        0.043489,
+        -0.044417
+      ]
+    },
+    "arm_joints_rad": [
+      0.06409,
+      -0.35,
+      -0.0632,
+      -0.09523,
+      -0.00209,
+      0.13248,
+      -0.01372
+    ],
+    "waist_yaw_rad": 0.0,
+    "gripper_closure": 0.0
+  },
+  "tool": "actuate",
+  "what_i_see": "Head shows upright white mug left of the open right hand; table surface below at z .751. Right wrist shows mug at lower left beside fingers; left wrist shows robot and table without mug.",
+  "arguments": {
+    "what_i_see": "Head shows upright white mug left of the open right hand; table surface below at z .751. Right wrist shows mug at lower left beside fingers; left wrist shows robot and table without mug.",
+    "reason": "Advance above support toward the mug while lowering slightly to align the open aperture with its body.",
+    "steps": 5,
+    "position": [
+      0.228,
+      -0.215,
+      0.883
+    ],
+    "quaternion_wxyz": [
+      0.982492,
+      -0.175626,
+      0.043489,
+      -0.044417
+    ],
+    "gripper": "open"
+  },
+  "result": {
+    "status": "executed",
+    "frames": 30,
+    "requested_position": [
+      0.228,
+      -0.215,
+      0.883
+    ],
+    "reached_position": [
+      0.22676,
+      -0.21638,
+      0.88293
+    ],
+    "position_gap_m": 0.0019,
+    "rotation_gap_rad": 0.1369,
+    "hand_table_contact": [],
+    "self_collision": [],
+    "ik_at_request": {
+      "position_error_m": 0.0002991422849802932,
+      "orientation_error_rad": 0.0009544586568249407,
+      "iterations": 65
+    }
+  }
+}

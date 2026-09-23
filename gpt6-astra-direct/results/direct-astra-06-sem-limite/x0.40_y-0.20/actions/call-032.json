@@ -1,0 +1,44 @@
+{
+  "accepted": true,
+  "action": {
+    "reason": "Retract the open palm 1 cm toward the robot at unchanged height to separate the hand's occlusion from the mug and resolve approach depth. Keep the motion small near the table and do not close on an uncertain enclosure.",
+    "steps": 1,
+    "target": {
+      "position": [
+        0.2425,
+        -0.21138,
+        0.97292
+      ],
+      "quaternion_wxyz": [
+        0.979004,
+        -0.161686,
+        0.08267,
+        -0.092597
+      ],
+      "gripper": "open"
+    }
+  },
+  "executed": {
+    "status": "executed",
+    "frames": 6,
+    "requested_position": [
+      0.2425,
+      -0.21138,
+      0.97292
+    ],
+    "reached_position": [
+      0.24231,
+      -0.2118,
+      0.9735
+    ],
+    "position_gap_m": 0.0007,
+    "rotation_gap_rad": 0.0371,
+    "hand_table_contact": [],
+    "self_collision": [],
+    "ik_at_request": {
+      "position_error_m": 0.00022892903298292138,
+      "orientation_error_rad": 0.0007116104716089867,
+      "iterations": 9
+    }
+  }
+}

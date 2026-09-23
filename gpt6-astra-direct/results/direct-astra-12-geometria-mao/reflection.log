@@ -1,0 +1,85 @@
+{
+  "episode": "results/direct-astra-12-geometria-mao/x0.40_y-0.20",
+  "at": "2026-09-23T15:51:25+00:00",
+  "critic_model": "gpt-6-astra",
+  "response_id": "chatcmpl-resp_05fe9469394e3cf5016ab3f4ffdf1887d2b7cf44aee7959d8f",
+  "usage": {
+    "input_tokens": 11761,
+    "output_tokens": 4097
+  },
+  "accepted": false,
+  "diagnosis": "The episode achieved pickup and retention but failed the upright requirement. The evaluator credited a 0.093 m lift and two-second retention, while recording 41.31 degrees of tilt before closure. The failure began during approach: successive open-hand advances contacted and increasingly tipped the mug instead of cleanly seating it within the aperture. Closing secured an already tilted grasp. Sensor use was only partly effective: depth established support height and candidate surfaces, but these measurements were not converted into reliable whole-hand clearance or object-pose checks. As the target became occluded and clipped, the policy repeatedly described it as upright without sufficient evidence. It also copied each measured wrist orientation into the next command, allowing orientation drift despite intending to preserve orientation. The final decision relied too heavily on stable palm position and gripper closure rather than verifying the object's required pose throughout the hold.",
+  "failure_mode": "Contact-induced tipping before closure, followed by an inadequately verified tilted grasp and premature completion based on hand-state proxies.",
+  "lessons_review": [
+    {
+      "lesson": "Check the swept extent of the whole hand before translating, lowering or rotating; an open gripper and a clear palm path do not establish finger clearance. Compare the target's pose relative to its support after each unverified interaction. If it shifts or tilts unexpectedly before secure control, relieve contact along a visibly clear path, observe its settled pose, and reorient in free space before trying a revised approach. Do not assume a lateral or downward correction is contact-free.",
+      "verdict": "neutral",
+      "why": "This remained relevant but was not effectively enforced. At steps 2–5, advances progressively tipped the mug while the policy continued assuming finger clearance. There were no recorded hand-table collisions, but absence of those collisions did not establish target clearance. Retain the principle and tie it more directly to verified aperture alignment and observed object response."
+    },
+    {
+      "lesson": "Align the intended grasp region with the open finger aperture, not merely with the palm or a finger silhouette. Use available views and depth to confirm opposing contact surfaces bracket that region. If alignment would sweep a finger through the target, withdraw along a clear path and change the hand orientation before reapproaching. Once bracketing is confirmed, hold the palm pose and close rather than continuing to nudge. Check measured closure and visual seating, then test whether the target follows securely; if not, return it to stable support before releasing and realigning.",
+      "verdict": "helped",
+      "why": "The policy held position for closure at step 6 and performed a test lift at step 7, obtaining a retained grasp. However, it asserted bracketing despite prior target disturbance and treated following the hand as sufficient without verifying required orientation. Preserve these actions while strengthening the evidence needed to proceed."
+    },
+    {
+      "lesson": "Keep the target's interaction region and its relationship to nearby support visible enough to judge alignment and unintended motion. If clipping or occlusion makes that judgment unreliable, use another available camera or reposition the wrist through known-clear space, guided by the last confirmed target region and observed frame-exit direction. Check whether each viewing motion improves visibility and change direction if it does not. Reacquire the target's current pose before resuming contact-directed motion.",
+      "verdict": "neutral",
+      "why": "The rule did not cause stalling or unnecessary viewing detours; it was largely bypassed. From step 6 onward, the head view was clipped and the wrist view partially occluded, yet the policy continued asserting uprightness. Keep visibility recovery, explicitly connecting it to uncertainty about task-relevant pose."
+    },
+    {
+      "lesson": "Use each depth query to answer a specific pending alignment or clearance question at a visually identified surface in the depth camera's current image. Treat the result as a surface point, not a target center, and combine it with visible finger geometry and measured palm pose to choose the next correction. If the sample may belong to the hand or background, select an unambiguous surface or restore visibility. Reuse unchanged support geometry, and after acting verify that the intended spatial relationship improved before collecting more samples.",
+      "verdict": "helped",
+      "why": "Depth provided useful support and surface estimates, and the policy resampled after null results at step 6. Its interpretation remained weak: repeated samples did not reveal whether advances were seating or displacing the mug, and step 9 used a visible wall point as evidence about base clearance. Preserve purposeful probing and strengthen feature identification and outcome verification."
+    }
+  ],
+  "lessons": [
+    {
+      "lesson": "Plan an approach using the swept extent of the whole hand, and align the intended grasp region inside the open aperture with opposing contact surfaces visibly bracketing it. Use smaller corrections as clearance becomes uncertain, checking the object's pose relative to its support after each correction. If the object shifts or tilts unintentionally before secure control, relieve contact along a visibly clear path, let it settle, and reorient in free space for an approach that brackets rather than pushes it. Once bracketing is verified, hold the palm pose and close instead of continuing to nudge.",
+      "evidence_steps": [
+        2,
+        3,
+        4,
+        5,
+        6
+      ],
+      "why": "Open-hand advances produced progressively greater tilt, reaching 38.5 degrees during step 5; the evaluator measured 41.31 degrees before closure. Checking the object's response to each approach correction would have exposed pushing before it became a tilted grasp."
+    },
+    {
+      "lesson": "Keep the interaction region and enough object features visible to judge its task-relevant pose relative to nearby support; apparent alignment with the image frame is not sufficient. If clipping or occlusion prevents that judgment, use another available view or a clearance-checked viewing motion, and verify that visibility improves. Query depth only on visually identified surfaces in the current depth-camera image to resolve a pending pose or clearance question. Treat each result as that surface point, reject ambiguous samples, and reuse unchanged support geometry rather than collecting more points without changing the decision.",
+      "evidence_steps": [
+        1,
+        5,
+        6,
+        7,
+        9,
+        12
+      ],
+      "why": "The sensor could locate surfaces, but partial views were repeatedly interpreted as showing uprightness. Step 9's wall sample did not establish the location of the base. Better feature identification and visibility recovery were more important than additional undirected sampling."
+    },
+    {
+      "lesson": "During translations and holds, compare measured hand orientation with a deliberately chosen task-compatible reference rather than automatically adopting each new measured orientation as the next target. If unintended drift appears, shorten the next motion and correct toward the reference within verified hand-and-object clearance. If that correction would strain an unstable contact or compromise the object's required pose, establish stable support and revise the grasp or orientation before continuing.",
+      "evidence_steps": [
+        7,
+        8,
+        9,
+        10,
+        11
+      ],
+      "why": "The policy intended to keep orientation fixed but repeatedly commanded the latest measured quaternion. Substantial orientation tracking errors during the lifts therefore became part of subsequent targets instead of being corrected. A deliberate reference would distinguish intended task rotation from accumulated drift."
+    },
+    {
+      "lesson": "Verify manipulation outcomes from the object, not just the commanded motion, palm stability, or gripper closure. After closing, inspect seating and use a small task-compatible test motion while tracking identifiable object features relative to the hand and support. Confirm required displacement and orientation from those features. If the relationship cannot be judged, restore an informative view; if unintended slipping or rotation occurs, return the object to stable support before releasing and realigning. Start any required hold only after the required state is verified, monitor that state throughout, and complete only when the object satisfies it.",
+      "evidence_steps": [
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12
+      ],
+      "why": "The grasp retained the mug, but retention and stable closure did not establish uprightness. The policy continued lifting and then declared completion despite substantial tilt. Object-based pose verification would have triggered recovery rather than counting a stable hand hold as task success."
+    }
+  ],
+  "rejected_lessons": []
+}

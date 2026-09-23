@@ -25,8 +25,10 @@ PRICES = {"gpt-6-astra": (10.0, 50.0), "gpt-5.6-sol": (4.0, 20.0)}
 
 BG, PANEL, CARD, INK, MUTED, LINE = (13, 15, 20), (22, 25, 33), (30, 34, 45), (236, 238, 243), (146, 153, 168), (50, 55, 68)
 ACCENT, OK, BAD, WARN, CUP = (96, 165, 250), (74, 222, 128), (248, 113, 113), (251, 191, 36), (230, 230, 230)
-F = "/usr/share/fonts/truetype/noto/NotoSans-{}.ttf"
-M = "/usr/share/fonts/truetype/noto/NotoSansMono-{}.ttf"
+FONT_DIR = next(d for d in ("/usr/share/fonts/truetype/noto", str(Path.home() / ".local/share/fonts"))
+                if Path(d, "NotoSans-Regular.ttf").exists())
+F = FONT_DIR + "/NotoSans-{}.ttf"
+M = FONT_DIR + "/NotoSansMono-{}.ttf"
 
 
 def font(size, bold=False, mono=False):
