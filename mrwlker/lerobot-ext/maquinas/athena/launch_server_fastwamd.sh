@@ -45,7 +45,7 @@ if ! touch "$LOG" 2>/dev/null; then
     echo "aviso: sem escrita no log padrão — usando $LOG"
 fi
 
-cd ~/DEV/prometheus-vla/lerobot-ext
+cd ~/DEV/prometheus-vla/mrwlker/lerobot-ext
 echo "== GPU $GPU | checkpoint $CKPT | log $LOG =="
 exec "$ENV/bin/python" -u init_lerobot_inference_fastwamd_server.py \
     --checkpoint="$CKPT" --port=5600 --debug \

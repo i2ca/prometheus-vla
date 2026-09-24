@@ -119,7 +119,7 @@ ao lado.
 Para atualizar a athena depois de mexer aqui, copie de volta:
 
 ```bash
-scp lerobot-ext/athena/*.sh lerobot-ext/athena/*.py hercules@10.9.8.252:/data/train_output/
+scp lerobot-ext/maquinas/athena/*.sh lerobot-ext/maquinas/athena/*.py hercules@10.9.8.252:/data/train_output/
 ```
 
 Ver `../docs/INFERENCIA_FASTWAMD.md` para o desenho completo do servidor,

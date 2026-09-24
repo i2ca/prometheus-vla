@@ -30,6 +30,14 @@ Ficaram de fora:
 | `unifolm-wla` | github.com/unitreerobotics/unifolm-wla | f33d0e7 + `lerobot-ext/remendos/unifolm-wla.patch` |
 | `unifolm-wma` | github.com/unitreerobotics/unifolm-world-model-action | 3e198de |
 
+`mrwlker/lerobot`, `mrwlker/unifolm-wla` e `mrwlker/unifolm-wma` são links para essas
+pastas **na raiz**: o código que sobe até a raiz (`RAIZ / "unifolm-wla"`) as acha por aqui.
+Na `main` o `unifolm-wla` e o `unifolm-wma` não são submódulos: clone-os na raiz nos
+commits acima (e aplique `lerobot-ext/remendos/unifolm-wla.patch`).
+
+Caminhos absolutos nos scripts apontam para `~/DEV/prometheus-vla/mrwlker/...`; as
+máquinas (athena, pgx) precisam estar na `main` para achar os scripts em `maquinas/`.
+
 ## Por onde começar
 
 | pasta | o quê |

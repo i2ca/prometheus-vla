@@ -7,7 +7,7 @@
 #   replay:   bash launch_client_sim.sh --replay=meu_dataset/white_cup_on_dripper_2026-08-11:1 --replay-uma-vez
 #
 # O servidor precisa estar no ar na athena (GPU 2):
-#   ssh mrwlker@10.9.8.252 'screen -dmS infer bash ~/DEV/prometheus-vla/lerobot-ext/athena/launch_server_fastwamd.sh 2 /data/mrwlker/checkpoints/fastwamd_lora_aug_step4250'
+#   ssh mrwlker@10.9.8.252 'screen -dmS infer bash ~/DEV/prometheus-vla/mrwlker/lerobot-ext/maquinas/athena/launch_server_fastwamd.sh 2 /data/mrwlker/checkpoints/fastwamd_lora_aug_step4250'
 set -euo pipefail
 
 SERVIDOR="${SERVIDOR:-10.9.8.252}"

@@ -37,7 +37,7 @@ export CUDA_VISIBLE_DEVICES=""
 export OMP_NUM_THREADS=1
 
 # O cwd decide qual árvore de assets é lida; da raiz do repo o robô não sobe.
-cd ~/DEV/prometheus-vla/lerobot-ext
+cd ~/DEV/prometheus-vla/mrwlker/lerobot-ext
 
 # Pré-voo: o `connect` do ZMQ NÃO falha com o outro lado ausente. Sem esta
 # checagem o cliente sobe bonito, conecta em sockets que ninguém atende e fica

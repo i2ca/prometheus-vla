@@ -67,7 +67,7 @@ else
     [[ " $* " == *" --wandb.enable=false "* ]] || set -- "$@" --wandb.enable=false
 fi
 
-cd ~/DEV/prometheus-vla/lerobot-ext
+cd ~/DEV/prometheus-vla/mrwlker/lerobot-ext
 
 # ── 3. libstdc++ do conda ANTES de tudo ────────────────────────────────────
 # O numpy exige GLIBCXX_3.4.29 e o libstdc++ do sistema não tem. Sem isto o

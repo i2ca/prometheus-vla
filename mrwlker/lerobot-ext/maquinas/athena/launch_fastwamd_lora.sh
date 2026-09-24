@@ -22,7 +22,7 @@ if [[ "${1:-}" =~ ^[0-9]+$ ]]; then GPU="$1"; shift; else
 fi
 echo "== GPU $GPU ($(nvidia-smi -i "$GPU" --query-gpu=memory.free --format=csv,noheader) livres) | LoRA | $(date '+%F %T') =="
 
-cd ~/DEV/prometheus-vla/lerobot-ext
+cd ~/DEV/prometheus-vla/mrwlker/lerobot-ext
 # Os DOIS caches do HuggingFace, separados de propósito. `HF_HUB_CACHE` são os
 # 25 GB de pesos já baixados (Wan2.2, umt5-xxl, fastwam_base), compartilhados e
 # só de leitura; `HF_HOME` é onde a biblioteca ESCREVE — locks do `datasets`,

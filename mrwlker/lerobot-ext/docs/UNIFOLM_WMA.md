@@ -204,7 +204,7 @@ nasce aleatório, ao contrário do nosso config de 29 dims (§4).
 Precisa de ~17 GB de VRAM (§5), então é na athena — não no notebook.
 
 ```bash
-bash lerobot-ext/athena/launch_wma_interacao.sh 0
+bash lerobot-ext/maquinas/athena/launch_wma_interacao.sh 0
 ```
 
 Sai um mp4 do futuro previsto. A pergunta que ele responde: **o modelo de
@@ -261,7 +261,7 @@ cliente (seu PC) ──ZMQ 5600──> ponte ──HTTP 8000──> real_eval_se
 
 ```bash
 # na athena:
-bash lerobot-ext/athena/launch_wma_server.sh 0 /data/train_output/wma_g1_dex3/checkpoints/last.ckpt
+bash lerobot-ext/maquinas/athena/launch_wma_server.sh 0 /data/train_output/wma_g1_dex3/checkpoints/last.ckpt
 # no seu PC: o MESMO cliente de sempre
 python init_lerobot_inference_fastwamd_client.py --host=<athena> --port=5600
 ```

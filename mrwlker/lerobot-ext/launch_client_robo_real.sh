@@ -70,7 +70,7 @@ if [ -n "$falta" ]; then
 fi
 if ! timeout 3 bash -c "cat < /dev/null > /dev/tcp/$ATHENA/5600" 2>/dev/null; then
     echo "❌ Servidor de inferência fora do ar em $ATHENA:5600. Suba com:"
-    echo "   ssh mrwlker@$ATHENA 'screen -dmS infer bash ~/DEV/prometheus-vla/lerobot-ext/athena/launch_server_fastwamd.sh 2 /data/mrwlker/checkpoints/fastwamd_lora_aug_step4250'"
+    echo "   ssh mrwlker@$ATHENA 'screen -dmS infer bash ~/DEV/prometheus-vla/mrwlker/lerobot-ext/maquinas/athena/launch_server_fastwamd.sh 2 /data/mrwlker/checkpoints/fastwamd_lora_aug_step4250'"
     exit 1
 fi
 

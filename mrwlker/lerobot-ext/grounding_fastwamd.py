@@ -68,7 +68,7 @@ todos) separado de `HF_HOME` (escrita: locks do `datasets`) — apontar os dois
 para o `/data` funciona só para o dono daquela pasta, e falha com
 `PermissionError` depois de dois minutos carregando o modelo:
 
-    cd ~/DEV/prometheus-vla/lerobot-ext
+    cd ~/DEV/prometheus-vla/mrwlker/lerobot-ext
     HF_HUB_CACHE=/data/.cache/huggingface/hub HF_HOME=$HOME/.cache/huggingface \
     HF_HUB_OFFLINE=1 CUDA_VISIBLE_DEVICES=2 OMP_NUM_THREADS=1 \
     python grounding_fastwamd.py \

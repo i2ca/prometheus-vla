@@ -17,7 +17,7 @@ controle de corpo inteiro deles.
     # terminal 2 — simulador com janela + cabine em http://localhost:8090
     cd ~/DEV/Isaac-GR00T && GR00T_SIM_JANELA=1 MUJOCO_GL=glfw \\
       gr00t/eval/sim/GR00T-WholeBodyControl/GR00T-WholeBodyControl_uv/.venv/bin/python \\
-      ~/DEV/prometheus-vla/lerobot-ext/pontes/groot/roda_groot_interativo.py
+      ~/DEV/prometheus-vla/mrwlker/lerobot-ext/pontes/groot/roda_groot_interativo.py
 
 Os botões da cabine, aqui:
   tarefa            reinicia o episódio e roda com a frase enviada

@@ -113,7 +113,7 @@ fi
 # e o notebook chega nele direto. Se um dia não chegar, é a mesma receita.
 if ! alcanca "$ATHENA" 5600; then
     echo "❌ o servidor de inferência não responde em $ATHENA:5600. Suba com:"
-    echo "   ssh $LOGIN@$ATHENA 'screen -dmS infer bash ~/DEV/prometheus-vla/lerobot-ext/athena/launch_server_fastwamd.sh 2 /data/mrwlker/checkpoints/fastwamd_lora_aug_step4250'"
+    echo "   ssh $LOGIN@$ATHENA 'screen -dmS infer bash ~/DEV/prometheus-vla/mrwlker/lerobot-ext/maquinas/athena/launch_server_fastwamd.sh 2 /data/mrwlker/checkpoints/fastwamd_lora_aug_step4250'"
     exit 1
 fi
 
