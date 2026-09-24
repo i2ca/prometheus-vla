@@ -162,6 +162,7 @@ class MotorWLA:
     CAM_CABECA = ("head_camera_antiga", 480, 848)
     CAM_PULSO = ("right_wrist_camera_antiga", 224, 224)
     RAIO_PEGA = 0.04
+    ROTULO = "wla"            # como a fase aparece no painel
 
     CENAS = {
         # nome: (arquivo da cena, frase do treino)
@@ -172,12 +173,14 @@ class MotorWLA:
         # xícara + fruta + prato na mesma mesa: a MESMA imagem serve às duas
         # frases, e o que se testa é se a rede escolhe o objeto pelo texto.
         "multi": ("scene_fruta.xml", "pick up the white cup"),
+        # A cena do `sim_copo_mujoco` e do `cotreino_completo`: xícara na
+        # metade direita, coador na esquerda, na posição fixa do `sorteia_alvo`.
+        "coador": ("scene_fruta.xml", "place the white cup on the dripper"),
     }
 
     def __init__(self, pasta: Path, base_vlm: Path, lead: int = 12, hz: float = 30.0,
                  max_consultas: int = 40, copo_xy=None, cena: str = "copo",
                  fruta: str = "limao", fisica: bool = True, forca: str = "forte"):
-        from pontes.wla.inferencia_wla import PoliticaWLA
         sys.path.insert(0, str(RAIZ / "pontes" / "unifolm-vla"))
         import roda_unifolm_mujoco as ponte
 
@@ -193,10 +196,7 @@ class MotorWLA:
         self.demo, self.cena, self.rng = base.demo, base.cena, base.rng
         self.ponte = ponte
         self.cin = ponte.Cinematica()
-        t0 = time.time()
-        print(f"⏳ carregando a WLA de {pasta} (VLM em {base_vlm})…")
-        self.pol = PoliticaWLA(pasta, base_vlm)
-        print(f"✅ WLA carregada em {time.time() - t0:.0f} s — {self.pol.carga}")
+        self._carrega_politica(pasta, base_vlm)
         self.lead = int(lead)
         self.hz = float(hz)
         self.max_consultas = max_consultas
@@ -226,6 +226,25 @@ class MotorWLA:
         self._prepara_fisica()
         self._abre_trabalhador()
 
+    # ── o que muda de uma rede para outra (o MotorPI05 sobrescreve) ──────
+    def _carrega_politica(self, pasta, base_vlm):
+        from pontes.wla.inferencia_wla import PoliticaWLA
+        t0 = time.time()
+        print(f"⏳ carregando a WLA de {pasta} (VLM em {base_vlm})…")
+        self.pol = PoliticaWLA(pasta, base_vlm)
+        print(f"✅ WLA carregada em {time.time() - t0:.0f} s — {self.pol.carga}")
+
+    def _consulta(self, obs):
+        return self.pol.age(obs["imagens"], obs["texto"], obs["T_esq"], obs["T_dir"],
+                            obs["garra_esq"], obs["garra_dir"], obs["cintura3"])
+
+    @staticmethod
+    def _tamanho(pedaco):
+        return len(pedaco["pose_dir"])
+
+    def _memoria_gpu(self):
+        return round(self.pol.torch.cuda.memory_reserved() / 1e9, 2)
+
     # ── a thread que roda a rede: UMA para sempre ───────────────────────
     # Era criada a cada comando. Cada thread nova que toca em CUDA ganha as
     # suas áreas de trabalho (cuBLAS e afins) e elas NÃO voltam quando a
@@ -244,10 +263,9 @@ class MotorWLA:
                 except queue.Empty:
                     continue
                 t0 = time.perf_counter()
-                out = self.pol.age(obs["imagens"], obs["texto"], obs["T_esq"], obs["T_dir"],
-                                   obs["garra_esq"], obs["garra_dir"], obs["cintura3"])
+                out = self._consulta(obs)
                 self.respostas.put((passo_obs, out, time.perf_counter() - t0,
-                                    obs["T_dir"][:3, 3]))
+                                    obs["mao_dir"]))
 
         self.trab = threading.Thread(target=trabalhador, daemon=True, name="wla")
         self.trab.start()
@@ -276,6 +294,7 @@ class MotorWLA:
             "garra_esq": ponte.dedos_para_garra(d.qpos[self.adr_mao["esq"]], "esq"),
             "garra_dir": ponte.dedos_para_garra(d.qpos[self.adr_mao["dir"]], "dir"),
             "cintura3": np.array([0.0, 0.0, float(d.qpos[cena.adr_cintura])], np.float32),
+            "mao_dir": dir_[0],
         }
 
     # ── o objeto que a mão leva: a xícara, ou a fruta no modo fruta ──────
@@ -315,7 +334,8 @@ class MotorWLA:
         f = {"nome": fruta, "qpos": m.jnt_qposadr[jid], "dof": m.jnt_dofadr[jid],
              "z0": cena.z_mesa, "centro": 0.027,
              "geom": gid(f"colisao_{fruta}"), "solda": eid(f"pega_{fruta}")}
-        self.objetos = {"copo": [copo], "fruta": [f], "multi": [f, copo]}[self.modo]
+        self.objetos = {"copo": [copo], "coador": [copo], "fruta": [f],
+                        "multi": [f, copo]}[self.modo]
         em_uso = {o["qpos"] for o in self.objetos}
         self.guardados = [
             m.jnt_qposadr[j] for j in range(m.njnt)
@@ -376,7 +396,7 @@ class MotorWLA:
     def _sorteia_obj(self):
         """Fruta na caixa perto do robô; no `multi`, a xícara na faixa do
         dataset dela, sem encostar na fruta."""
-        if self.modo == "copo":
+        if self.modo in ("copo", "coador"):
             self.cena.sorteia_copo(self.rng)
             return
         fruta = self.objetos[0]
@@ -397,8 +417,11 @@ class MotorWLA:
         cena, d = self.cena, self.cena.d
         for k, adr in enumerate(self.guardados):
             d.qpos[adr:adr + 3] = self.LONGE + [0, 0.3 * (k + 1), 0]
-        if self.modo == "copo":
+        if self.modo in ("copo", "coador"):
             d.mocap_pos[self.mocap_prato] = self.LONGE + [0, -0.5, 0]
+            if self.modo == "coador":
+                self.pos_coador = cena.sorteia_alvo(self.rng)
+                cena.desenha_alvo(self.pos_coador)
             return
         d.mocap_pos[cena.mocap_alvo] = self.LONGE + [0.5, 0, 0]      # o coador
         d.mocap_pos[self.mocap_prato] = self.pos_prato
@@ -406,7 +429,7 @@ class MotorWLA:
     def _solta(self, o):
         """Garra abriu: o objeto cai no prato se estiver em cima dele."""
         p = self._obj_pos(o)
-        if self.modo != "copo" and np.linalg.norm(p[:2] - self.pos_prato[:2]) < self.RAIO_PRATO:
+        if self.modo in ("fruta", "multi") and np.linalg.norm(p[:2] - self.pos_prato[:2]) < self.RAIO_PRATO:
             p[2] = self.pos_prato[2] + 0.012 + (o["z0"] - self.cena.z_mesa)
         else:
             p[2] = o["z0"]
@@ -600,12 +623,12 @@ class MotorWLA:
                     # Alinhamento: o pedaço vale a partir do instante da
                     # observação; o que passou enquanto a rede pensava já era.
                     pulados = passo - passo_obs
-                    cursor = min(pulados, len(pedaco["pose_dir"]) - 1)
+                    cursor = min(pulados, self._tamanho(pedaco) - 1)
                     self._publica_consulta(n_pedacos, pedaco, mao_obs, texto, dt, pulados)
                 except queue.Empty:
                     pass
 
-                restante = len(pedaco["pose_dir"]) - cursor
+                restante = self._tamanho(pedaco) - cursor
                 if (not em_voo and restante <= self.lead and n_pedacos < self.max_consultas):
                     pedidos.put((passo, self._observa(texto)))
                     em_voo = True
@@ -619,14 +642,14 @@ class MotorWLA:
                 if not em_voo and restante <= 0:
                     break                # acabou o orçamento de consultas
 
-                ao_passo(f"wla {n_pedacos}/{self.max_consultas}"
+                ao_passo(f"{self.ROTULO} {n_pedacos}/{self.max_consultas}"
                          + (f" [{na_mao['nome']} na mão]" if na_mao else ""), q)
                 passo += 1
                 self.info["laco"] = {
                     "passo": passo, "pedaco": n_pedacos, "cursor_no_pedaco": cursor,
                     "restam_no_pedaco": max(restante - 1, 0), "lead": self.lead,
                     "rede_calculando": em_voo, "passos_parado_esperando_rede": parado,
-                    "memoria_gpu_gb": round(self.pol.torch.cuda.memory_reserved() / 1e9, 2),
+                    "memoria_gpu_gb": self._memoria_gpu(),
                 }
                 proximo += periodo
                 espera = proximo - time.perf_counter()
@@ -649,7 +672,9 @@ class MotorWLA:
             p = self._centro(o)
             if na_mao is o:
                 est = "NA MÃO" + (", levantada" if p[2] > o["z0"] + o["centro"] + 0.05 else "")
-            elif self.modo != "copo" and np.linalg.norm(p[:2] - self.pos_prato[:2]) < self.RAIO_PRATO:
+            elif self.modo == "coador" and np.linalg.norm(p[:2] - self.pos_coador[:2]) < 0.05:
+                est = "NO COADOR"
+            elif self.modo in ("fruta", "multi") and np.linalg.norm(p[:2] - self.pos_prato[:2]) < self.RAIO_PRATO:
                 est = "NO PRATO"
             else:
                 est = "na mesa"
@@ -685,7 +710,15 @@ class MotorWLA:
         d.qpos[self.adr_mao["dir"]] = dedos_d
         d.qpos[self.adr_mao["esq"]] = dedos_e
         mujoco.mj_forward(cena.m, d)
+        na_mao = self._pega_cinematica(g, na_mao)
+        chegou = self.cin.fk(q)[1][0]
+        self._info_acao(i, pd, chegou, g, pedaco)
+        return q, g, na_mao
 
+    def _pega_cinematica(self, g, na_mao):
+        """Sem física: o objeto gruda na pinça se ela FECHA perto dele, e cai
+        quando ela abre. Devolve o objeto preso (ou None)."""
+        cena, d, ponte = self.cena, self.cena.d, self.ponte
         fechada = g < 0.5 * ponte.GARRA_ABERTA
         # `na_mao` é o OBJETO preso (ou None). A pinça pega o que estiver mais
         # perto dela quando a rede fecha — a escolha de qual é da rede.
@@ -702,10 +735,7 @@ class MotorWLA:
         if na_mao is not None:
             self._poe_obj(pinca - [0, 0, na_mao["centro"]], na_mao)
             mujoco.mj_forward(cena.m, d)
-
-        chegou = self.cin.fk(q)[1][0]
-        self._info_acao(i, pd, chegou, g, pedaco)
-        return q, g, na_mao
+        return na_mao
 
     def _info_acao(self, i, pd, chegou, g, pedaco):
         # Quanto a mão ficou longe do que a rede pediu. Sem física é só a IK;
@@ -742,6 +772,125 @@ class MotorWLA:
         if self.cabine is not None:
             for papel, img in out.get("atencao", {}).items():
                 self.cabine.publica_quadro(f"atencao_{papel}", img)
+
+
+class MotorPI05(MotorWLA):
+    """O π0.5 do `pega_copo_sem_prof_2026-09-18` na mesma cena, painel e laço.
+
+    Herda do `MotorWLA` tudo menos a rede: cena, objetos, `ç`, pega cinemática,
+    o laço de pedaço/antecedência e a thread única da rede. Muda o que entra e
+    o que sai.
+
+    ── Entra e sai JUNTA, não pose de mão ──────────────────────────────────
+    O dataset foi gravado pelo `gerar_dataset_mujoco.py`, que guarda o MESMO
+    vetor de 29 como estado e como ação (cinemática pura: a junta comandada é a
+    atingida). Ordem do `NOMES_29`: 0..13 braços na ordem do `JUNTAS_BRACO`,
+    14 yaw da cintura, 15..21 mão esquerda (sempre zero no dataset), 22..28 mão
+    direita na ordem de `cena.mao`. A ação vai direto para o `qpos`, sem IK.
+
+    ── Câmeras ─────────────────────────────────────────────────────────────
+    As mesmas `_antiga` do `MotorWLA`, nas mesmas resoluções: são as que
+    gravaram este dataset (cabeça 480x848, pulso 224x224).
+
+    Frase do treino: "pick up the white cup" — a ÚNICA do dataset. Qualquer
+    outra frase é fora da distribuição.
+    """
+
+    ROTULO = "pi05"
+
+    def _carrega_politica(self, pasta, base_vlm):
+        import torch
+        import init_lerobot_inference_v3 as v3   # os carregadores do cliente do robô
+
+        self.torch = torch
+        t0 = time.time()
+        self.pol, tipo = v3.load_policy(str(pasta), torch.device("cuda"))
+        self.pre, self.pos = v3.load_pre_post_processors(str(pasta), self.pol)
+        self.chaves_img = list(self.pol.config.image_features)
+        print(f"✅ π0.5 ({tipo}) carregado em {time.time() - t0:.0f} s — "
+              f"câmeras {self.chaves_img}, pedaço {self.pol.config.chunk_size}")
+
+    def _memoria_gpu(self):
+        return round(self.torch.cuda.memory_reserved() / 1e9, 2)
+
+    @staticmethod
+    def _tamanho(pedaco):
+        return len(pedaco["acoes"])
+
+    def _estado29(self):
+        cena, d = self.cena, self.cena.d
+        e = np.zeros(29, np.float32)
+        e[:14] = d.qpos[cena.q_braco]
+        e[14] = d.qpos[cena.adr_cintura]
+        for k, j in enumerate(cena.mao[:7]):
+            e[22 + k] = d.qpos[j["adr"]]
+        return e
+
+    def _observa(self, texto):
+        torch = self.torch
+        fotos = {"head_camera": self._foto(self.CAM_CABECA[0]).copy(),
+                 "right_wrist_camera": self._foto(self.CAM_PULSO[0]).copy()}
+        bruto = {"observation.state": torch.from_numpy(self._estado29()), "task": texto}
+        for chave in self.chaves_img:
+            nome = chave.rsplit(".", 1)[-1]
+            if nome in fotos:
+                bruto[chave] = torch.from_numpy(fotos[nome]).permute(2, 0, 1).float().div(255.0)
+        return {"bruto": bruto,
+                "mao_dir": self.cin.fk(self.cena.d.qpos[self.cena.q_braco].copy())[1][0]}
+
+    def _consulta(self, obs):
+        torch = self.torch
+        lote = self.pre(obs["bruto"])
+        lote.pop("action", None)
+        lote = {k: v for k, v in lote.items() if isinstance(v, torch.Tensor)}
+        with torch.inference_mode():
+            norm = self.pol.predict_action_chunk(lote)          # (1, 50, 29)
+            acoes = self.pos(norm)
+        if isinstance(acoes, dict):
+            acoes = acoes["action"]
+        return {"acoes": acoes[0].float().cpu().numpy()}
+
+    def _aplica(self, pedaco, i, q, na_mao):
+        cena, d, ponte = self.cena, self.cena.d, self.ponte
+        a = pedaco["acoes"][i]
+        q = a[:14].astype(float)
+        d.qpos[cena.q_braco] = q
+        d.qpos[cena.adr_cintura] = float(np.clip(a[14], -cena.lim_cintura, cena.lim_cintura))
+        for k, j in enumerate(cena.mao[:7]):
+            d.qpos[j["adr"]] = a[22 + k]
+        mujoco.mj_forward(cena.m, d)
+        g = float(ponte.dedos_para_garra(d.qpos[self.adr_mao["dir"]], "dir"))
+        na_mao = self._pega_cinematica(g, na_mao)
+        self.info["acao"] = {
+            "passo_do_pedaco": i,
+            "juntas_braco_dir": [round(float(v), 4) for v in q[7:14]],
+            "garra_dir": round(g, 3),
+            "cintura_yaw": round(float(a[14]), 4),
+            "fisica": False,
+        }
+        return q, g, na_mao
+
+    def _publica_consulta(self, k, out, mao_obs, texto, dt, pulados):
+        """Mesmo JSON do `MotorWLA`: a trajetória da mão vem da FK das juntas
+        previstas, para o gráfico do painel funcionar igual."""
+        A = out["acoes"]
+        P = [self.cin.fk(a[:14].astype(float))[1][0] for a in A]
+        garra = [float(self.ponte.dedos_para_garra(a[22:29], "dir")) for a in A]
+        self.info["predicao"] = {
+            "pedaco": k,
+            "texto_enviado": texto,
+            "tempo_s": round(dt, 3),
+            "pulados_por_atraso": int(pulados),
+            "mao_dir_na_observacao": [round(float(v), 4) for v in mao_obs],
+            "copo_pelvis": [round(float(v), 4) for v in self._copo_pelvis()],
+            "objetos_pelvis": {
+                o["nome"]: [round(float(v), 4) for v in
+                            self.cena.para_pelvis(self._T((self._centro(o), np.eye(3))))[:3, 3]]
+                for o in self.objetos},
+            "mao_dir_xyz": [[round(float(v), 4) for v in p] for p in P],
+            "garra_dir": [round(v, 3) for v in garra],
+            "cintura_yaw": [round(float(a[14]), 4) for a in A],
+        }
 
 
 class Cerebro:
@@ -906,11 +1055,13 @@ def main():
     p = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     p.add_argument("--porta", type=int, default=8090)
     p.add_argument("--host", default="0.0.0.0")
-    p.add_argument("--motor", choices=("roteirizado", "wla", "isaac"), default="roteirizado",
+    p.add_argument("--motor", choices=("roteirizado", "wla", "pi05", "isaac"), default="roteirizado",
                    help="isaac: fecha o laço com o simulador da Unitree (IsaacLab) por DDS e "
                         "ZMQ, sem renderizar nada na tela. Suba o `sobe_sim_dex3.sh` antes.")
-    p.add_argument("--modelo", type=Path, default=Path.home() / "modelos/wla_prometheus_copo",
-                   help="pasta do treino da WLA (config.yaml + final_model/)")
+    p.add_argument("--modelo", type=Path, default=None,
+                   help="WLA: pasta do treino (config.yaml + final_model/), padrão "
+                        "~/modelos/wla_prometheus_copo. pi05: a `pretrained_model` do "
+                        "checkpoint, padrão ~/ckpts_nossos/pi05_pega_copo_sim")
     p.add_argument("--base-vlm", type=Path, default=Path.home() / "modelos/UnifoLM-ER-1-Qwen3-VL",
                    help="o VLM base; o NOME da pasta escolhe a classe, não renomeie")
     p.add_argument("--tarefa", default="", help="já começa executando esta frase")
@@ -924,10 +1075,11 @@ def main():
                         "Tem que cobrir o tempo da rede: 0,22 s a 30 Hz = 7 passos")
     p.add_argument("--hz", type=float, default=30.0,
                    help="ritmo do braço; 30 = o fps do dataset, tempo real")
-    p.add_argument("--cena", choices=("copo", "fruta", "multi"), default="copo",
+    p.add_argument("--cena", choices=("copo", "fruta", "multi", "coador"), default="copo",
                    help="copo: a do `nosso_sim_pega`. fruta: a mesma mesa com prato e fruta "
                         "do YCB, para a tarefa da Unitree (10%% do treino). multi: xícara, "
-                        "fruta e prato juntos, para ver se a rede escolhe pelo texto")
+                        "fruta e prato juntos, para ver se a rede escolhe pelo texto. "
+                        "coador: xícara e coador, a cena do `place the white cup on the dripper`")
     p.add_argument("--fruta", choices=("limao", "banana"), default="limao")
     p.add_argument("--forca", choices=("forte", "real"), default="forte",
                    help="forte: o braço segue o alvo de perto (o dataset é cinemático). "
@@ -948,17 +1100,28 @@ def main():
                         "que é o que o vídeo pede. O padrão 0 corre solto.")
     args = p.parse_args()
 
+    if args.modelo is None:
+        args.modelo = Path.home() / ("ckpts_nossos/pi05_pega_copo_sim" if args.motor == "pi05"
+                                     else "modelos/wla_prometheus_copo")
     print(f"⏳ montando o motor {args.motor}…")
     if args.motor == "isaac":
         from pontes.cabine.motor_isaac import MotorIsaac
         motor = MotorIsaac(args.modelo, args.base_vlm, lead=args.lead, hz=args.hz,
                            max_consultas=args.consultas)
         print(f"   IsaacLab: esperando simulador… {'OK' if motor.espera_simulador() else 'NÃO respondeu'}")
-    elif args.motor == "wla":
+    elif args.motor in ("wla", "pi05"):
         copo = tuple(float(v) for v in args.copo.split(",")) if args.copo else None
-        motor = MotorWLA(args.modelo, args.base_vlm, lead=args.lead, hz=args.hz,
+        Motor = MotorPI05 if args.motor == "pi05" else MotorWLA
+        if args.motor == "pi05" and not args.sem_fisica:
+            # O π0.5 escreve junta direto no qpos; a física com PD não existe
+            # para ele (e o dataset é cinemático).
+            print("   π0.5: física desligada (a ação vai direto para as juntas)")
+            args.sem_fisica = True
+        motor = Motor(args.modelo, args.base_vlm, lead=args.lead, hz=args.hz,
                          max_consultas=args.consultas, copo_xy=copo,
                          cena=args.cena, fruta=args.fruta, fisica=not args.sem_fisica, forca=args.forca)
+        if args.motor == "pi05" and args.cena != "coador":
+            motor.tarefa_treino = "pick up the white cup"
         if args.prato:
             motor.pos_prato[:2] = [float(v) for v in args.prato.split(",")]
         # Parado, o motor já mostra a cena montada, com prato e fruta no lugar.

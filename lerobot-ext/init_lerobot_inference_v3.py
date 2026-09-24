@@ -293,7 +293,7 @@ def make_raw_obs(
 # 5. SETUP DE CÂMERAS
 # ─────────────────────────────────────────────────────────────────────
 def setup_cameras(cam_robot_ip, cam_port, fake_video_path):
-    from Scripts_Prometheus_int.sim.sensor_utils import SensorClient, ImageUtils
+    from robot.Scripts_Prometheus_int.sim.sensor_utils import SensorClient, ImageUtils
 
     stream_client = None
     fake_cap = None
@@ -323,7 +323,7 @@ def setup_cameras(cam_robot_ip, cam_port, fake_video_path):
 # ─────────────────────────────────────────────────────────────────────
 def get_camera_frames(obs, stream_client, fake_cap, fake_img_rgb):
     if stream_client is not None:
-        from Scripts_Prometheus_int.sim.sensor_utils import ImageUtils
+        from robot.Scripts_Prometheus_int.sim.sensor_utils import ImageUtils
         msg = stream_client.receive_message()
         if msg and "images" in msg:
             # TODAS as câmeras do stream, não só a cabeça. O MuJoCo publica

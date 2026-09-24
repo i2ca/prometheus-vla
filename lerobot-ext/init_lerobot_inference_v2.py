@@ -284,7 +284,7 @@ def make_batch_for_actdepth(
 # ─────────────────────────────────────────────────────────────────────
 def setup_cameras(cam_robot_ip, cam_port, fake_video_path):
     """Inicializa stream ZMQ ou vídeo fake. Retorna (stream_client, fake_cap, fake_img_rgb)."""
-    from Scripts_Prometheus_int.sim.sensor_utils import SensorClient, ImageUtils
+    from robot.Scripts_Prometheus_int.sim.sensor_utils import SensorClient, ImageUtils
 
     stream_client = None
     fake_cap = None
@@ -319,7 +319,7 @@ def get_camera_frames(obs, stream_client, fake_cap, fake_img_rgb):
     Retorna o fake_img_rgb atualizado (pode mudar se for vídeo).
     """
     if stream_client is not None:
-        from Scripts_Prometheus_int.sim.sensor_utils import ImageUtils
+        from robot.Scripts_Prometheus_int.sim.sensor_utils import ImageUtils
         msg = stream_client.receive_message()
         if msg and "images" in msg:
             obs["head_camera"] = ImageUtils.decode_image(msg["images"]["head_camera"])

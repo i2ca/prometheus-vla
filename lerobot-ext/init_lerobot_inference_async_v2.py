@@ -1358,7 +1358,7 @@ def setup_cameras(cam_robot_ip, cam_port, fake_video_path, fake_depth_path=None)
                      Ignorado se cam_robot_ip estiver definido (ZMQ já
                      entrega depth nativo).
     """
-    from Scripts_Prometheus_int.sim.sensor_utils import SensorClient, ImageUtils  # noqa: F401
+    from robot.Scripts_Prometheus_int.sim.sensor_utils import SensorClient, ImageUtils  # noqa: F401
 
     stream_client = fake_cap = fake_img_rgb = None
     fake_depth_cap = fake_depth_img = None   # ← novas variáveis de depth
@@ -1418,7 +1418,7 @@ def get_camera_frames(obs, stream_client, fake_cap, fake_img_rgb,
         então basta espelhar CAP_PROP_POS_FRAMES do fake_cap no fake_depth_cap.
     """
     if stream_client is not None:
-        from Scripts_Prometheus_int.sim.sensor_utils import ImageUtils
+        from robot.Scripts_Prometheus_int.sim.sensor_utils import ImageUtils
         msg = stream_client.receive_message()
         if msg and "images" in msg:
             obs["head_camera"]       = ImageUtils.decode_image(msg["images"]["head_camera"])

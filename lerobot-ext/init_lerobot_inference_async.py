@@ -221,7 +221,7 @@ def make_batch_for_actdepth(obs, joint_names, device, has_depth=False, has_press
 # 6. SETUP DE CÂMERAS / LEITURA DE FRAME
 # ─────────────────────────────────────────────────────────────────────
 def setup_cameras(cam_robot_ip, cam_port, fake_video_path):
-    from Scripts_Prometheus_int.sim.sensor_utils import SensorClient, ImageUtils  # noqa: F401
+    from robot.Scripts_Prometheus_int.sim.sensor_utils import SensorClient, ImageUtils  # noqa: F401
 
     stream_client = fake_cap = fake_img_rgb = None
 
@@ -246,7 +246,7 @@ def setup_cameras(cam_robot_ip, cam_port, fake_video_path):
 
 def get_camera_frames(obs, stream_client, fake_cap, fake_img_rgb):
     if stream_client is not None:
-        from Scripts_Prometheus_int.sim.sensor_utils import ImageUtils
+        from robot.Scripts_Prometheus_int.sim.sensor_utils import ImageUtils
         msg = stream_client.receive_message()
         if msg and "images" in msg:
             obs["head_camera"] = ImageUtils.decode_image(msg["images"]["head_camera"])

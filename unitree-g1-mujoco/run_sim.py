@@ -68,6 +68,16 @@ def main(n_envs=1, use_async_envs: bool = False,
             camera_configs[cam_name] = CAMERA_RESOLUTIONS.get(
                 cam_name, {"height": 480, "width": 640}
             )
+        # SIM_CAMERAS_ANTIGAS=1: cabeça e pulso saem das poses que valiam até 21/09
+        # (`*_antiga` no MJCF), com os MESMOS nomes publicados. É com elas que os
+        # datasets de simulação até 18/09 foram gravados (o `pega_copo_sem_prof`,
+        # que treinou o π0.5); com as poses corrigidas a política vê outra cena.
+        if os.environ.get("SIM_CAMERAS_ANTIGAS") == "1":
+            for nome in ("head_camera", "head_camera_depth", "right_wrist_camera"):
+                if nome in camera_configs:
+                    base = nome.replace("_depth", "")
+                    camera_configs[nome]["mjcf"] = f"{base}_antiga"
+            print("📷 SIM_CAMERAS_ANTIGAS=1: cabeça e pulso nas poses de antes de 21/09")
         resumo = ", ".join(
             f"{n} {camera_configs[n]['width']}x{camera_configs[n]['height']}" for n in camera_list
         )

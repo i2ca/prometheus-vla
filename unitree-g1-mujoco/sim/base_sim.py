@@ -261,8 +261,10 @@ class DefaultEnv:
             if "params" in camera_config:
                 renderer.update_scene(self.mj_data, camera=camera_config["params"])
             else:
-                renderer.update_scene(self.mj_data, camera=camera_name)
-                
+                # `mjcf`: renderiza de OUTRA câmera do MJCF publicando com este nome
+                # (ver SIM_CAMERAS_ANTIGAS no run_sim.py).
+                renderer.update_scene(self.mj_data, camera=camera_config.get("mjcf", camera_name))
+
             # MATEMÁTICA DO DEPTH: IGUAL AO ROBÔ REAL (Prometheus)
             if 'depth' in camera_name.lower():
                 import cv2 # Garanta que está importado

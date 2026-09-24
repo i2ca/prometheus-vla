@@ -259,7 +259,7 @@ def le_cameras_externas(obs: dict, stream_cabeca, stream_pulso, estado: dict) ->
     câmera publica a ~30 Hz e o loop roda a 15, então uma falha isolada é
     normal. O que não pode é passar despercebido quando vira permanente.
     """
-    from Scripts_Prometheus_int.sim.sensor_utils import ImageUtils
+    from robot.Scripts_Prometheus_int.sim.sensor_utils import ImageUtils
 
     fontes = (
         (stream_cabeca, ("head_camera", "head_camera_depth")),
@@ -822,7 +822,7 @@ def main():
     ultimos_quadros: dict = {}   # último quadro bom por câmera + contador de defasagem
     stream_pulso = None
     if cam_robot_ip and str(cam_port_pulso) not in ("0", ""):
-        from Scripts_Prometheus_int.sim.sensor_utils import SensorClient
+        from robot.Scripts_Prometheus_int.sim.sensor_utils import SensorClient
         stream_pulso = SensorClient()
         stream_pulso.start_client(server_ip=cam_robot_ip, port=int(cam_port_pulso))
         print(f"📡 Câmera de pulso em tcp://{cam_robot_ip}:{cam_port_pulso}")
