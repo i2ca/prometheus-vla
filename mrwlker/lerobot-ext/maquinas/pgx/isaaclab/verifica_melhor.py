@@ -15,7 +15,7 @@ import time
 from datetime import datetime
 from pathlib import Path
 
-sys.path.insert(0, "/home/mrwlker/DEV/prometheus-vla/lerobot-ext/pgx")
+sys.path.insert(0, "/home/mrwlker/DEV/prometheus-vla/mrwlker/lerobot-ext/maquinas/pgx")
 import av
 import numpy as np
 

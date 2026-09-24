@@ -776,7 +776,7 @@ EOF
 # Retargeting das mãos e IK dos braços: rodar DE DENTRO de lerobot-ext (ver §5.1).
 # Não basta importar — o que quebrou na migração (§2.7, §2.8) só aparece ao construir.
 # O IK na 1ª vez é lento: reconstrói o cache do pinocchio.
-cd ~/DEV/prometheus-vla/lerobot-ext && python - <<'EOF'
+cd ~/DEV/prometheus-vla/mrwlker/lerobot-ext && python - <<'EOF'
 import sys, numpy as np
 sys.path.insert(0, ".")
 from teleop.robot_control.hand_retargeting import HandRetargeting, HandType
@@ -824,7 +824,7 @@ errado.
 
 ```bash
 conda activate prometheus-vla
-cd ~/DEV/prometheus-vla/lerobot-ext
+cd ~/DEV/prometheus-vla/mrwlker/lerobot-ext
 python -m pytest tests/ -v
 ```
 

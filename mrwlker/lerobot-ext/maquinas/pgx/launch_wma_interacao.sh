@@ -12,7 +12,7 @@
 #
 #   uso: bash maquinas/pgx/launch_wma_interacao.sh [dataset]
 set -euo pipefail
-RAIZ=$HOME/DEV/prometheus-vla
+RAIZ=$HOME/DEV/prometheus-vla/mrwlker
 DATASET="${1:-unitree_g1_pack_camera}"
 HF=$HOME/.cache/huggingface
 CKPT=$(ls -d "$HF"/hub/models--unitreerobotics--UnifoLM-WMA-0-Dual/snapshots/*/unifolm_wma_dual.ckpt 2>/dev/null | head -1)
@@ -20,7 +20,7 @@ RES="${RES:-$HOME/wma_interacao}"
 
 if ! docker image inspect unifolm-wma:pgx >/dev/null 2>&1; then
     echo "❌ imagem unifolm-wma:pgx não existe. Rode:"
-    echo "     docker build -t unifolm-wma:pgx $RAIZ/lerobot-ext/pgx/wma/"
+    echo "     docker build -t unifolm-wma:pgx $RAIZ/lerobot-ext/maquinas/pgx/wma/"
     exit 1
 fi
 if [ -z "$CKPT" ]; then

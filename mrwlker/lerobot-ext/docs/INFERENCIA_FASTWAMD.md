@@ -33,7 +33,7 @@ Arquivos:
 **Na athena** (o checkpoint é o `best`, que o treino publica sozinho):
 
 ```bash
-cd ~/DEV/prometheus-vla/lerobot-ext
+cd ~/DEV/prometheus-vla/mrwlker/lerobot-ext
 HF_HOME=/data/.cache/huggingface CUDA_VISIBLE_DEVICES=2 \
 python init_lerobot_inference_fastwamd_server.py \
     --checkpoint=/data/train_output/fastwamdepth_white_cup_on_dripper/checkpoints/best/pretrained_model \

@@ -1,6 +1,6 @@
 """Rastreia o centro do cubo vermelho e a garra ao longo do tempo. Mede se a tarefa anda."""
 import sys, time
-sys.path.insert(0, "/home/mrwlker/DEV/prometheus-vla/lerobot-ext/pgx")
+sys.path.insert(0, "/home/mrwlker/DEV/prometheus-vla/mrwlker/lerobot-ext/maquinas/pgx")
 import numpy as np
 from roda_politica_g1_isaaclab import CameraZMQ, abre_dds
 

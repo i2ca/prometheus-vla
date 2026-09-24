@@ -369,7 +369,7 @@ Config pronto: `train/config/openvla_depth_cup_atena.yaml`
 
 ```bash
 source ~/miniconda3/bin/activate g1
-cd ~/DEV/prometheus-vla/lerobot-ext
+cd ~/DEV/prometheus-vla/mrwlker/lerobot-ext
 
 # uma vez: as duas dependências que faltam no env g1 (--no-deps preserva os pins)
 pip install --no-deps 'timm>=1.0.0,<1.1.0' 'peft>=0.13.0'

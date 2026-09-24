@@ -22,7 +22,7 @@ export OMP_NUM_THREADS=1
 
 LOG="${LOG:-$HOME/inferencia_server.log}"
 
-cd ~/DEV/prometheus-vla/lerobot-ext
+cd ~/DEV/prometheus-vla/mrwlker/lerobot-ext
 echo "== checkpoint $CKPT | log $LOG =="
 exec "$ENV/bin/python" -u init_lerobot_inference_fastwamd_server.py \
     --checkpoint="$CKPT" --port=5600 --debug \

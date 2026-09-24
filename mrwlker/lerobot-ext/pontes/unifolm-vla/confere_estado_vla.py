@@ -39,7 +39,7 @@ import numpy as np
 import pinocchio as pin
 from huggingface_hub import hf_hub_download
 
-sys.path.insert(0, "/home/mrwlker/DEV/prometheus-vla/lerobot-ext")
+sys.path.insert(0, "/home/mrwlker/DEV/prometheus-vla/mrwlker/lerobot-ext")
 
 # O `ASSETS_DIR` do `g1_arm_ik.py` aponta para `robot/unitree_g1/assets`, que nesta cópia do
 # repositório não existe — o URDF está em `lerobot-ext/assets/g1`. Importar o módulo da IK só

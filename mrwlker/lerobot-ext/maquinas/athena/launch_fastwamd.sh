@@ -38,7 +38,7 @@ fi
 LIVRE=$(nvidia-smi -i "$GPU" --query-gpu=memory.free --format=csv,noheader)
 echo "== GPU $GPU ($LIVRE livres) | wandb: ${WANDB_API_KEY:+chave própria}${WANDB_API_KEY:-desligado} =="
 
-cd ~/DEV/prometheus-vla/lerobot-ext
+cd ~/DEV/prometheus-vla/mrwlker/lerobot-ext
 # Pesos e saída no disco de dados: o disco de sistema vive perto de 100%.
 export HF_HOME=/data/.cache/huggingface
 export CUDA_VISIBLE_DEVICES="$GPU"

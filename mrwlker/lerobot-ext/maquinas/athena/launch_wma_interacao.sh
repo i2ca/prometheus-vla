@@ -15,7 +15,7 @@
 set -euo pipefail
 GPU="${1:-0}"
 ENV=$HOME/miniconda3/envs/unifolm-wma
-RAIZ=$HOME/DEV/prometheus-vla
+RAIZ=$HOME/DEV/prometheus-vla/mrwlker
 CKPT="${2:-$(ls -d "$HOME"/.cache/huggingface/hub/models--unitreerobotics--UnifoLM-WMA-0-Dual/snapshots/*/unifolm_wma_dual.ckpt 2>/dev/null | head -1)}"
 DATASET="${3:-unitree_g1_pack_camera}"
 

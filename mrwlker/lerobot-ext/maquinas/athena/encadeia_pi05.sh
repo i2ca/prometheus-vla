@@ -27,7 +27,7 @@ GPU="${1:-1}"
 SESSAO_WLA="${SESSAO_WLA:-wla}"
 CONFIG="${CONFIG:-config/train/pi05_pega_copo_sim.yaml}"
 LOG_WLA="${LOG_WLA:-/data/mrwlker/wla_treino.log}"
-REPO="$HOME/DEV/prometheus-vla/lerobot-ext"
+REPO="$HOME/DEV/prometheus-vla/mrwlker/lerobot-ext"
 LOG="/data/mrwlker/pi05_pega_copo_sim.log"
 
 echo "[$(date '+%F %T')] esperando a sessão '$SESSAO_WLA' terminar…"

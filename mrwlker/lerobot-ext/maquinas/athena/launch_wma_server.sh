@@ -10,7 +10,7 @@ set -euo pipefail
 GPU="${1:-0}"
 CKPT="${2:-}"
 ENV=$HOME/miniconda3/envs/unifolm-wma
-RAIZ=$HOME/DEV/prometheus-vla
+RAIZ=$HOME/DEV/prometheus-vla/mrwlker
 
 if [ ! -x "$ENV/bin/python" ]; then
     echo "❌ env unifolm-wma não existe. Rode: bash $RAIZ/lerobot-ext/install-unifolm-wma.sh"

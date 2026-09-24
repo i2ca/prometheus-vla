@@ -1,6 +1,6 @@
 """Tira de quadros da camera da cabeca, para ver o que a politica esta fazendo."""
 import sys, time
-sys.path.insert(0, "/home/mrwlker/DEV/prometheus-vla/lerobot-ext/pgx")
+sys.path.insert(0, "/home/mrwlker/DEV/prometheus-vla/mrwlker/lerobot-ext/maquinas/pgx")
 import numpy as np
 from PIL import Image
 from roda_politica_g1_isaaclab import CameraZMQ

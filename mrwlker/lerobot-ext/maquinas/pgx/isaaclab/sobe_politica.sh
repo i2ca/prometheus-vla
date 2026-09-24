@@ -4,5 +4,5 @@
 #   ~/sobe_politica.sh --politica RooibosT/Sim_act_dex1_bt16_s50k --passos-acao 20
 source ~/miniforge3/etc/profile.d/conda.sh
 conda activate prometheus-vla
-cd ~/DEV/prometheus-vla/lerobot-ext
+cd ~/DEV/prometheus-vla/mrwlker/lerobot-ext
 exec python maquinas/pgx/roda_politica_g1_isaaclab.py "$@"

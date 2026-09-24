@@ -30,7 +30,7 @@ fi
 LIVRE=$(nvidia-smi -i "$GPU" --query-gpu=memory.free --format=csv,noheader)
 echo "== GPU $GPU ($LIVRE livres) | ACT-D | $(date '+%F %T') =="
 
-cd ~/DEV/prometheus-vla/lerobot-ext
+cd ~/DEV/prometheus-vla/mrwlker/lerobot-ext
 # O disco de sistema tem 21 GB livres de 6,9 TB: nada de cache nem de saída de
 # treino pode cair nele. O `output_dir` do YAML é relativo (`train_output/...`,
 # escrito para o PC do Miguel) e é sobrescrito abaixo pelo mesmo motivo.
