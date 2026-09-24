@@ -35,7 +35,17 @@ Em cada pasta de episódio: `policy-calls/call-NNN.json` tem o que o modelo viu 
 
 ## Como rodar
 
-Precisa de um gateway OmniRoute com uma conta Codex (rota `cx/gpt-6-astra`) e de uma máquina com GPU e EGL.
+Precisa de um gateway OmniRoute com uma conta Codex (rota `cx/gpt-6-astra`). O modelo roda na OpenAI; a máquina
+local só simula e desenha.
+
+Requisitos medidos num episódio (arnês completo, sem contar a espera pelo modelo): pico de 2,8 GB de RAM, cerca de
+1,5 núcleo de CPU e até 38% de GPU, só para desenhar as câmeras (a física roda na CPU). Qualquer GPU NVIDIA com
+driver EGL serve; sem GPU, `MUJOCO_GL=osmesa` funciona, mais devagar. O tempo de um episódio é dominado pelo modelo
+(30 a 70 s por decisão com esforço `max`).
+
+Uma DGX Spark é a melhor opção para dois usos: o vídeo narrado em paralelo (`--workers N` usa um processo por
+núcleo, cada um com uns 2 a 3 GB; 18 processos ficam na faixa de 40 a 50 GB) e vários episódios ao mesmo tempo.
+Num notebook, use `--workers 2` ou `3`.
 
 ```bash
 cd runtime/g1-cup-grasp
