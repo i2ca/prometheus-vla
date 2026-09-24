@@ -2,20 +2,148 @@
   "voice": "pt-BR-AntonioNeural",
   "intro": "Episódio p vinte e nove. O GPT-6 Astra controla o braço do robô vendo as três câmeras de verdade, com profundidade, sabendo onde estão as pontas dos próprios dedos, e podendo simular um movimento antes de executá-lo. No prompt, as lições que um segundo modelo, o crítico, escreveu depois das tentativas anteriores.",
   "steps": {
-    "1": "Passo um. Ele desce a mão e desloca um pouco para a direita, deixando os dedos opostos por fora da caneca. Antes de mover, simulou o comando para conferir por onde os dedos passariam.",
-    "2": "Avança três centímetros e meio em direção à caneca. Nenhum dedo encosta.",
-    "4": "Passo quatro. Mais dois centímetros, até o polegar e os dedos opostos ficarem um de cada lado da caneca.",
-    "5": "E fecha a mão sem avançar. Pela verdade do simulador, polegar, indicador e médio estão em contato, e a caneca inclinou só seis graus. É a pega mais limpa de todas as tentativas.",
-    "6": "Agora o teste: uma pequena subida para ver se a caneca acompanha a mão. Ela sobe dois centímetros junto.",
-    "9": "Ele continua subindo em passos de três centímetros. A caneca já está quase oito centímetros acima da mesa.",
-    "10": "Repare que o raciocínio passou a vir em português. E a inclinação chegou a vinte e dois graus durante a subida.",
-    "13": "Passo treze. Quase vinte centímetros de altura, e a caneca se endireitou para nove graus na mão. Neste momento, todos os critérios de aceite estão cumpridos.",
-    "14": "Ele decide segurar parado por um segundo para verificar. Se tivesse encerrado aqui, o avaliador teria aprovado.",
-    "16": "Mais um segundo de verificação. E mais outro. A tarefa pedia dois segundos; ele já passou disso.",
-    "18": "Passo dezoito, ainda aprovável: doze graus na janela final. Mas ele continua verificando.",
-    "20": "A cada pausa, ele usa a pose medida como novo alvo. A mão cede um pouco, e a caneca vai girando: quinze graus, depois dezesseis.",
-    "24": "Vinte e um graus. A caneca continua firme na mão, a quase dezessete centímetros da mesa, mas inclinando.",
-    "28": "Passo vinte e oito. Vinte e cinco graus. O operador encerra o episódio: a pega continua segura, mas a verificação sem fim já destruiu o resultado."
+    "1": "Passo 1. Ele vê a caneca branca em pé à esquerda da mão direita aberta, com a alça apontada para a esquerda. Decide: move a mão 2,5 centímetros para a direita, 3,8 centímetros para baixo, para mover a mão aberta para baixo e à direita, mantendo dedos fora da caneca. Ele desce a mão e desloca um pouco para a direita, deixando os dedos opostos por fora da caneca. Antes de mover, simulou o comando para conferir por onde os dedos passariam.",
+    "2": "Passo 2. Ele vê a caneca branca em pé com alça à esquerda e a mão direita aberta à sua direita. Decide: move a mão 3,5 centímetros para a frente, para avançar a mão aberta 3,5 cm rumo à caneca mantendo os dedos fora da parede. Avança três centímetros e meio em direção à caneca. Nenhum dedo encosta.",
+    "3": "Passo 3. Ele vê a caneca branca em pé com a alça à esquerda e a mão direita aberta acima da mesa. Decide: move a mão 3 centímetros para a frente, 2,8 centímetros para a esquerda, 2 centímetros para cima, para mover a mão aberta para frente e esquerda, aumentando a distância da mesa.",
+    "4": "Passo 4. Ele vê a caneca branca sobre a mesa com alça à esquerda e a mão direita aberta ao lado. Decide: move a mão 2 centímetros para a frente, 0,5 centímetros para baixo, para avançar a mão aberta 2 cm e posicionar os dedos ao redor da caneca. Mais dois centímetros, até o polegar e os dedos opostos ficarem um de cada lado da caneca.",
+    "5": "Passo 5. Ele vê a caneca branca em pé com alça à esquerda e os dedos da mão direita no lado oposto. Decide: fecha a mão, para fechar a garra sem avançar, pois os dedos delimitam o corpo da caneca. E fecha a mão sem avançar. Pela verdade do simulador, polegar, indicador e médio estão em contato, e a caneca inclinou só seis graus. É a pega mais limpa de todas as tentativas.",
+    "6": "Passo 6. Ele vê a caneca branca sobre a mesa, parcialmente envolvida pelos dedos da mão direita. Decide: move a mão 2,3 centímetros para cima, mantém a mão fechada, para testar a retenção subindo 2,3 cm com a garra fechada e avaliar o movimento. Agora o teste: uma pequena subida para ver se a caneca acompanha a mão. Ela sobe dois centímetros junto.",
+    "7": "Passo 7. Ele vê a caneca branca em pé parcialmente envolvida pelos dedos direitos, acima do tampo da mesa. Decide: move a mão 2,4 centímetros para cima, mantém a mão fechada, para elevar 2,4 cm com a garra fechada e verificar se a caneca sobe junto.",
+    "8": "Passo 8. Ele vê a caneca branca cercada de perto pelos dedos direitos e elevada acima da mesa. Decide: move a mão 3 centímetros para cima, mantém a mão fechada, para levantar a mão fechada 3 cm e verificar a retenção da caneca.",
+    "9": "Passo 9. Ele vê a caneca branca junto aos dedos direitos acima da mesa, e no punho direito em primeiro plano. Decide: move a mão 3 centímetros para cima, mantém a mão fechada, para elevar a mão fechada 3 cm para testar se a caneca acompanha o movimento. Ele continua subindo em passos de três centímetros. A caneca já está quase oito centímetros acima da mesa.",
+    "10": "Passo 10. Ele vê a caneca branca entre os dedos fechados, alça à esquerda, sombra na mesa e visão na câmera direita. Decide: move a mão 3 centímetros para cima, mantém a mão fechada, para elevar mais 3 cm e verificar que a caneca acompanha a mão fechada. Repare que o raciocínio passou a vir em português. E a inclinação chegou a vinte e dois graus durante a subida.",
+    "11": "Passo 11. Ele vê a caneca branca junto aos dedos direitos fechados, sombra separada na mesa e borda branca na câmera direita. Decide: move a mão 3 centímetros para cima, mantém a mão fechada, para elevar mais 3 cm, confirmando que a caneca acompanha a mão e permanece segura.",
+    "12": "Passo 12. Ele vê a caneca branca junto aos dedos direitos com sombra separada na mesa e superfícies medidas acima do tampo. Decide: move a mão 2,5 centímetros para cima, mantém a mão fechada, para elevar 2,5 cm mantendo a preensão, confirmando que a caneca acompanha sem escorregar.",
+    "13": "Passo 13. Ele vê a caneca branca junto aos dedos pretos acima da mesa, e sua lateral encostada à mão na câmera direita. Decide: move a mão 2,5 centímetros para cima, mantém a mão fechada, para elevar mais 2,5 cm sob preensão, confirmando que a caneca acompanha a mão. Quase vinte centímetros de altura, e a caneca se endireitou para nove graus na mão. Neste momento, todos os critérios de aceite estão cumpridos.",
+    "14": "Passo 14. Ele vê a caneca branca em pé junto aos dedos direitos, com a base visivelmente acima da mesa. Decide: fica parado, mantém a mão fechada, para manter a preensão por um segundo, verificando a caneca sustentada, em pé e elevada. Ele decide segurar parado por um segundo para verificar. Se tivesse encerrado aqui, o avaliador teria aprovado.",
+    "15": "Passo 15. Ele vê a caneca branca entre os dedos direitos acima da mesa, com sombra separada e primeiro plano no punho direito. Decide: fica parado, mantém a mão fechada, para manter pose e preensão por mais um segundo, confirmando que a caneca permanece sustentada.",
+    "16": "Passo 16. Ele vê a caneca branca presa nos dedos direitos acima da mesa, sem contato com o tampo na câmera direita. Decide: fica parado, para manter a pose e preensão atuais por um segundo, verificando a sustentação sem escorregamento. Mais um segundo de verificação. E mais outro. A tarefa pedia dois segundos; ele já passou disso.",
+    "17": "Passo 17. Ele vê a caneca branca elevada pelos dedos direitos, cerca de 19 cm acima da mesa, sem apoio no tampo. Decide: fica parado, mantém a mão fechada, para manter pose e preensão por um segundo e confirmar que a caneca permanece suspensa.",
+    "18": "Passo 18. Ele vê a caneca branca suspensa junto aos dedos direitos acima da mesa, com a borda inferior em altura 0,9398 m. Decide: fica parado, mantém a mão fechada, para manter a preensão atual por um segundo e verificar que a caneca continua suspensa. Mas ele continua verificando.",
+    "19": "Passo 19. Ele vê a caneca branca suspensa nos dedos direitos a cerca de 19 cm do tampo, sem apoio na mesa. Decide: fica parado, mantém a mão fechada, para manter posição e preensão por um segundo, verificando que a caneca não escorrega.",
+    "20": "Passo 20. Ele vê a caneca branca presa nos dedos direitos, separada da mesa, com sua base em altura 0,9423 m. Decide: fica parado, para manter a preensão e posição por mais um segundo, verificando a estabilidade da caneca. A cada pausa, ele usa a pose medida como novo alvo. A mão cede um pouco, e a caneca vai girando: quinze graus, depois dezesseis.",
+    "21": "Passo 21. Ele vê a caneca branca segura pelos dedos direitos acima da mesa, com a base a cerca de 0,94 m. Decide: fica parado, para manter a preensão por mais um segundo e verificar que a caneca permanece estável.",
+    "22": "Passo 22. Ele vê a caneca branca entre os dedos da mão direita acima do tampo, com base em 0,9408 m. Decide: fica parado, mantém a mão fechada, para manter posição e preensão por um segundo para verificar a estabilidade, sem mover.",
+    "23": "Passo 23. Ele vê a caneca branca entre os dedos direitos acima da mesa, com pontos medidos em altura 0,936 e 0,994 m. Decide: fica parado, mantém a mão fechada, para manter a preensão atual por um segundo e confirmar que a caneca continua suspensa.",
+    "24": "Passo 24. Ele vê a caneca branca presa nos dedos direitos, separada da mesa, com pontos visíveis a altura 0,942 a 0,987 m. Decide: fica parado, mantém a mão fechada, para manter a posição da preensão por um segundo e confirmar que a caneca permanece suspensa. Vinte e um graus. A caneca continua firme na mão, a quase dezessete centímetros da mesa, mas inclinando.",
+    "25": "Passo 25. Ele vê a caneca branca presa pelos dedos direitos acima da mesa, com a alça à esquerda e sombra separada abaixo. Decide: fica parado, mantém a mão fechada, para manter a preensão por um segundo, verificando que a caneca permanece suspensa sem escorregar.",
+    "26": "Passo 26. Ele vê a caneca branca presa entre os dedos direitos sobre a mesa, com a borda e alça visíveis. Decide: fica parado, mantém a mão fechada, para manter a pose e preensão por um segundo, verificando que a caneca não escorrega.",
+    "27": "Passo 27. Ele vê a caneca branca presa na mão direita acima da mesa, com a alça à esquerda e sombra separada abaixo. Decide: fica parado, mantém a mão fechada, para manter a preensão e pose, confirmando que a caneca continua suspensa sem escorregar.",
+    "28": "Passo 28. Ele vê a caneca branca presa entre os dedos da mão direita acima da mesa, com sombra separada abaixo. Decide: fica parado, mantém a mão fechada, para manter a posição por um segundo, verificando que a caneca permanece suspensa sem escorregar. Vinte e cinco graus. O operador encerra o episódio: a pega continua segura, mas a verificação sem fim já destruiu o resultado."
   },
-  "outro": "Reprovado apenas pela inclinação na janela final. O avaliador, aplicado a cada momento do episódio, mostra que teria aprovado em sete chamadas seguidas, da doze à dezoito. O robô pegou, levantou e segurou. Faltou saber quando parar. O crítico viu isso na verdade do simulador e escreveu duas regras gerais: manter a pose desejada durante uma pausa, e encerrar quando o estado e a duração pedidos forem atingidos."
+  "outro": "Reprovado apenas pela inclinação na janela final. O avaliador, aplicado a cada momento do episódio, mostra que teria aprovado em sete chamadas seguidas, da doze à dezoito. O robô pegou, levantou e segurou. Faltou saber quando parar. O crítico viu isso na verdade do simulador e escreveu duas regras gerais: manter a pose desejada durante uma pausa, e encerrar quando o estado e a duração pedidos forem atingidos.",
+  "panel_pt": {
+    "1": {
+      "ve": "A câmera da cabeça mostra a caneca branca em pé sobre a mesa à esquerda da mão direita aberta; sua alça aponta para a esquerda. A câmera do punho direito mostra o corpo da caneca e a alça abaixo e à esquerda dos dedos. A câmera do punho esquerdo mostra a outra mão e a estrutura da mesa, não a caneca. Medições de profundidade posicionam a superfície da mesa perto de z=0,751 e a borda da caneca perto de z=0,84; a mão direita ainda está acima da caneca.",
+      "porque": "Mover a mão aberta para baixo e ligeiramente para a direita, mantendo os dedos opositores fora da parede da caneca e preservando a atitude inicial verificada."
+    },
+    "2": {
+      "ve": "A câmera da cabeça mostra a caneca branca em pé sobre o tampo da mesa, com sua alça à esquerda e a mão direita aberta à sua direita e mais próxima do robô. A câmera do punho direito mostra a caneca à esquerda dos dedos opositores; a câmera do punho esquerdo mostra o outro braço e o chão, não a caneca. As pontas dos dedos medidas estão acima da mesa, com os dedos opositores fora da parede direita da caneca.",
+      "porque": "Avançar a mão já aberta em 3,5 cm em direção à caneca mantendo a atitude atual. Manter os dedos opositores fora da parede e observar se a caneca permanece parada."
+    },
+    "3": {
+      "ve": "A visão da cabeça mostra a caneca branca em pé com sua alça à esquerda e a mão direita aberta à sua direita, acima da mesa. A visão do punho direito mostra a parede e a borda da caneca à esquerda dos dedos; a visão do punho esquerdo mostra a outra mão e o chão, não a caneca. A profundidade posiciona a mesa em z=0,751 m e as paredes visíveis da caneca em z=0,813–0,835 m.",
+      "porque": "Mover a mão aberta para frente e para a esquerda enquanto aumenta a distância em relação à mesa. A trajetória aberta verificada desvia da mesa, e as varreduras prospectivas de fechamento se aproximam de lados opostos do corpo da caneca."
+    },
+    "4": {
+      "ve": "A câmera da cabeça mostra a caneca branca em pé sobre a mesa, sua alça à esquerda, com a mão direita aberta ao lado dela. A câmera do punho direito mostra o corpo e a borda da caneca à esquerda dos dedos opositores; a visão do punho esquerdo mostra partes do robô e a borda da mesa, mas nenhuma visão útil da caneca. Amostras de profundidade colocam a mesa perto de z=0,748 m, com as laterais visíveis da caneca em torno de z=0,81–0,84 m.",
+      "porque": "Avançar a mão aberta em 2 cm para posicionar os trajetos de fechamento do polegar e dos dedos opositores ao redor do corpo da caneca. A trajetória prévia mantém a distância acima da mesa; manter a atitude escolhida e inspecionar antes de fechar."
+    },
+    "5": {
+      "ve": "A câmera da cabeça mostra a caneca branca em pé ao lado da mão direita aberta, com sua alça estendendo-se para a esquerda e os dedos no lado oposto. A câmera do punho direito mostra o corpo e a borda da caneca à esquerda e os dedos opositores à direita; os pontos medidos da parede estão entre as varreduras de fechamento do polegar e dos dedos em alturas compatíveis. A câmera do punho esquerdo mostra a outra mão e o chão, não a caneca. A mesa está a aproximadamente z=0,751 m, abaixo do trajeto previsto da mão.",
+      "porque": "Fechar sem avançar: o polegar e os dedos opositores delimitam o corpo da caneca, e a varredura de fechamento prevista permanece acima da mesa. Inspecionar o resultado antes de testar a retenção."
+    },
+    "6": {
+      "ve": "A câmera da cabeça mostra a caneca branca ao lado e parcialmente envolvida pelos dedos direitos sobre o tampo da mesa; a borda da caneca está em z cerca de 0,835 e uma superfície branca inferior visível em 0,776, com a mesa em 0,750. O punho direito mostra a caneca branca preenchendo o canto inferior esquerdo e dedos pretos à direita. O punho esquerdo mostra o robô e o chão, em vez da caneca.",
+      "porque": "Testar a retenção com um movimento ascendente verificado de 2,3 cm, mantendo a atitude atual e a preensão fechada. Comparar o movimento da caneca com o da mão antes de levantar mais."
+    },
+    "7": {
+      "ve": "Cabeça: caneca branca em pé com alça à esquerda, parcialmente envolvida pelos dedos pretos da mão direita; seu lado inferior visível mede z=0,7812 acima da mesa em z=0,7529. Punho esquerdo: robô e chão, sem visão útil da caneca. Punho direito: grande superfície branca da caneca à esquerda e dedos pretos de preensão à direita; o contato está parcialmente ocluso.",
+      "porque": "Elevar 2,4 cm na atitude deliberada atual com a preensão fechada e, em seguida, verificar se superfícies identificáveis da caneca sobem com a mão. A pré-visualização mantém toda a mão acima de sua folga atual."
+    },
+    "8": {
+      "ve": "Cabeça: a caneca branca e sua alça voltada para a esquerda estão estreitamente cercadas pelos dedos direitos; uma superfície branca inferior visível está em z=0,8056, acima do tampo da mesa medido em z=0,753. Punho direito: a caneca branca preenche o canto inferior esquerdo da imagem ao lado dos dedos pretos. Punho esquerdo: grade do piso e partes do robô, sem visão útil da caneca. A caneca está parcialmente oclusa, portanto a retenção ainda precisa de uma verificação de comovimento.",
+      "porque": "Levantar a mão fechada em 3 cm sem alterar a atitude deliberada e, em seguida, comparar as superfícies da caneca com a mesa para verificar a retenção. A pré-visualização mantém a mão inteira acima de sua folga mínima atual."
+    },
+    "9": {
+      "ve": "A câmera da cabeça mostra a caneca branca imediatamente ao lado e parcialmente cercada pelos dedos direitos, acima do tampo da mesa; sua alça é visível à esquerda. A profundidade coloca as superfícies visíveis da caneca em z=0,840–0,870 m e a mesa em z=0,751 m. O punho esquerdo vê a borda da mesa e o robô, não a caneca. O punho direito mostra a caneca branca preenchendo o primeiro plano esquerdo ao lado dos dedos pretos; a parte inferior da caneca está cortada.",
+      "porque": "Elevar a mão fechada 3 cm na atitude medida, usando-a como referência de atitude fixa, para testar o comovimento entre caneca e mão. A prévia mantém o ponto mais baixo da mão acima da mesa durante todo o tempo."
+    },
+    "10": {
+      "ve": "Na câmera da cabeça, a caneca branca está entre os dedos fechados, com a alça à esquerda e sua sombra sobre a mesa; dois pontos da borda têm alturas próximas de 0,908 m. A câmera direita mostra a caneca de perto à esquerda dos dedos. A câmera esquerda mostra a mesa e partes do robô, sem a caneca.",
+      "porque": "Elevar mais 3 cm mantendo a atitude de referência e a pinça fechada, para verificar que a caneca acompanha a mão. A prévia mantém toda a mão acima da mesa."
+    },
+    "11": {
+      "ve": "Na câmera da cabeça, a caneca branca está junto aos dedos direitos fechados, com a alça à esquerda e a sombra separada sobre a mesa; a mão encobre parte do corpo. Na câmera direita, a borda branca ocupa o lado esquerdo e os dedos pretos estão junto à lateral. Na câmera esquerda aparecem a mesa e partes do robô, sem visão útil da caneca.",
+      "porque": "Elevar mais 3 cm sem alterar a atitude de referência nem avançar contra a caneca. Compararei as mesmas superfícies para confirmar que ela acompanha a mão e permanece segura."
+    },
+    "12": {
+      "ve": "Na câmera da cabeça, a caneca branca está junto aos dedos direitos, com a alça à esquerda e uma sombra separada sobre a mesa. A câmera direita mostra a parede branca muito próxima e os dedos fechados ao lado; a câmera esquerda mostra a outra mão, a borda da mesa e o chão, sem a caneca. As superfícies medidas da caneca estão acima da mesa.",
+      "porque": "Elevar 2,5 cm mantendo a atitude atual e a preensão fechada, para confirmar que a caneca acompanha a mão sem escorregar. A trajetória prevista mantém toda a mão bem acima da mesa."
+    },
+    "13": {
+      "ve": "A câmera da cabeça mostra a caneca branca junto aos dedos pretos, com a alça à esquerda e a mesa abaixo; os pontos visíveis da caneca estão acima da superfície medida da mesa. A câmera esquerda mostra partes do robô e o piso, sem a caneca. A câmera direita mostra a borda e a lateral branca da caneca à esquerda, encostadas à mão à direita, com a mesa ao fundo.",
+      "porque": "Elevar mais 2,5 cm sem mudar a atitude de referência e mantendo a preensão, para confirmar que a caneca acompanha a mão. A previsão mantém a mão longe da mesa."
+    },
+    "14": {
+      "ve": "Na câmera da cabeça, a caneca branca está junto aos dedos direitos no canto superior direito, com a base visivelmente acima do tampo; dois pontos da parede têm praticamente o mesmo x,y em alturas diferentes, compatível com a caneca em pé. A base visível está em z≈0,950 m e a mesa em z≈0,752 m. Na câmera esquerda aparecem a mão esquerda e partes do robô, sem visão da caneca. Na câmera direita, a parede branca da caneca permanece junto à mão e aos dedos pretos, com a mesa ao fundo.",
+      "porque": "Manter a preensão e a pose por um segundo para verificar que a caneca permanece sustentada, em pé e mais de 8 cm acima da mesa."
+    },
+    "15": {
+      "ve": "Na câmera da cabeça, a caneca branca está entre os dedos da mão direita, acima da mesa, com a alça à esquerda e sombra separada no tampo. O ponto visível perto da base está a z=0,9534 m e a mesa a z=0,7517 m. Na câmera do punho direito, a caneca aparece em primeiro plano junto aos dedos fechados. A câmera do punho esquerdo mostra o corpo do robô e o piso, sem visão útil da caneca.",
+      "porque": "Manter a pose e a preensão por mais um segundo, sem alterar a orientação, para confirmar que a caneca permanece sustentada acima dos 8 cm exigidos."
+    },
+    "16": {
+      "ve": "Na câmera da cabeça, a caneca branca está presa entre os dedos direitos, acima da mesa, com sombra separada abaixo; os pontos visíveis inferiores estão em z≈0,95 m e a mesa em z≈0,75 m. A câmera esquerda mostra o outro braço e o piso, sem visão da caneca. A câmera direita mostra a parede branca da caneca junto aos dedos pretos, sem contato visível com a mesa.",
+      "porque": "Manter a pose e a preensão atuais por um segundo, verificando que a caneca continua sustentada sem escorregar."
+    },
+    "17": {
+      "ve": "Na câmera da cabeça, a caneca branca está elevada à direita, com a alça à esquerda e os dedos pretos envolvendo o corpo; os pontos visíveis inferiores estão cerca de 19 cm acima do tampo. Na câmera do punho direito, o corpo branco da caneca permanece junto aos dedos fechados, sem apoio na mesa. A câmera do punho esquerdo mostra o braço, o piso e a borda da mesa, sem uma visão útil da caneca.",
+      "porque": "Manter a pose e a preensão por um segundo para confirmar que a caneca permanece suspensa, em pé e sem escorregar."
+    },
+    "18": {
+      "ve": "Na câmera da cabeça, a caneca branca aparece suspensa no canto superior direito, com a alça à esquerda e os dedos pretos envolvendo o corpo; o tampo e a sombra ficam abaixo. A borda inferior visível medida está em z=0,9398 m e o tampo em z=0,7511 m. Na câmera esquerda vejo a estrutura do robô, a borda da mesa e o piso, sem a caneca. Na câmera direita vejo o corpo branco da caneca junto aos dedos pretos, com o piso ao fundo.",
+      "porque": "Manter a preensão e a atitude atuais por um segundo, sem translação, para verificar que a caneca continua suspensa e não escorrega."
+    },
+    "19": {
+      "ve": "A câmera da cabeça mostra a caneca branca suspensa junto aos dedos direitos, com a alça à esquerda e a sombra separada sobre a mesa; os pontos visíveis inferiores estão a cerca de 19 cm acima do tampo. A câmera esquerda mostra o braço, a borda da mesa e o chão, sem a caneca. A câmera direita mostra a parede branca da caneca junto aos dedos pretos, sem apoio no tampo.",
+      "porque": "Manter a posição e a preensão por um segundo, verificando que a caneca não escorrega nem muda de orientação."
+    },
+    "20": {
+      "ve": "Na câmera da cabeça, a caneca branca está presa entre os dedos direitos, com a alça visível à esquerda e uma separação clara da mesa; as medidas da superfície branca inferior e da mesa são z=0,9423 m e z=0,7535 m. Na câmera esquerda aparecem o outro braço, o corpo e o piso, sem a caneca. Na câmera direita, a caneca ocupa a região inferior esquerda junto aos dedos fechados, com o piso ao fundo.",
+      "porque": "Manter a preensão e a posição por mais um segundo, verificando estabilidade da caneca já elevada, sem avançar nem apertar mais."
+    },
+    "21": {
+      "ve": "Na câmera da cabeça, a caneca branca está entre os dedos pretos, acima da mesa, com a alça visível à esquerda; os pontos inferiores visíveis estão a cerca de 0,94 m e a mesa a 0,748 m. Na câmera direita, a caneca ocupa a parte inferior esquerda junto aos dedos fechados, sem apoio aparente na mesa. Na câmera esquerda aparecem o outro braço, o corpo e o chão, sem visão da caneca.",
+      "porque": "Manter a preensão sem translação nem rotação intencional por mais um segundo e verificar que a caneca permanece elevada e estável."
+    },
+    "22": {
+      "ve": "Na câmera da cabeça, a caneca branca está entre os dedos da mão direita, acima do tampo, com a alça visível à esquerda e a sombra separada abaixo. A profundidade medida da superfície inferior visível é 0,9408 m e a do tampo é 0,7491 m. Na câmera esquerda aparecem a outra mão, a borda da mesa e o piso, sem visão útil da caneca. Na câmera direita, a caneca ocupa o canto inferior esquerdo junto aos dedos fechados.",
+      "porque": "Manter a posição e a preensão por um segundo para verificar estabilidade, sem introduzir inclinação ou deslocamento."
+    },
+    "23": {
+      "ve": "Na câmera da cabeça, a caneca branca está entre os dedos direitos, acima da mesa, com a alça à esquerda e a sombra separada abaixo; os pontos medidos da caneca estão em z=0,936 e 0,994 m, enquanto a mesa está em z=0,749 m. Na câmera esquerda aparecem o braço/mão esquerdo e o piso, sem visão útil da caneca. Na câmera direita, a parede branca da caneca está encostada aos dedos pretos, sobre a mesa vista ao fundo.",
+      "porque": "Manter a preensão e a atitude atuais durante um segundo, sem avançar, para confirmar que a caneca continua suspensa e não escorrega."
+    },
+    "24": {
+      "ve": "A câmera da cabeça mostra a caneca branca presa entre os dedos direitos, claramente separada da mesa; os pontos visíveis do corpo estão a z=0,942–0,987 m e a mesa a z=0,746 m. A câmera do punho direito mostra o corpo e a alça junto aos dedos fechados. A câmera do punho esquerdo mostra a outra mão e o piso, sem visão útil da caneca. Não há contato da mão com a mesa.",
+      "porque": "Manter a posição e a orientação da preensão por mais um segundo, sem avançar nem girar, e confirmar que a caneca permanece suspensa e estável."
+    },
+    "25": {
+      "ve": "Na câmera da cabeça, a caneca branca está presa pelos dedos direitos acima da mesa, com a alça visível à esquerda e a sombra separada abaixo; os pontos visíveis medidos da caneca estão em z=0,930–0,979 m e a mesa em z=0,749 m. A câmera esquerda mostra o outro braço e o ambiente, sem visão útil da caneca. Na câmera direita, o corpo branco e a alça permanecem junto aos dedos fechados.",
+      "porque": "Manter a preensão e a orientação atuais por um segundo, sem translação, para verificar que a caneca continua suspensa e não escorrega."
+    },
+    "26": {
+      "ve": "Na câmera da cabeça, a caneca branca está presa entre os dedos direitos, suspensa sobre a mesa; o ponto visível na região inferior está em z=0,927 m, enquanto a mesa está em z=0,753 m. A câmera direita mostra a caneca junto aos dedos, com a borda e a alça visíveis, sem sinal de queda. A câmera esquerda mostra a mão esquerda, a borda da mesa e o piso, sem a caneca.",
+      "porque": "Manter a pose e a preensão por mais um segundo, completando os dois segundos de sustentação e verificando que a caneca não escorrega nem inclina."
+    },
+    "27": {
+      "ve": "Na câmera da cabeça, a caneca branca está presa na mão direita, acima da mesa, com a alça à esquerda e sombra separada abaixo; os dedos cobrem parte da lateral. A câmera do punho direito mostra a lateral branca entre as partes pretas da mão. A câmera do punho esquerdo mostra o outro punho e o entorno da mesa, sem visão útil da caneca. A superfície inferior visível da caneca foi medida em z=0,9216 m, enquanto a mesa está em z=0,7536 m.",
+      "porque": "Manter a preensão e a pose sem avançar, confirmando que a caneca continua suspensa e não escorrega durante mais um segundo."
+    },
+    "28": {
+      "ve": "Na câmera da cabeça, a caneca branca está presa entre os dedos da mão direita, acima da mesa, com sombra separada; a superfície inferior visível está em z=0,919 m e a mesa em z=0,752 m. A câmera esquerda mostra o outro braço e a região abaixo da mesa, sem visão útil da caneca. A câmera direita mostra de perto a caneca à esquerda e os dedos fechados à direita, com a mesa ao fundo.",
+      "porque": "Manter a mesma posição e orientação com a mão fechada por um segundo, verificando que a caneca permanece suspensa e em pé sem escorregar."
+    }
+  }
 }
