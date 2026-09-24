@@ -417,6 +417,128 @@ class Story:
             f"· Caneca em x = {case['cup_xy'][0]:.2f} m, y = {case['cup_xy'][1]:.2f} m. Orçamento: {self.meta['max_calls']} chamadas."
             + ("  · Prompt com lições do crítico." if self.meta.get("lessons_file") else "")])
         wr.fade_in(intro, n)
+        self._prompt_screens(wr)
+
+    # ---------------- telas do prompt ----------------
+    PROMPT_TALK = {
+        "system": "Este é o prompt de sistema que o modelo recebe em toda decisão, exatamente como foi enviado, em inglês, "
+                  "com a tradução ao lado. Ele descreve o corpo do robô, as câmeras, os limites de cada movimento e quando a "
+                  "tarefa termina. Não diz onde a caneca está nem como pegá-la passo a passo.",
+        "tools": "Estas são as ferramentas que ele pode chamar: mover a palma, medir a profundidade sob um pixel, simular um "
+                 "movimento antes de executar, e declarar a tarefa completa. Em cada decisão ele pode sondar e simular "
+                 "algumas vezes, e depois escolhe uma única ação.",
+        "lessons": "E estas são as lições ativas neste episódio, escritas pelo crítico depois das tentativas anteriores. Elas "
+                   "entram no fim do prompt. São regras gerais: não citam a caneca, nem números, nem o que deu errado.",
+        "obs": "A cada decisão, junto com o prompt, ele recebe isto: a observação medida do próprio corpo, em texto, e as três "
+               "imagens das câmeras com uma grade de coordenadas para apontar pixels. Esta é a do primeiro passo.",
+    }
+
+    def _two_cols(self, title, subtitle, left, right, page_label=""):
+        """Paginas com original (esq.) e traducao (dir.); left/right sao listas de paragrafos alinhados."""
+        pages, col_w, top, bottom = [], 860, 190, H - 40
+        fnt = font(15)
+        img = d = None
+        y = bottom + 1
+        for i, (a, b) in enumerate(zip(left, right)):
+            la = wrap(ImageDraw.Draw(Image.new("RGB", (1, 1))), a, fnt, col_w)
+            lb = wrap(ImageDraw.Draw(Image.new("RGB", (1, 1))), b, fnt, col_w)
+            hgt = max(len(la), len(lb)) * (fnt.size + 5) + 14
+            if y + hgt > bottom:
+                img = Image.new("RGB", (W, H), BG); d = ImageDraw.Draw(img)
+                self.header(d, None)
+                d.text((60, 84), title, font=font(30, True), fill=INK)
+                d.text((60, 126), subtitle, font=FS, fill=MUTED)
+                d.text((60, 158), "ORIGINAL (como o modelo recebe)", font=FH, fill=ACCENT)
+                d.text((60 + col_w + 60, 158), "TRADUÇÃO", font=FH, fill=OK)
+                d.line((60 + col_w + 30, 158, 60 + col_w + 30, H - 30), fill=LINE, width=2)
+                pages.append(img); y = top
+            for k, ln in enumerate(la):
+                d.text((60, y + k * (fnt.size + 5)), ln, font=fnt, fill=INK)
+            for k, ln in enumerate(lb):
+                d.text((60 + col_w + 60, y + k * (fnt.size + 5)), ln, font=fnt, fill=INK)
+            y += hgt
+        if len(pages) > 1:
+            for k, im in enumerate(pages):
+                ImageDraw.Draw(im).text((W - 160, 90), f"página {k + 1} de {len(pages)}", font=FS, fill=MUTED)
+        return pages
+
+    def _prompt_screens(self, wr):
+        pr = (self.narration or {}).get("prompt")
+        if not pr:
+            return
+        o, t = pr["original"], pr["pt"]
+        def paras(txt):   # junta quebras no meio da frase: um paragrafo termina em ponto final
+            out, cur = [], ""
+            for ln in (txt or "").split("\n"):
+                cur = (cur + " " + ln.strip()).strip()
+                if cur.endswith((".", ":")):
+                    out.append(cur); cur = ""
+            return out + ([cur] if cur else [])
+        screens = []
+        ob, tb = paras(o["base"]), paras(t.get("base", ""))
+        tb += [""] * (len(ob) - len(tb))
+        screens.append(("system", self._two_cols("1 · O prompt de sistema", "enviado em toda chamada, antes da observação",
+                                                 ob, tb[:len(ob)])))
+        from direct_run_omniroute import TOOLS
+        lt, rt = [], []
+        for tool in TOOLS:
+            props = ", ".join(tool["input_schema"]["properties"])
+            lt.append(f"{tool['name']}: {tool['description']}  [parâmetros: {props}]")
+            rt.append(f"{tool['name']}: {t.get('tools', {}).get(tool['name'], '')}")
+        screens.append(("tools", self._two_cols("2 · As ferramentas", "o modelo só age chamando uma delas", lt, rt)))
+        if o.get("lessons"):
+            tl = t.get("lessons", []) + [""] * len(o["lessons"])
+            screens.append(("lessons", self._two_cols("3 · As lições do crítico neste episódio",
+                                                      "coladas no fim do prompt de sistema",
+                                                      [f"{i}. {x}" for i, x in enumerate(o["lessons"], 1)],
+                                                      [f"{i}. {x}" for i, x in enumerate(tl[:len(o["lessons"])], 1)])))
+        screens.append(("obs", [self._obs_screen()]))
+        for key, pages in screens:
+            talk = wr.speak(self.PROMPT_TALK[key])
+            per = max(int(18 * FPS), talk // len(pages) + int(2 * FPS))
+            for im in pages:
+                wr.fade_in(im, per)
+
+    def _obs_screen(self):
+        c = self.calls[0]
+        step = self.ep / "obs" / f"step-{c['step_id']:03d}"
+        obs = json.loads((step / "observation.json").read_text())
+        hidden = ("images", "next_call", "episode", "remaining_calls", "remaining_sim_seconds", "finished")
+        pub = {k: v for k, v in obs.items() if k not in hidden}
+        img = Image.new("RGB", (W, H), BG); d = ImageDraw.Draw(img)
+        self.header(d, None)
+        d.text((60, 84), "4 · O que ele recebe a cada decisão", font=font(30, True), fill=INK)
+        d.text((60, 126), "observação medida em texto (JSON) + as 3 imagens com grade de coordenadas · passo 1", font=FS, fill=MUTED)
+        rows = []   # um campo por linha, valores compactos (listas numa linha so)
+        for k, v in pub.items():
+            if isinstance(v, dict):
+                rows.append(f'"{k}": {{')
+                rows += [f'   "{kk}": {json.dumps(vv, ensure_ascii=False)}' for kk, vv in v.items()]
+                rows.append("}")
+            else:
+                rows.append(f'"{k}": {json.dumps(v, ensure_ascii=False)}')
+        txt = "\n".join(rows)
+        y, f = 160, font(12, mono=True)
+        for ln in txt.splitlines():
+            for part in wrap(d, ln, f, 900) or [""]:
+                if y > H - 30:
+                    break
+                d.text((60, y), part, font=f, fill=INK); y += f.size + 3
+        x0, y0 = 1000, 160
+        for cam, (w_, h_) in (("head_camera", (860, 484)), ("left_wrist_camera", (420, 236)), ("right_wrist_camera", (420, 236))):
+            im = Image.open(step / f"{cam}.png").convert("RGB")
+            gd = ImageDraw.Draw(im); stp = 100 if im.width > 500 else 50
+            for gx in range(stp, im.width, stp):
+                gd.line((gx, 0, gx, im.height), fill=(255, 255, 0)); gd.text((gx + 2, 2), str(gx), fill=(255, 255, 0))
+            for gy in range(stp, im.height, stp):
+                gd.line((0, gy, im.width, gy), fill=(255, 255, 0)); gd.text((2, gy + 2), str(gy), fill=(255, 255, 0))
+            im = fit(im, w_, h_)
+            img.paste(im, (x0, y0)); d.text((x0 + 6, y0 + im.height - 20), cam, font=FS, fill=INK)
+            if cam == "head_camera":
+                y0 += im.height + 12
+            else:
+                x0 += im.width + 20
+        return img
 
     def _outro(self, wr):
         nar, r = self.narration or {}, self.report

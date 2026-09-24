@@ -116,6 +116,34 @@ def _translate(model, calls):
     return out
 
 
+SPLIT = "Lessons from your previous attempts (follow them):\n"
+
+
+def translate_prompt(model, system):
+    """Traducao fiel do prompt de sistema (base e licoes) e das descricoes das ferramentas, para as telas iniciais."""
+    import sys
+    sys.path.insert(0, str(Path(__file__).parent))
+    from direct_run_omniroute import TOOLS
+    base, _, lessons = system.partition(SPLIT)
+    items = {"base": base.strip(), "lessons": [l[2:].strip() for l in lessons.strip().splitlines() if l.startswith("- ")],
+             "tools": {t["name"]: t["description"] for t in TOOLS}}
+    prompt = ("Traduza para português do Brasil de forma COMPLETA e fiel, sem resumir, sem acrescentar, mantendo nomes "
+              "de campos e ferramentas em inglês. Devolva só JSON com a mesma estrutura:\n\n" + json.dumps(items, ensure_ascii=False))
+    body = {"model": model, "max_tokens": 16000, "messages": [{"role": "user", "content": prompt}]}
+    req = urllib.request.Request(f"{GATEWAY}/v1/messages", json.dumps(body).encode(),
+                                 {"content-type": "application/json", "anthropic-version": "2023-06-01",
+                                  "x-api-key": os.environ["OMNIROUTE_API_KEY"]})
+    for attempt in range(3):
+        try:
+            resp = json.load(urllib.request.urlopen(req, timeout=600))
+            text = " ".join(c.get("text", "") for c in resp["content"] if c.get("type") == "text")
+            pt = json.loads(re.search(r"\{.*\}", text, re.S).group(0))
+            return {"original": items, "pt": pt}
+        except (ValueError, AttributeError):
+            if attempt == 2:
+                raise
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("episode_dir")
@@ -146,7 +174,8 @@ def main():
     panel = {str(c["call"]): {"ve": tr[str(c["call"])].get("ve_completo", ""),
                               "porque": tr[str(c["call"])].get("porque_completo", "")} for c in calls}
     out = {"voice": old.get("voice", "pt-BR-AntonioNeural"), "intro": old.get("intro"), "steps": steps,
-           "outro": old.get("outro"), "panel_pt": panel}
+           "outro": old.get("outro"), "panel_pt": panel,
+           "prompt": translate_prompt(a.model, json.loads((ep / "episode.json").read_text()).get("system_prompt", ""))}
     old_path.write_text(json.dumps(out, indent=2, ensure_ascii=False) + "\n")
     for n in list(steps)[:5]:
         print(steps[n])
