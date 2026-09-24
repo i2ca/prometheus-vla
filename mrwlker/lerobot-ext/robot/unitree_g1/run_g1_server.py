@@ -1,0 +1,1 @@
+../../../../lerobot-ext/robot/unitree_g1/run_g1_server.py

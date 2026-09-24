@@ -1,0 +1,1 @@
+../../../lerobot-ext/train/inference_pi05_d.py

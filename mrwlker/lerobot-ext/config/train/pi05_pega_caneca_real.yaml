@@ -1,0 +1,140 @@
+# ==========================================================
+# π0.5 — SÓ PEGAR A CANECA, no ROBÔ REAL, partindo do nosso checkpoint
+#
+# POR QUE ESTA CORRIDA EXISTE
+# ---------------------------
+# Em 18/09 rodamos o `pi05_cotreino_completo` no MuJoCo e filmamos o que ele faz. A cada
+# 10 segundos:
+#     t= 0 s  mão levantada, copo e coador na mesa
+#     t=10 s  a mão varre POR CIMA do copo, com os dedos abertos
+#     t=20 s  segue para o coador, mão ainda aberta
+#     t=40 s  chega no coador; o copo está deitado ao pé do antebraço
+# Ele não erra o caminho — ele executa a SEGUNDA METADE do roteiro e nunca fecha a mão.
+# A causa está nos dados: os 1.424 episódios são `"place the white cup on the dripper"`,
+# o roteiro inteiro, e o modelo aprendeu a média do movimento em vez do instante da pega.
+# A avaliação de 16/09 (`prometheus-dados/avaliacao/completo_best.json`) já dizia o mesmo
+# em número: no braço DIREITO, que é o que age, o erro do modelo (0,131 rad) é PIOR que o
+# de ficar parado (0,099 rad).
+#
+# Aqui o dataset é outro: 97 episódios de ROBÔ REAL cuja tarefa é, e só é,
+# `"Pick up the white cup"`. Sem coador, sem segunda metade, sem média para esconder a pega.
+#
+# ── AS TRÊS DIFERENÇAS QUE O CHECKPOINT VAI SENTIR ────────────────────────
+# 1. 28 DIMENSÕES, NÃO 29. O schema v2 (o nosso) é 14 braços + kWaistYaw + 14 mãos; este
+#    dataset é do schema v1, sem a cintura. Os pesos carregam mesmo assim porque o π0.5
+#    empacota estado e ação em `max_state_dim=32` — 28 e 29 são ambos preenchimento. Quem
+#    PRECISA mudar é o normalizador, e o trainer já o reconstrói a partir do dataset novo
+#    (`run_train.py:292` sobrescreve `stats` e `features`). Por isso `pretrained_strict: false`.
+#
+# 2. SEM CÂMERA DE PULSO. As gravações reais têm `head_camera` + `head_camera_depth`; o
+#    checkpoint foi treinado com `head_camera` + `right_wrist_camera`. A torre visual é
+#    compartilhada, então tirar uma câmera não quebra nada — mas é uma entrada a menos, e a
+#    de pulso era justamente a que enxergava o copo de perto na hora de fechar a mão.
+#    A profundidade fica de fora nesta corrida (`use_depth_3d: false`) para casar com o
+#    checkpoint; ligá-la é a variação óbvia da próxima.
+#
+# 3. É ROBÔ REAL. A câmera da cabeça tem o MESMO formato do simulador (480×848), mas a cena
+#    é um laboratório de verdade, não o nosso render. Um modelo afinado aqui serve para o G1
+#    REAL. Avaliá-lo no MuJoCo vai falhar por domínio, não por competência — se a ideia for
+#    testar no simulador, o caminho é co-treinar com os episódios de simulação.
+#
+# ── DIVISÃO ───────────────────────────────────────────────────────────────
+# 87 episódios para treino, 10 para validação. 21.106 quadros no total, então 15.000 passos
+# × batch 4 = 60 mil amostras ≈ 3 passagens pelos dados. Partindo de um modelo que já
+# controla este corpo, 3 passagens é o bastante para a pega aparecer; mais que isso começa a
+# decorar 87 episódios.
+#
+# ── DISCO ─────────────────────────────────────────────────────────────────
+# MEDIDO no teste de fumaça de 18/09: cada checkpoint ocupa 23 GB (os pesos mais o estado do
+# otimizador), não os 13,9 GB só dos pesos. Ficam DOIS no disco — o `best_val_checkpoint`, que o
+# `BestValTracker` sobrescreve a cada recorde, e o do último passo: 46 GB. Ver `save_freq`.
+#
+# ── RITMO, TAMBÉM MEDIDO ──────────────────────────────────────────────────
+# 2,3 s por passo · 1 min 51 s por validação (10 episódios) · 2 min para gravar um checkpoint.
+# 15.000 passos = 9,6 h de treino + ~30 min de validação com `eval_freq: 1000`. Com 500, a
+# validação sozinha passa de 1 h e não diz nada de novo a cada 500 passos.
+# ==========================================================
+dataset:
+  repo_id: Mrwlker/dataset_g1_cup_convertido
+  root: /home/mrwlker/meu_dataset/dataset_g1_cup_convertido
+  episodes: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19,
+             20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37,
+             38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55,
+             56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73,
+             74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86]
+  image_transforms:
+    enable: true
+    max_num_transforms: 1
+    tfs:
+      ColorJitter:
+        type: ColorJitter
+        weight: 1.0
+        kwargs:
+          brightness: [0.8, 1.2]
+          contrast: [0.8, 1.2]
+          saturation: [0.5, 1.5]
+          hue: [-0.05, 0.05]
+
+val_dataset:
+  repo_id: Mrwlker/dataset_g1_cup_convertido
+  root: /home/mrwlker/meu_dataset/dataset_g1_cup_convertido
+  episodes: [87, 88, 89, 90, 91, 92, 93, 94, 95, 96]
+
+policy:
+  type: pi05depth
+  push_to_hub: false
+  # NÃO é mais o `lerobot/pi05_base`: parte do modelo que já treinamos.
+  pretrained_path: /home/mrwlker/ckpts_nossos/pi05_cotreino_completo
+  pretrained_strict: false
+  use_depth_3d: false
+  use_pressure: false
+  paligemma_variant: "gemma_2b"
+  action_expert_variant: "gemma_300m"
+  image_resolution: [224, 224]
+  max_state_dim: 32
+  override_task: null
+  scene_uncertainty_threshold: 0.0
+  n_samples_uncertainty: 1
+  input_features:
+    observation.images.head_camera:
+      type: VISUAL
+      shape: [3, 480, 848]
+    observation.state:
+      type: STATE
+      shape: [28]
+  output_features:
+    action:
+      type: ACTION
+      shape: [28]
+  chunk_size: 50
+  n_action_steps: 50
+  n_obs_steps: 1
+  # 5e-6 e não 1e-5: o ponto de partida já não é um prior genérico, é um modelo que controla
+  # este corpo. Taxa alta aqui desfaz o que ele sabe antes de aprender a pega.
+  optimizer_lr: 5.0e-6
+  optimizer_weight_decay: 0.01
+  scheduler_warmup_steps: 500
+  scheduler_decay_steps: 15000
+  train_expert_only: false
+  freeze_vision_encoder: false
+  dtype: bfloat16
+  gradient_checkpointing: true
+
+output_dir: "/home/mrwlker/train_output/pi05_pega_caneca_real"
+job_name: pi05_pega_caneca_real
+steps: 15000
+batch_size: 4
+num_workers: 8
+log_freq: 100
+# save_freq == steps: a gravacao periodica acontece SO no fim, e isso e o `last`. O `best` vem
+# por outro caminho — o `BestValTracker` grava sempre na mesma pasta `best_val_checkpoint`,
+# sobrescrevendo-a a cada recorde de val_loss. Resultado: dois checkpoints no disco, 27,8 GB,
+# em vez de quinze.
+save_freq: 15000
+eval_freq: 1000
+save_checkpoint: true
+save_best_checkpoint: true
+neutral_position_loss_weight: 0.0
+wandb:
+  enable: false
+tolerance_s: 0.04

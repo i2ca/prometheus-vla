@@ -1,0 +1,73 @@
+{
+  "dataset": "ext_unitree_dex3_2026-09-10",
+  "repo_id": "Mrwlker/ext_unitree_dex3_2026-09-10",
+  "raiz": "/data/mrwlker/meu_dataset/ext_unitree_dex3_2026-09-10",
+  "gerado_em": "2026-09-11",
+  "origem": "unitreerobotics/G1_Dex3_* convertidos por converte_dex3_unitree.py e agregados por junta_convertidos.sh",
+  "total_episodios": 1140,
+  "total_quadros": 828128,
+  "fps": 30,
+  "robot_type": "unitree_g1_dex3",
+  "codebase_version": "v3.0",
+  "features_equal_for_merge_contra_robo_real": true,
+  "avisos": [
+    "A PROFUNDIDADE E FALSA: head_camera_depth foi gravada com zeros e o decodificador devolve 10,0 m uniformes. Treinar so com use_depth_3d: false.",
+    "As pressoes (left/right_hand_pressure, 33 cada) sao zeros. use_pressure: false.",
+    "A dim 14 (yaw do tronco) e 0.0 em todos os quadros: o tronco ficou fixo na coleta da Unitree.",
+    "NENHUMA destas tarefas e a nossa (place the white cup on the dripper). Este dataset ensina controle do G1+Dex3, nao a tarefa do cafe."
+  ],
+  "tarefas": [
+    {
+      "task_index": 3,
+      "task": "toasted bread",
+      "episodios": 418,
+      "quadros": 352022,
+      "duracao_media_s": 28.1,
+      "faixas_de_indice": [
+        [
+          722,
+          1139
+        ]
+      ]
+    },
+    {
+      "task_index": 0,
+      "task": "camera packaging",
+      "episodios": 201,
+      "quadros": 256253,
+      "duracao_media_s": 42.5,
+      "faixas_de_indice": [
+        [
+          0,
+          200
+        ]
+      ]
+    },
+    {
+      "task_index": 2,
+      "task": "pour water",
+      "episodios": 311,
+      "quadros": 121587,
+      "duracao_media_s": 13.0,
+      "faixas_de_indice": [
+        [
+          411,
+          721
+        ]
+      ]
+    },
+    {
+      "task_index": 1,
+      "task": "object placement",
+      "episodios": 210,
+      "quadros": 98266,
+      "duracao_media_s": 15.6,
+      "faixas_de_indice": [
+        [
+          201,
+          410
+        ]
+      ]
+    }
+  ]
+}

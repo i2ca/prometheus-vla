@@ -1,0 +1,75 @@
+# ==========================================================
+# TREINO — ACT no simulador da Unitree (IsaacLab), tarefa do cubo vermelho
+#
+# Por que este treino existe: em 16-17/09 testamos TODOS os checkpoints públicos
+# desta tarefa — 8 configurações, 32 tentativas — e nenhum resolveu (recompensa
+# 0,0 em todas). Ver docs/SESSAO_2026-09-16.md. Antes de culpar os dados, treinar
+# o nosso responde a pergunta que ficou: a tarefa é aprendível com este dataset?
+#
+#   conda activate prometheus-vla
+#   lerobot-train --config_path=config/train/act_redblock_isaaclab.yaml
+#
+# Avaliação (com o simulador de pé, ver ~/sobe_sim_unitree.sh):
+#   ~/sobe_politica.sh --politica outputs/train/act_redblock_isaaclab/checkpoints/<N>/pretrained_model
+# ==========================================================
+
+# ==========================================================
+# 1. DATASET
+# ==========================================================
+# 107 demonstrações gravadas DENTRO do `Isaac-PickPlace-RedBlock-G129-Dex1-Joint`,
+# o mesmo ambiente em que avaliamos. Diferença de domínio zero — foi exatamente
+# isso que faltou no π0.5 do cubo azul, treinado em vídeo de robô real.
+#
+# Schema: estado e ação de 16 dims (14 juntas dos braços + garra esquerda + garra
+# direita, nesta ordem), três câmeras de 480x640.
+dataset:
+  repo_id: RooibosT/g1_pick_redblock_dex1_sim_merged_107demo
+
+# ==========================================================
+# 2. POLÍTICA
+# ==========================================================
+policy:
+  type: act
+  device: cuda
+  push_to_hub: false
+
+  # chunk 50 a 30 Hz = 1,7 s de plano. Quanto DESSE plano executar antes de
+  # replanejar é decisão de inferência, não de treino: medimos em 16/09 que o
+  # mesmo checkpoint muda de comportamento entre lead 50 e lead 10. A ponte
+  # controla isso com `--passos-acao`.
+  chunk_size: 50
+  n_action_steps: 50
+
+  vision_backbone: resnet18
+  pretrained_backbone_weights: ResNet18_Weights.IMAGENET1K_V1
+  dim_model: 512
+  n_heads: 8
+  n_encoder_layers: 4
+  n_decoder_layers: 1
+  use_vae: true
+  latent_dim: 32
+  kl_weight: 10.0
+  dropout: 0.1
+
+  optimizer_lr: 1.0e-4
+  optimizer_lr_backbone: 1.0e-5
+  optimizer_weight_decay: 1.0e-4
+
+# ==========================================================
+# 3. CORRIDA
+# ==========================================================
+# 60.000 passos: os checkpoints públicos desta tarefa usaram entre 30k e 100k, e
+# o de 100k (binabik) não foi melhor que o de 50k. Salva a cada 5.000 para dar
+# para avaliar no simulador enquanto o resto treina.
+steps: 60000
+batch_size: 24
+num_workers: 8
+save_freq: 5000
+log_freq: 200
+seed: 1000
+
+output_dir: outputs/train/act_redblock_isaaclab
+job_name: act_redblock_isaaclab
+
+wandb:
+  enable: false

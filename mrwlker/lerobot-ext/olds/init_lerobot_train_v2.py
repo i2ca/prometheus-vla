@@ -1,0 +1,1 @@
+../../../lerobot-ext/olds/init_lerobot_train_v2.py

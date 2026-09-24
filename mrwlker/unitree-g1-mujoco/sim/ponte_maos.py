@@ -1,0 +1,1 @@
+../../../unitree-g1-mujoco/sim/ponte_maos.py
