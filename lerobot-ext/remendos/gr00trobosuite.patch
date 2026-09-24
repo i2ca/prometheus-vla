@@ -1,0 +1,16 @@
+diff --git a/robosuite/environments/base.py b/robosuite/environments/base.py
+index 0072961..bc1366b 100644
+--- a/robosuite/environments/base.py
++++ b/robosuite/environments/base.py
+@@ -267,8 +267,9 @@ class MujocoEnv(metaclass=EnvMeta):
+         # TODO(yukez): investigate black screen of death
+         # Use hard reset if requested
+ 
+-        # always terminate mjviewer
+-        if self.renderer == "mjviewer":
++        # always terminate mjviewer — exceto num reset leve (hard_reset=False): o
++        # modelo é o mesmo, então a janela pode continuar ligada a ele.
++        if self.renderer == "mjviewer" and (self.hard_reset and not self.deterministic_reset):
+             self._destroy_viewer()
+ 
+         if self.hard_reset and not self.deterministic_reset:
