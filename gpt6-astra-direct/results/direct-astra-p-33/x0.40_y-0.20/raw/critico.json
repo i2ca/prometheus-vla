@@ -1,0 +1,346 @@
+{
+ "schemaVersion": 5,
+ "summary": {
+  "id": "1790189561533-c29f9d",
+  "timestamp": "2026-09-23T18:54:35.337Z",
+  "method": "POST",
+  "path": "/v1/messages",
+  "status": 200,
+  "model": "gpt-6-astra",
+  "requestedModel": "codex/gpt-6-astra",
+  "provider": "codex",
+  "account": "luiz.coutinho.dev@gmail.com",
+  "connectionId": "1d665760-ccac-4a93-8449-c9c814752bb7",
+  "duration": 113804,
+  "tokens": {
+   "in": 3504,
+   "out": 3679,
+   "cacheRead": 0,
+   "cacheWrite": null,
+   "reasoning": 2070,
+   "compressed": null
+  },
+  "requestType": null,
+  "sourceFormat": "claude",
+  "targetFormat": "openai-responses",
+  "apiKeyId": "ad52ad98-c3ce-45a9-b4ab-5ab0ce4e4af8",
+  "apiKeyName": "claude-code-cli",
+  "comboName": null,
+  "comboStepId": null,
+  "comboExecutionKey": null
+ },
+ "requestBody": {
+  "model": "codex/gpt-6-astra",
+  "system": "You are reviewing one episode of a vision-language policy that controls a Unitree G1 right arm\n(Dex3 hand) in MuJoCo to grasp a mug and lift it. The policy only sees 3 RGB cameras (head, left wrist,\nright wrist) plus measured palm pose, joints and gripper closure, and it can query the head depth camera\n(probe_depth: 3D point under a pixel). Judge whether it used that sensor well. It does NOT know the mug position.\nYou see more than the policy did: the simulator truth per step and the evaluator verdict.\n\nYour job: explain why the episode failed (or succeeded) and write lessons that will be added to the\npolicy's system prompt in FUTURE episodes, where the mug may be somewhere else.\n\nHard rules for lessons (they become permanent rules in the policy's system prompt):\n- Generic manipulation principles, valid for ANY object and ANY later stage of a kitchen task\n  (mug, jug, kettle, filter, spoon...). Say \"the object\" / \"the target\", never name this object.\n- Never describe this episode: no step numbers, no \"you did X\", no which finger touched what, no\n  \"last time\". The policy must not be told what went wrong; it must receive a rule that would have\n  prevented it and that also holds elsewhere.\n- No coordinates, distances, angles or numbers from the scene. Qualitative guidance only.\n- Each lesson must be checkable from the policy's own inputs (images + proprioception) and must say\n  what to DO next, not only when to stop. A rule that only makes the policy stop, wait or retreat\n  will make it stall; pair any \"stop\" with the alternative action to try.\n- At most 4 lessons, most important first. Put the evidence (steps) in evidence_steps/why, which the\n  policy never sees.\n\nAlways write lessons, whether the episode was accepted or not. The policy has no call limit, so\nefficiency is part of quality: every call costs time and tokens (see COST). If the episode was\nACCEPTED, focus on efficiency: which calls were unnecessary, which detours could be skipped, how to\nreach the same result with fewer calls without losing reliability. If it FAILED, focus on what would\nhave made it succeed, and add efficiency only when waste was significant.\n\nIf the policy already had lessons in its prompt (listed as ACTIVE LESSONS), judge them against what\nhappened: which helped, which caused harmful behavior (for example stalling, repeated retreat, or new\ncollisions). Return the COMPLETE revised set that replaces them: keep what helped, rewrite or drop what hurt.\n\nAnswer only with JSON:\n{\"diagnosis\": \"...\", \"failure_mode\": \"...\",\n \"lessons_review\": [{\"lesson\": \"...\", \"verdict\": \"helped|hurt|neutral\", \"why\": \"...\"}],\n \"lessons\": [{\"lesson\": \"...\", \"evidence_steps\": [..], \"why\": \"...\"}]}",
+  "output_config": {
+   "effort": "max"
+  },
+  "messages": [
+   {
+    "role": "user",
+    "content": [
+     {
+      "type": "text",
+      "text": "TASK: Pegue a caneca branca da mesa com a mao direita, levante-a pelo menos 8 cm mantendo-a em pe, e segure por 2 segundos.\nPOLICY SYSTEM PROMPT RULES: palm target within 5 cm / 0.35 rad per call; gripper open/closed/keep.\nACTIVE LESSONS in the policy prompt during this episode:\n- Treat the task-required object attitude as a constraint during approach and contact acquisition, not merely after lifting. Check the complete swept hand, arm, and any held object against observed geometry; support clearance alone does not establish a clear approach. Establish hand attitude in free space and align opposing solid contact regions that resist unwanted rotation. If an unsecured target shifts or rotates unexpectedly, unload along a clear path, observe its settled pose, and restore a task-compatible pose or revise the approach. Close in place only after the target pose, contact alignment, and closing sweep are verified.\n- Maintain explicit task-compatible position and attitude goals separately from measured pose. Use measurements to construct bounded commands toward those goals; do not redefine a hold goal by copying each newly measured pose. After acting, compare achieved hand motion and object attitude with the intended change. If tracking deviates, revise the motion prediction and make a clearance-checked correction while retention remains reliable. If corrections are poorly tracked or the object moves unpredictably relative to the hand, re-support the object and choose a more controllable arm configuration or grasp before resuming.\n- Make each cautious retention test lead to a decision. If corresponding object features follow the hand reliably and task conditions are satisfied, proceed to the next required action or execute the remaining hold. If retention is reliable but attitude is wrong, correct attitude in verified clearance instead of adding more displacement or repeating the same hold. If retention remains ambiguous, obtain a more informative view or measurement; if uncertainty persists, re-support and revise the grasp. Count holding time only while all required conditions remain verified, and finish when the task is satisfied.\n- Choose depth queries to resolve the uncertainty that changes the next action. Identify which visible target surface each sample belongs to, reject hand or background returns and inconsistent samples, and estimate spatial attitude from a coherent surface or identifiable object axis. Do not infer attitude from an upright-looking projection or similar heights of unrelated points. Track corresponding features to assess displacement, attitude, and hand-relative stability separately. Reuse geometry while observations remain consistent; if useful features are obscured or estimates disagree, inspect another view or make a clearance-checked visibility adjustment before selecting the next manipulation action."
+     },
+     {
+      "type": "text",
+      "text": "{\"step\": 1, \"tool\": \"actuate\", \"policy_saw\": \"Head: the white mug is upright on the tabletop, left of the right hand, with its handle to image-left; the hand is above the table. Left wrist: robot and table edge, no mug. Right wrist: the mug and handle are below-left of the open fingers. Depth samples put the table near z=0.749 and mug rim near z=0.84.\", \"policy_reason\": \"Establish a level side-grasp attitude in free space, with the fingers open, before lowering toward the mug.\", \"action\": {\"steps\": 5, \"position\": [0.18672, -0.22595, 0.90596], \"quaternion_wxyz\": [0.99875, -0.04998, 0, 0], \"gripper\": \"open\"}, \"measured_palm_before\": {\"position\": [0.18672, -0.22595, 0.90596], \"quaternion_wxyz\": [0.982492, -0.175626, 0.043489, -0.044417]}, \"hand_geometry_before\": {\"thumb_tip\": [0.2646, -0.1271, 0.8599], \"index_tip\": [0.4049, -0.2413, 0.9202], \"middle_tip\": [0.3993, -0.2584, 0.8661], \"aperture_center\": [0.3042, -0.2102, 0.8875], \"lowest_point\": [0.365, -0.2529, 0.852], \"note\": \"from measured joint angles and the robot's own hand mesh; same frame as palm and depth probes\"}, \"gripper_closure_before\": 0.0, \"harness_result\": {\"status\": \"aborted_on_contact\", \"frames\": 30, \"requested_position\": [0.18672, -0.22595, 0.90596], \"reached_position\": [0.18589, -0.21698, 0.90534], \"position_gap_m\": 0.009, \"rotation_gap_rad\": 0.066, \"hand_table_contact\": [], \"self_collision\": [[\"right_shoulder_yaw_link\", \"torso_link\"]], \"ik_at_request\": {\"position_error_m\": 0.0002774450217868133, \"orientation_error_rad\": 0.0009455516631450066, \"iterations\": 6}}, \"depth_probes_by_policy\": [{\"camera\": \"head_camera\", \"pixels\": [[646, 172], [623, 226], [653, 246], [588, 205], [548, 260], [674, 216]], \"points_3d\": [[0.4342, -0.2141, 0.7896], [0.3674, -0.1779, 0.8057], [0.3642, -0.216, 0.7706], [0.4047, -0.1578, 0.7771], [0.3595, -0.1205, 0.7486], [0.3622, -0.212, 0.8346]]}, {\"camera\": \"head_camera\", \"pixels\": [[646, 136], [679, 149], [697, 178], [684, 202], [662, 218], [620, 202], [604, 175], [614, 151]], \"points_3d\": [[0.4358, -0.1959, 0.8465], [0.4274, -0.2265, 0.8386], [0.3979, -0.2371, 0.8378], [0.3903, -0.2355, 0.8087], [0.3588, -0.2003, 0.8375], [0.3747, -0.1674, 0.8364], [0.4038, -0.1583, 0.8331], [0.4203, -0.1657, 0.846]]}], \"pose_previews_by_policy\": [{\"asked\": {\"position\": [0.18672, -0.22595, 0.90596], \"quaternion_wxyz\": [0.99875, -0.04998, 0, 0], \"steps\": 5, \"gripper\": \"open\"}, \"lowest_hand_point\": {\"z\": 0.852, \"point\": [0.365, -0.2529, 0.852]}}], \"SIM_TRUTH_hidden_from_policy\": {\"fingers_touching_mug\": [], \"mug_tilt_deg_max\": 0.0, \"mug_height_change_cm\": -0.0, \"palm_to_mug_horizontal_cm_end\": 21.5, \"palm_height_above_mug_base_cm_end\": 15.5, \"mug_touches_table_end\": true}}"
+     },
+     {
+      "type": "text",
+      "text": "head_camera the policy saw at step 1:"
+     },
+     {
+      "type": "image",
+      "source": {
+       "type": "base64",
+       "media_type": "image/jpeg",
+       "data": {
+        "omitted": "imagem",
+        "chars_no_log": 22404,
+        "sha256_do_texto": "0e1cd29914751a11fa0528da4934ad0248ba3d8c52914bb16a6f042acb0da963",
+        "cortada_pelo_gateway": false
+       }
+      }
+     },
+     {
+      "type": "text",
+      "text": "External 6-camera view at the end of the episode (policy never saw this):"
+     },
+     {
+      "type": "image",
+      "source": {
+       "type": "base64",
+       "media_type": "image/jpeg",
+       "data": {
+        "omitted": "imagem",
+        "chars_no_log": 65567,
+        "sha256_do_texto": "5a9dd9a7b252414fb51639223bb4258de6d274b1cd3d2fcf87034442be23fe19",
+        "cortada_pelo_gateway": true
+       }
+      }
+     },
+     {
+      "type": "text",
+      "text": "COST: {\"calls\": 1, \"input_tokens\": 5980, \"output_tokens\": 709, \"model_wait_s\": 31.4, \"sim_seconds\": 2.03, \"palm_path_length_cm\": 0, \"gripper_close_commands\": 0}"
+     },
+     {
+      "type": "text",
+      "text": "EVALUATOR: {\"accepted\": false, \"lift_m\": 0.0, \"retained_for_2s\": false, \"upright_grasp\": false, \"cup_tilt_deg_before_close\": 0.0, \"calls_used\": 1, \"aborted\": {\"call\": 1, \"frame\": -1, \"hand_table\": [], \"self_collision\": [[\"right_shoulder_yaw_link\", \"torso_link\"]]}}"
+     }
+    ]
+   }
+  ],
+  "max_output_tokens": 16000
+ },
+ "responseBody": {
+  "id": "resp_04fa28cbf4ebc802016ab41ffa211c87d2b3326474ff9cfe37",
+  "object": "response",
+  "model": "gpt-6-astra",
+  "output": [
+   {
+    "id": "rs_04fa28cbf4ebc802016ab41ffc9d2087d2a2e0dab6659a05cd",
+    "type": "reasoning",
+    "content": [],
+    "encrypted_content": "[omitted: encrypted reasoning, 5196 chars]",
+    "internal_chat_message_metadata_passthrough": {
+     "turn_id": "c8fef72d-32be-42f9-a856-a916835a8d39"
+    },
+    "summary": [
+     {
+      "type": "summary_text",
+      "text": "**Revising body-clearance guidance**"
+     },
+     {
+      "type": "summary_text",
+      "text": "**Assessing first lesson**"
+     },
+     {
+      "type": "summary_text",
+      "text": "**Reviewing query efficiency**"
+     }
+    ],
+    "metadata": {
+     "turn_id": "c8fef72d-32be-42f9-a856-a916835a8d39"
+    }
+   },
+   {
+    "id": "rs_04fa28cbf4ebc802016ab4200c7ca087d2ab4fe2260dfda652",
+    "type": "reasoning",
+    "content": [],
+    "encrypted_content": "[omitted: encrypted reasoning, 4984 chars]",
+    "internal_chat_message_metadata_passthrough": {
+     "turn_id": "c8fef72d-32be-42f9-a856-a916835a8d39"
+    },
+    "summary": [
+     {
+      "type": "summary_text",
+      "text": "**Checking moving-arm clearance**"
+     }
+    ],
+    "metadata": {
+     "turn_id": "c8fef72d-32be-42f9-a856-a916835a8d39"
+    }
+   },
+   {
+    "id": "rs_04fa28cbf4ebc802016ab4201d947487d29ba05e6df14d18b6",
+    "type": "reasoning",
+    "content": [],
+    "encrypted_content": "[omitted: encrypted reasoning, 5240 chars]",
+    "internal_chat_message_metadata_passthrough": {
+     "turn_id": "c8fef72d-32be-42f9-a856-a916835a8d39"
+    },
+    "summary": [
+     {
+      "type": "summary_text",
+      "text": "**Reviewing lesson evidence.**"
+     },
+     {
+      "type": "summary_text",
+      "text": "**Reviewing lesson verdict.**"
+     }
+    ],
+    "metadata": {
+     "turn_id": "c8fef72d-32be-42f9-a856-a916835a8d39"
+    }
+   },
+   {
+    "id": "rs_04fa28cbf4ebc802016ab4202d047887d2acba7f7fb7b1939f",
+    "type": "reasoning",
+    "content": [],
+    "encrypted_content": "[omitted: encrypted reasoning, 5004 chars]",
+    "internal_chat_message_metadata_passthrough": {
+     "turn_id": "c8fef72d-32be-42f9-a856-a916835a8d39"
+    },
+    "summary": [
+     {
+      "type": "summary_text",
+      "text": "**Reviewing label rationale**"
+     },
+     {
+      "type": "summary_text",
+      "text": "**Refining rule wording**"
+     },
+     {
+      "type": "summary_text",
+      "text": "**Refining rule wording**"
+     }
+    ],
+    "metadata": {
+     "turn_id": "c8fef72d-32be-42f9-a856-a916835a8d39"
+    }
+   },
+   {
+    "id": "msg_04fa28cbf4ebc802016ab4203e752487d29a11491493f4f1b3",
+    "type": "message",
+    "status": "completed",
+    "content": [
+     {
+      "type": "output_text",
+      "annotations": [],
+      "logprobs": [],
+      "text": "{\n  \"diagnosis\": \"The episode failed before grasp acquisition. The only action changed palm orientation while keeping its target position fixed; execution aborted on contact between the right shoulder yaw link and the torso. The hand never contacted the mug, the gripper never closed, and no lift occurred. Depth sensing usefully established target surfaces and tabletop height, but those measurements did not validate the whole-arm motion. The preview checked the hand's lowest point, and endpoint IK was accurate, yet neither established self-collision clearance during the orientation change. The decisive missing check concerned the arm relative to the robot's body, not the mug's location.\",\n  \"failure_mode\": \"Whole-arm self-collision during a fixed-position palm reorientation, before any grasp attempt.\",\n  \"lessons_review\": [\n    {\n      \"lesson\": \"Treat the task-required object attitude as a constraint during approach and contact acquisition, not merely after lifting. Check the complete swept hand, arm, and any held object against observed geometry; support clearance alone does not establish a clear approach. Establish hand attitude in free space and align opposing solid contact regions that resist unwanted rotation. If an unsecured target shifts or rotates unexpectedly, unload along a clear path, observe its settled pose, and restore a task-compatible pose or revise the approach. Close in place only after the target pose, contact alignment, and closing sweep are verified.\",\n      \"verdict\": \"neutral\",\n      \"why\": \"At step 1, the policy explicitly followed the instruction to establish attitude in free space, but did not adequately apply the whole-arm clearance requirement. The preview reported hand height rather than arm–body clearance. The principle remains valid, but needs an explicit distinction between free space around the hand and a safe arm configuration, plus an alternative to fixed-position rotation.\"\n    },\n    {\n      \"lesson\": \"Maintain explicit task-compatible position and attitude goals separately from measured pose. Use measurements to construct bounded commands toward those goals; do not redefine a hold goal by copying each newly measured pose. After acting, compare achieved hand motion and object attitude with the intended change. If tracking deviates, revise the motion prediction and make a clearance-checked correction while retention remains reliable. If corrections are poorly tracked or the object moves unpredictably relative to the hand, re-support the object and choose a more controllable arm configuration or grasp before resuming.\",\n      \"verdict\": \"neutral\",\n      \"why\": \"The episode ended during the initial orientation change at step 1. There was no retained object, hold-goal drift, or opportunity to evaluate corrective tracking. Preserve these safeguards without attributing the abort to a retention or tracking failure.\"\n    },\n    {\n      \"lesson\": \"Make each cautious retention test lead to a decision. If corresponding object features follow the hand reliably and task conditions are satisfied, proceed to the next required action or execute the remaining hold. If retention is reliable but attitude is wrong, correct attitude in verified clearance instead of adding more displacement or repeating the same hold. If retention remains ambiguous, obtain a more informative view or measurement; if uncertainty persists, re-support and revise the grasp. Count holding time only while all required conditions remain verified, and finish when the task is satisfied.\",\n      \"verdict\": \"neutral\",\n      \"why\": \"No retention test or hold occurred before the step 1 abort. This rule was untested and did not contribute to the failure.\"\n    },\n    {\n      \"lesson\": \"Choose depth queries to resolve the uncertainty that changes the next action. Identify which visible target surface each sample belongs to, reject hand or background returns and inconsistent samples, and estimate spatial attitude from a coherent surface or identifiable object axis. Do not infer attitude from an upright-looking projection or similar heights of unrelated points. Track corresponding features to assess displacement, attitude, and hand-relative stability separately. Reuse geometry while observations remain consistent; if useful features are obscured or estimates disagree, inspect another view or make a clearance-checked visibility adjustment before selecting the next manipulation action.\",\n      \"verdict\": \"helped\",\n      \"why\": \"At step 1, depth samples provided useful metric information about the mug and support surface, rather than relying solely on image appearance. However, this geometric information addressed target and table clearance, not the arm–body clearance that determined whether the chosen action could execute.\"\n    }\n  ],\n  \"lessons\": [\n    {\n      \"lesson\": \"Treat a palm orientation change as a whole-arm motion, even when the palm position stays fixed. Use available camera views and measured joints to assess arm–body clearance as well as clearance from surrounding geometry, including any held object. Hand clearance and endpoint reachability are not substitutes for checking the arm's sweep. If an in-place rotation crowds the arm against the body or its clearance is uncertain, inspect the other available views and choose a better-separated waypoint; move toward it while largely preserving attitude, then blend the needed rotation into the approach. Use bounded increments and recheck visible arm clearance and measured tracking before continuing.\",\n      \"evidence_steps\": [1],\n      \"why\": \"The fixed-position orientation command caused shoulder–torso contact despite ample hand–table clearance and accurate endpoint IK. A configuration-aware approach, rather than assuming the hand's free space applied to the whole arm, directly addresses the failure.\"\n    },\n    {\n      \"lesson\": \"Maintain explicit task-compatible position and attitude goals rather than replacing them with each newly measured pose. Plan approach and contact acquisition to preserve the required target attitude, align opposing contact regions that resist unwanted motion, and clear the closing sweep. If an unsecured target shifts unexpectedly, unload along an observed clear path, observe its settled pose, and restore a compatible pose or revise the approach before closing. After acting, compare achieved hand motion and target attitude with the intended change. Correct in verified clearance while retention is reliable; otherwise re-support the target and choose a more controllable arm configuration or grasp.\",\n      \"evidence_steps\": [1],\n      \"why\": \"The initial action pursued a task-compatible grasp attitude, but the abort prevented contact acquisition or tracking evaluation. This retains the useful attitude, contact, and goal-tracking safeguards while allowing configuration changes instead of requiring orientation to be completed at a fixed palm location.\"\n    },\n    {\n      \"lesson\": \"Make each cautious retention test lead to a decision. If corresponding object features follow the hand reliably and task conditions are satisfied, proceed to the next required action or execute the remaining hold. If retention is reliable but attitude is wrong, correct attitude in verified clearance instead of adding displacement or repeating the same hold. If retention remains ambiguous, obtain a more informative view or measurement; if uncertainty persists, re-support the object and revise the grasp. Count holding time only while all required conditions remain verified, and finish when the task is satisfied.\",\n      \"evidence_steps\": [1],\n      \"why\": \"Retained as an untested safeguard: the episode terminated before any grasp or lift, so there is no evidence that this decision-oriented retention rule needs removal.\"\n    },\n    {\n      \"lesson\": \"Choose depth queries to resolve uncertainty that changes the next action. Associate each sample with a visible target surface, reject hand or background returns and inconsistent samples, and estimate attitude from a coherent surface or identifiable object axis. Do not infer spatial attitude from an upright-looking projection or similar heights of unrelated points. Track corresponding features to assess displacement, attitude, and hand-relative stability separately. Reuse geometry while observations remain consistent. When the unresolved issue is arm clearance rather than target geometry, inspect the relevant arm and body views and revise the approach instead of collecting more target samples.\",\n      \"evidence_steps\": [1],\n      \"why\": \"The depth samples supported useful target localization, but additional target geometry would not establish shoulder–torso clearance. The revision preserves good depth practice while directing sensing toward the uncertainty that actually constrains the next motion.\"\n    }\n  ]\n}"
+     }
+    ],
+    "internal_chat_message_metadata_passthrough": {
+     "create_time": 1790189562.335997,
+     "turn_id": "c8fef72d-32be-42f9-a856-a916835a8d39"
+    },
+    "phase": "final_answer",
+    "role": "assistant",
+    "metadata": {
+     "turn_id": "c8fef72d-32be-42f9-a856-a916835a8d39"
+    }
+   }
+  ],
+  "usage": {
+   "attribution": {
+    "items": {
+     "msg_04fa28cbf4ebc802016ab41ffa316487d2bbcd563004878eee": {
+      "cache_write_tokens": 0,
+      "cached_tokens": 0,
+      "content": [
+       {
+        "cache_write_tokens": 0,
+        "cached_tokens": 0,
+        "input_tokens": 520,
+        "output_tokens": 0
+       },
+       {
+        "cache_write_tokens": 0,
+        "cached_tokens": 0,
+        "input_tokens": 1107,
+        "output_tokens": 0
+       },
+       {
+        "cache_write_tokens": 0,
+        "cached_tokens": 0,
+        "input_tokens": 10,
+        "output_tokens": 0
+       },
+       {
+        "cache_write_tokens": 0,
+        "cached_tokens": 0,
+        "input_tokens": 289,
+        "output_tokens": 0
+       },
+       {
+        "cache_write_tokens": 0,
+        "cached_tokens": 0,
+        "input_tokens": 17,
+        "output_tokens": 0
+       },
+       {
+        "cache_write_tokens": 0,
+        "cached_tokens": 0,
+        "input_tokens": 769,
+        "output_tokens": 0
+       },
+       {
+        "cache_write_tokens": 0,
+        "cached_tokens": 0,
+        "input_tokens": 62,
+        "output_tokens": 0
+       },
+       {
+        "cache_write_tokens": 0,
+        "cached_tokens": 0,
+        "input_tokens": 96,
+        "output_tokens": 0
+       }
+      ],
+      "input_tokens": 2870,
+      "output_tokens": 0
+     },
+     "rs_04fa28cbf4ebc802016ab41ffc9d2087d2a2e0dab6659a05cd": {
+      "cache_write_tokens": 0,
+      "cached_tokens": 0,
+      "input_tokens": 2,
+      "output_tokens": 516
+     },
+     "rs_04fa28cbf4ebc802016ab4200c7ca087d2ab4fe2260dfda652": {
+      "cache_write_tokens": 0,
+      "cached_tokens": 0,
+      "input_tokens": 0,
+      "output_tokens": 518
+     },
+     "rs_04fa28cbf4ebc802016ab4201d947487d29ba05e6df14d18b6": {
+      "cache_write_tokens": 0,
+      "cached_tokens": 0,
+      "input_tokens": 0,
+      "output_tokens": 518
+     },
+     "rs_04fa28cbf4ebc802016ab4202d047887d2acba7f7fb7b1939f": {
+      "cache_write_tokens": 0,
+      "cached_tokens": 0,
+      "input_tokens": 0,
+      "output_tokens": 518
+     },
+     "msg_04fa28cbf4ebc802016ab4203e752487d29a11491493f4f1b3": {
+      "cache_write_tokens": 0,
+      "cached_tokens": 0,
+      "content": [
+       {
+        "cache_write_tokens": 0,
+        "cached_tokens": 0,
+        "input_tokens": 0,
+        "output_tokens": 1609
+       }
+      ],
+      "input_tokens": 0,
+      "output_tokens": 1609
+     }
+    },
+    "request_fields": {
+     "instructions": {
+      "cache_write_tokens": 0,
+      "cached_tokens": 0,
+      "input_tokens": 632,
+      "output_tokens": 0
+     }
+    }
+   },
+   "input_tokens": 3504,
+   "input_tokens_details": {
+    "cache_write_tokens": 0,
+    "cached_tokens": 0
+   },
+   "output_tokens": 3679,
+   "output_tokens_details": {
+    "reasoning_tokens": 2070
+   },
+   "total_tokens": 7183
+  },
+  "status": "completed",
+  "created_at": 1790189562,
+  "metadata": {},
+  "_omniroute": {
+   "claudePromptCacheUsage": {
+    "cacheReadTokens": 0,
+    "cacheCreationTokens": 0
+   }
+  }
+ },
+ "error": null
+}

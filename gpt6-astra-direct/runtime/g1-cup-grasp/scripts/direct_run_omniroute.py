@@ -121,6 +121,7 @@ TILT_BEFORE_CLOSE_DEG = 15.0   # mesmo limite do direct_finish.py
 
 
 INFO_TOOLS = ("probe_depth", "preview_pose")
+RAW_DIR = None   # definido no main: <ep>/raw-runner
 
 
 def ask(model, obs, system, probe, effort=None, preview=None):
@@ -136,6 +137,12 @@ def ask(model, obs, system, probe, effort=None, preview=None):
         if effort:  # nivel de raciocinio da politica (o gateway traduz output_config.effort para o upstream)
             body["output_config"] = {"effort": effort}
         resp = post(body)
+        if RAW_DIR is not None:   # log bruto proprio: nao depende da rotacao do gateway (que apaga os antigos)
+            from export_raw_logs import strip_images
+            RAW_DIR.mkdir(exist_ok=True)
+            n = len(list(RAW_DIR.glob("*.json"))) + 1
+            (RAW_DIR / f"{n:04d}.json").write_text(json.dumps(
+                {"requestBody": strip_images(body), "responseBody": resp}, indent=1, ensure_ascii=False) + "\n")
         for k in usage:
             usage[k] += (resp.get("usage") or {}).get(k, 0)
         uses = [c for c in resp.get("content", []) if c.get("type") == "tool_use"]
@@ -193,6 +200,8 @@ def main():
     meta["policy_effort"] = a.effort
     (ep_dir / "episode.json").write_text(json.dumps(meta, indent=2) + "\n")
     (ep_dir / "policy-calls").mkdir()
+    global RAW_DIR
+    RAW_DIR = ep_dir / "raw-runner"
     log = open(ep_dir / "policy-log.jsonl", "a")
 
     n = 0

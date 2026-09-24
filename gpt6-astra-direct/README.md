@@ -24,6 +24,12 @@ passos seguidos e só falharam porque o robô não declarou a tarefa concluída.
 | `results/<episódio>/x0.40_y-0.20/` | um episódio: `policy-calls/` (cada decisão), `actions/` e `truth/` (verdade), `report.json`, vídeo |
 | `results/direct-lessons-visao-real.json` | a memória de lições do crítico (a versão mais recente é a que entra no prompt) |
 
+Log bruto: `raw/` guarda o pedido exato enviado ao modelo e a resposta exata, chamada por chamada (inclusive as
+sondagens e prévias de cada decisão e a do crítico), tirados do log do gateway, com o resumo do raciocínio que a
+OpenAI devolve. As imagens aparecem só como hash e tamanho (estão em `obs/` na máquina onde rodou). O gateway apaga
+os logs mais antigos, então do episódio 08 ao c-18 o log bruto já não existe; a partir dos próximos episódios o
+runner grava o seu próprio em `raw-runner/`.
+
 Em cada pasta de episódio: `policy-calls/call-NNN.json` tem o que o modelo viu (`what_i_see`), o motivo
 (`reason`), a ação, as sondagens de profundidade e prévias, os tokens e os horários; `report.json` é o veredito;
 `direct-story.mp4` é o vídeo narrado. Quadros e imagens brutas ficam só na máquina onde rodou.

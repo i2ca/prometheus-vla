@@ -1,0 +1,648 @@
+{
+ "schemaVersion": 5,
+ "summary": {
+  "id": "1790186086705-888b28",
+  "timestamp": "2026-09-23T17:54:59.368Z",
+  "method": "POST",
+  "path": "/v1/messages",
+  "status": 200,
+  "model": "gpt-6-astra",
+  "requestedModel": "codex/gpt-6-astra",
+  "provider": "codex",
+  "account": "luiz.coutinho.dev@gmail.com",
+  "connectionId": "1d665760-ccac-4a93-8449-c9c814752bb7",
+  "duration": 12666,
+  "tokens": {
+   "in": 3649,
+   "out": 241,
+   "cacheRead": 2816,
+   "cacheWrite": null,
+   "reasoning": 191,
+   "compressed": null
+  },
+  "requestType": null,
+  "sourceFormat": "claude",
+  "targetFormat": "openai-responses",
+  "apiKeyId": "ad52ad98-c3ce-45a9-b4ab-5ab0ce4e4af8",
+  "apiKeyName": "claude-code-cli",
+  "comboName": null,
+  "comboStepId": null,
+  "comboExecutionKey": null
+ },
+ "requestBody": {
+  "model": "codex/gpt-6-astra",
+  "system": "You are the visuomotor policy for a Unitree G1 humanoid in MuJoCo, right arm, Dex3 hand.\nUse only the RGB images and measured proprioception in this message. You do not know the cup pose.\nEach call: choose ONE absolute target pose for the right palm, within 5 cm and 0.35 rad of the\ncurrent measured palm pose, then look at the next observation. Frame: x forward, y left, z up (meters).\nKeep the hand above the table in transit, approach the mug from the side at mid height, open before\ncontact, close only when the mug is between thumb and fingers, then lift. Touching the table with the\nhand or the robot body aborts the episode. If a command is rejected, read the error and fix it.\nCameras: head_camera (848x480) on the head looking down at the workspace; left_wrist_camera and\nright_wrist_camera (424x240) mounted on top of each wrist, looking forward along the hand. All three are\nRGB-D. Call probe_depth with a camera and pixel coordinates (u, v) (a labeled grid is drawn on each image)\nto get the 3D point under each pixel, in the same frame as the palm pose. It does not move the robot.\nThe observation includes hand_geometry: approximate fingertip positions and the center of the grasp aperture\nbetween thumb and opposing fingers, from your measured joint angles. The palm is not the leading part of the\nhand; plan with these points. Rotating the hand swings the fingertips; call preview_pose to check where they\nwould go before committing a motion.\nIn `what_i_see`, describe what each camera shows right now (mug, hand, fingers, table) before deciding.\nPut your immediate purpose in `reason` (one or two sentences).\nThere is no limit on the number of calls: keep working until the task is done. Still, every call costs\ntime and tokens, so prefer the fewest calls that reliably complete the task.\nCall finish_episode only when the mug is lifted and held. The controller rejects unsafe commands (you get\nthe reason back), so a rejection is information, not a reason to stop.\n\nLessons from your previous attempts (follow them):\n- Preserve deliberate, task-compatible object and hand attitude goals across action calls, and preserve the desired position during a stationary hold. Change these goals only for an intended task motion. Use proprioception as the starting state for bounded commands, not as a replacement goal. Compare achieved hand attitude and visible object attitude against the persistent references. Correct accumulating drift along a clearance-checked path while maintaining verified retention; if correction cannot safely preserve the required object attitude, re-support the object and select a better grasp or attainable configuration.\n- Check object displacement, attitude, and hand-relative stability separately using identifiable features, the support, and measured hand pose. Probe depth only to resolve uncertainty that changes the next action, associating returns with the visible target or support rather than robot surfaces, background, or openings. Track corresponding features across observations; do not infer attitude or whole-object clearance from unrelated surface heights. If necessary features are occluded, inspect a more informative available view or make a clearance-checked viewing adjustment, then use the clarified geometry to correct the diagnosed error. Reuse established geometry while observations remain consistent.\n- Make verification advance the task: establish retention with a cautious test, then execute the remaining requested motion rather than repeatedly testing by moving farther. Once the requested state is observed, maintain a fixed goal and accumulate the required stable duration using executed action durations. When the state and duration are satisfied, report completion or proceed to the next requested stage instead of adding redundant holds and depth probes. If a condition fails, correct that condition and restart only the affected verification.\n- Before acquiring or changing a grasp, compare visible target surfaces with contact patches and closing sweeps derived from measured hand pose and joints. Align opposing contacts on the same intended region in depth and height, not merely in projection or around an opening, then close without advancing. Check the full swept assembly, including the arm and any held object, against the support, surroundings, and robot body. If an unsecured object moves unexpectedly or retention fails, safely re-support or unload it, observe its settled pose, and reposition the open hand or choose a different approach before retrying.",
+  "tools": [
+   {
+    "name": "actuate",
+    "description": "Execute one bounded Cartesian command for the right palm.",
+    "input_schema": {
+     "type": "object",
+     "additionalProperties": false,
+     "properties": {
+      "what_i_see": {
+       "type": "string",
+       "description": "what each camera shows now"
+      },
+      "reason": {
+       "type": "string"
+      },
+      "steps": {
+       "type": "integer",
+       "minimum": 1,
+       "maximum": 5,
+       "description": "1 step = 0.2 s"
+      },
+      "position": {
+       "type": "array",
+       "items": {
+        "type": "number"
+       },
+       "minItems": 3,
+       "maxItems": 3
+      },
+      "quaternion_wxyz": {
+       "type": "array",
+       "items": {
+        "type": "number"
+       },
+       "minItems": 4,
+       "maxItems": 4
+      },
+      "gripper": {
+       "type": "string",
+       "enum": [
+        "keep",
+        "open",
+        "closed"
+       ]
+      }
+     },
+     "required": [
+      "what_i_see",
+      "reason",
+      "steps",
+      "position",
+      "quaternion_wxyz",
+      "gripper"
+     ]
+    }
+   },
+   {
+    "name": "probe_depth",
+    "description": "Depth camera: 3D point (same frame as the palm) under each pixel (u, v) of the chosen camera image (head 848x480, wrists 424x240). Does not move the robot.",
+    "input_schema": {
+     "type": "object",
+     "additionalProperties": false,
+     "properties": {
+      "camera": {
+       "type": "string",
+       "enum": [
+        "head_camera",
+        "left_wrist_camera",
+        "right_wrist_camera"
+       ]
+      },
+      "points": {
+       "type": "array",
+       "minItems": 1,
+       "maxItems": 8,
+       "items": {
+        "type": "array",
+        "items": {
+         "type": "number"
+        },
+        "minItems": 2,
+        "maxItems": 2
+       }
+      }
+     },
+     "required": [
+      "camera",
+      "points"
+     ]
+    }
+   },
+   {
+    "name": "preview_pose",
+    "description": "Plan without moving: for a candidate palm target, returns where the fingertips and grasp aperture would end up, and the lowest point of the hand along the whole motion (rotations swing the fingers). Does not move the robot.",
+    "input_schema": {
+     "type": "object",
+     "additionalProperties": false,
+     "properties": {
+      "position": {
+       "type": "array",
+       "items": {
+        "type": "number"
+       },
+       "minItems": 3,
+       "maxItems": 3
+      },
+      "quaternion_wxyz": {
+       "type": "array",
+       "items": {
+        "type": "number"
+       },
+       "minItems": 4,
+       "maxItems": 4
+      },
+      "steps": {
+       "type": "integer",
+       "minimum": 1,
+       "maximum": 5
+      },
+      "gripper": {
+       "type": "string",
+       "enum": [
+        "keep",
+        "open",
+        "closed"
+       ]
+      }
+     },
+     "required": [
+      "position",
+      "quaternion_wxyz"
+     ]
+    }
+   },
+   {
+    "name": "finish_episode",
+    "description": "Stop only when the task is complete. Safety is enforced by the controller (unsafe commands are rejected), so keep trying otherwise.",
+    "input_schema": {
+     "type": "object",
+     "additionalProperties": false,
+     "properties": {
+      "what_i_see": {
+       "type": "string",
+       "description": "what each camera shows now"
+      },
+      "reason": {
+       "type": "string"
+      },
+      "outcome": {
+       "type": "string",
+       "enum": [
+        "complete"
+       ]
+      }
+     },
+     "required": [
+      "what_i_see",
+      "reason",
+      "outcome"
+     ]
+    }
+   }
+  ],
+  "tool_choice": {
+   "type": "any",
+   "disable_parallel_tool_use": true
+  },
+  "messages": [
+   {
+    "role": "user",
+    "content": [
+     {
+      "type": "text",
+      "text": "Current measured observation:\n{\"step_id\": 6, \"elapsed_sim_seconds\": 5.37, \"task\": \"Pegue a caneca branca da mesa com a mao direita, levante-a pelo menos 8 cm mantendo-a em pe, e segure por 2 segundos.\", \"current_palm\": {\"position\": [0.31591, -0.25429, 0.88979], \"quaternion_wxyz\": [0.977706, 0.157785, -0.110059, 0.084156]}, \"arm_joints_rad\": [-0.59399, -0.89239, -1.33448, 2.09409, -0.00773, -0.98777, 0.90935], \"hand_geometry\": {\"thumb_tip\": [0.3611, -0.1379, 0.9385], \"index_tip\": [0.5197, -0.2393, 0.9691], \"middle_tip\": [0.5299, -0.2184, 0.9171], \"aperture_center\": [0.4217, -0.2115, 0.9265], \"lowest_point\": [0.4363, -0.2354, 0.8763], \"note\": \"from measured joint angles and the robot's own hand mesh; same frame as palm and depth probes\"}, \"waist_yaw_rad\": 0.47627, \"gripper_closure\": 0.0, \"previous_reason\": \"Raise the open hand slightly along the previewed clearance-safe path and obtain a new view before locating the mug.\", \"previous_execution\": {\"status\": \"executed\", \"frames\": 6, \"requested_position\": [0.31345, -0.25326, 0.88877], \"reached_position\": [0.31591, -0.25429, 0.88979], \"position_gap_m\": 0.0029, \"rotation_gap_rad\": 0.2026, \"hand_table_contact\": [], \"self_collision\": [], \"ik_at_request\": {\"position_error_m\": 0.00019575007837471157, \"orientation_error_rad\": 0.00048459322187088377, \"iterations\": 13}}, \"limits\": {\"max_target_distance_m\": 0.05, \"max_target_rotation_rad\": 0.35, \"max_steps_per_call\": 5, \"ik_tolerance_m\": 0.03, \"ik_tolerance_rad\": 0.15, \"max_joint_speed_deg_s\": 240.0}}"
+     },
+     {
+      "type": "text",
+      "text": "Camera: head_camera"
+     },
+     {
+      "type": "image",
+      "source": {
+       "type": "base64",
+       "media_type": "image/png",
+       "data": {
+        "omitted": "imagem",
+        "chars_no_log": 65567,
+        "sha256_do_texto": "5c1a16fa53b9225afee47e420cd459393758643df3756d3e460bd868bbb12e2e",
+        "cortada_pelo_gateway": true
+       }
+      }
+     },
+     {
+      "type": "text",
+      "text": "Camera: left_wrist_camera"
+     },
+     {
+      "type": "image",
+      "source": {
+       "type": "base64",
+       "media_type": "image/png",
+       "data": {
+        "omitted": "imagem",
+        "chars_no_log": 46984,
+        "sha256_do_texto": "3e3726937c38a3c856ece078572a91aed8422a1aee89c6f1d50b8ebf61eec4e5",
+        "cortada_pelo_gateway": false
+       }
+      }
+     },
+     {
+      "type": "text",
+      "text": "Camera: right_wrist_camera"
+     },
+     {
+      "type": "image",
+      "source": {
+       "type": "base64",
+       "media_type": "image/png",
+       "data": {
+        "omitted": "imagem",
+        "chars_no_log": 64756,
+        "sha256_do_texto": "5d2074f9b543d4c677de1126ef744f81b6e462912fcabf8b725df91ef87f3f83",
+        "cortada_pelo_gateway": false
+       }
+      }
+     }
+    ]
+   },
+   {
+    "role": "assistant",
+    "content": [
+     {
+      "type": "text",
+      "text": "(empty response)"
+     },
+     {
+      "type": "tool_use",
+      "id": "call_bbuf2SA4txd8gZMBtmrrQ8EV",
+      "name": "probe_depth",
+      "input": {
+       "camera": "head_camera",
+       "points": [
+        [
+         827,
+         324
+        ],
+        [
+         817,
+         348
+        ],
+        [
+         798,
+         318
+        ],
+        [
+         837,
+         286
+        ],
+        [
+         730,
+         286
+        ],
+        [
+         669,
+         359
+        ]
+       ]
+      }
+     }
+    ]
+   },
+   {
+    "role": "user",
+    "content": [
+     {
+      "type": "tool_result",
+      "tool_use_id": "call_bbuf2SA4txd8gZMBtmrrQ8EV",
+      "content": "[{\"u\": 827, \"v\": 324, \"valid\": true, \"depth_m\": 0.5104, \"point\": [0.3982, -0.1696, 0.8103]}, {\"u\": 817, \"v\": 348, \"valid\": true, \"depth_m\": 0.531, \"point\": [0.3899, -0.1794, 0.7814]}, {\"u\": 798, \"v\": 318, \"valid\": true, \"depth_m\": 0.51, \"point\": [0.391, -0.1462, 0.8128]}, {\"u\": 837, \"v\": 286, \"valid\": true, \"depth_m\": 0.4986, \"point\": [0.4194, -0.1591, 0.8352]}, {\"u\": 730, \"v\": 286, \"valid\": true, \"depth_m\": 0.5896, \"point\": [0.4311, -0.1066, 0.7506]}, {\"u\": 669, \"v\": 359, \"valid\": true, \"depth_m\": 0.5592, \"point\": [0.3359, -0.0766, 0.7494]}]"
+     }
+    ]
+   },
+   {
+    "role": "assistant",
+    "content": [
+     {
+      "type": "text",
+      "text": "(empty response)"
+     },
+     {
+      "type": "tool_use",
+      "id": "call_MqQixNoE4vh2Wbpz3WORk2xO",
+      "name": "preview_pose",
+      "input": {
+       "position": [
+        0.301,
+        -0.254,
+        0.8505
+       ],
+       "quaternion_wxyz": [
+        0.997196,
+        0.06,
+        -0.04,
+        0.02
+       ],
+       "steps": 3,
+       "gripper": "open"
+      }
+     }
+    ]
+   },
+   {
+    "role": "user",
+    "content": [
+     {
+      "type": "tool_result",
+      "tool_use_id": "call_MqQixNoE4vh2Wbpz3WORk2xO",
+      "content": "{\"within_limits\": true, \"distance_m\": 0.042, \"rotation_rad\": 0.276, \"predicted_palm_end\": [0.3038, -0.2533, 0.8446], \"end\": {\"thumb_tip\": [0.377, -0.2403, 0.7331], \"index_tip\": [0.4851, -0.3733, 0.8167], \"middle_tip\": [0.4494, -0.4056, 0.7862], \"aperture_center\": [0.3965, -0.311, 0.7951], \"lowest_point\": [0.3755, -0.2442, 0.7315]}, \"lowest_hand_point_along_path\": {\"z\": 0.7315, \"point\": [0.3755, -0.2442, 0.7315]}, \"note\": \"own-body dynamics (self-contacts kept, contacts with anything else removed): it does not know about the table or objects\"}"
+     }
+    ]
+   },
+   {
+    "role": "assistant",
+    "content": [
+     {
+      "type": "text",
+      "text": "(empty response)"
+     },
+     {
+      "type": "tool_use",
+      "id": "call_JFAGaKY78GIDQEuDoG5uwggE",
+      "name": "preview_pose",
+      "input": {
+       "position": [
+        0.3159,
+        -0.2543,
+        0.8508
+       ],
+       "quaternion_wxyz": [
+        0.977706,
+        0.157785,
+        -0.110059,
+        0.084156
+       ],
+       "steps": 1,
+       "gripper": "open"
+      }
+     }
+    ]
+   },
+   {
+    "role": "user",
+    "content": [
+     {
+      "type": "tool_result",
+      "tool_use_id": "call_JFAGaKY78GIDQEuDoG5uwggE",
+      "content": "{\"within_limits\": true, \"distance_m\": 0.039, \"rotation_rad\": 0.0, \"predicted_palm_end\": [0.2844, -0.2184, 0.7872], \"end\": {\"thumb_tip\": [0.3376, -0.1111, 0.8472], \"index_tip\": [0.4878, -0.2266, 0.8685], \"middle_tip\": [0.5002, -0.2015, 0.8188], \"aperture_center\": [0.3927, -0.1874, 0.8284], \"lowest_point\": [0.4061, -0.2074, 0.7761]}, \"lowest_hand_point_along_path\": {\"z\": 0.7732, \"point\": [0.4052, -0.1966, 0.7732]}, \"note\": \"own-body dynamics (self-contacts kept, contacts with anything else removed): it does not know about the table or objects\"}"
+     }
+    ]
+   }
+  ],
+  "output_config": {
+   "effort": "max"
+  },
+  "max_output_tokens": 16000
+ },
+ "responseBody": {
+  "id": "resp_02f0cf96a1330520016ab4126763a087d29bf10e41adb8fc52",
+  "object": "response",
+  "model": "gpt-6-astra",
+  "output": [
+   {
+    "id": "rs_02f0cf96a1330520016ab412693a0887d289453566b9a9f72e",
+    "type": "reasoning",
+    "content": [],
+    "encrypted_content": "[omitted: encrypted reasoning, 2232 chars]",
+    "internal_chat_message_metadata_passthrough": {
+     "turn_id": "28b85ab6-82af-437f-9c30-970a4d4ccb7a"
+    },
+    "summary": [
+     {
+      "type": "summary_text",
+      "text": "**Positioning hand above mug**"
+     },
+     {
+      "type": "summary_text",
+      "text": "**Checking mug rim depth**"
+     }
+    ],
+    "metadata": {
+     "turn_id": "28b85ab6-82af-437f-9c30-970a4d4ccb7a"
+    }
+   },
+   {
+    "id": "fc_02f0cf96a1330520016ab41272da1c87d2a580c499962b7652",
+    "type": "function_call",
+    "status": "completed",
+    "arguments": "{\"camera\":\"head_camera\",\"points\":[[846,312],[841,354],[838,370],[801,336],[823,298],[846,277]]}",
+    "call_id": "call_MhYVLfLLng0y8SRMRq7G8gIC",
+    "internal_chat_message_metadata_passthrough": {
+     "create_time": 1790186087.629134,
+     "turn_id": "28b85ab6-82af-437f-9c30-970a4d4ccb7a"
+    },
+    "name": "probe_depth",
+    "metadata": {
+     "turn_id": "28b85ab6-82af-437f-9c30-970a4d4ccb7a"
+    }
+   }
+  ],
+  "usage": {
+   "attribution": {
+    "items": {
+     "msg_02f0cf96a1330520016ab41267771c87d2928d721e517b794d": {
+      "cache_write_tokens": 0,
+      "cached_tokens": 1337,
+      "content": [
+       {
+        "cache_write_tokens": 0,
+        "cached_tokens": 563,
+        "input_tokens": 563,
+        "output_tokens": 0
+       },
+       {
+        "cache_write_tokens": 0,
+        "cached_tokens": 4,
+        "input_tokens": 4,
+        "output_tokens": 0
+       },
+       {
+        "cache_write_tokens": 0,
+        "cached_tokens": 487,
+        "input_tokens": 487,
+        "output_tokens": 0
+       },
+       {
+        "cache_write_tokens": 0,
+        "cached_tokens": 6,
+        "input_tokens": 6,
+        "output_tokens": 0
+       },
+       {
+        "cache_write_tokens": 0,
+        "cached_tokens": 135,
+        "input_tokens": 135,
+        "output_tokens": 0
+       },
+       {
+        "cache_write_tokens": 0,
+        "cached_tokens": 6,
+        "input_tokens": 6,
+        "output_tokens": 0
+       },
+       {
+        "cache_write_tokens": 0,
+        "cached_tokens": 136,
+        "input_tokens": 136,
+        "output_tokens": 0
+       }
+      ],
+      "input_tokens": 1337,
+      "output_tokens": 0
+     },
+     "msg_02f0cf96a1330520016ab4126775e487d2b35916458fd96a6b": {
+      "cache_write_tokens": 0,
+      "cached_tokens": 10,
+      "content": [
+       {
+        "cache_write_tokens": 0,
+        "cached_tokens": 10,
+        "input_tokens": 10,
+        "output_tokens": 0
+       }
+      ],
+      "input_tokens": 10,
+      "output_tokens": 0
+     },
+     "fc_02f0cf96a1330520016ab41267746887d2bb88f4c2d9d88b21": {
+      "cache_write_tokens": 0,
+      "cached_tokens": 50,
+      "input_tokens": 50,
+      "output_tokens": 0
+     },
+     "fc_02f0cf96a1330520016ab41267748487d28566e36a213f3644": {
+      "cache_write_tokens": 0,
+      "cached_tokens": 93,
+      "content": [
+       {
+        "cache_write_tokens": 0,
+        "cached_tokens": 93,
+        "input_tokens": 297,
+        "output_tokens": 0
+       }
+      ],
+      "input_tokens": 297,
+      "output_tokens": 0
+     },
+     "msg_02f0cf96a1330520016ab4126775f487d2bca3f21c09b066b7": {
+      "cache_write_tokens": 0,
+      "cached_tokens": 0,
+      "content": [
+       {
+        "cache_write_tokens": 0,
+        "cached_tokens": 0,
+        "input_tokens": 10,
+        "output_tokens": 0
+       }
+      ],
+      "input_tokens": 10,
+      "output_tokens": 0
+     },
+     "fc_02f0cf96a1330520016ab41267750087d2826f3aed80281a8b": {
+      "cache_write_tokens": 0,
+      "cached_tokens": 0,
+      "input_tokens": 62,
+      "output_tokens": 0
+     },
+     "fc_02f0cf96a1330520016ab41267751c87d280b476455c969d4e": {
+      "cache_write_tokens": 0,
+      "cached_tokens": 0,
+      "content": [
+       {
+        "cache_write_tokens": 0,
+        "cached_tokens": 0,
+        "input_tokens": 238,
+        "output_tokens": 0
+       }
+      ],
+      "input_tokens": 238,
+      "output_tokens": 0
+     },
+     "msg_02f0cf96a1330520016ab4126775fc87d2be37e16f9f1f5cfe": {
+      "cache_write_tokens": 0,
+      "cached_tokens": 0,
+      "content": [
+       {
+        "cache_write_tokens": 0,
+        "cached_tokens": 0,
+        "input_tokens": 10,
+        "output_tokens": 0
+       }
+      ],
+      "input_tokens": 10,
+      "output_tokens": 0
+     },
+     "fc_02f0cf96a1330520016ab41267753c87d286737f857764df75": {
+      "cache_write_tokens": 0,
+      "cached_tokens": 0,
+      "input_tokens": 67,
+      "output_tokens": 0
+     },
+     "fc_02f0cf96a1330520016ab41267755887d2a72994a9fccc9cca": {
+      "cache_write_tokens": 0,
+      "cached_tokens": 0,
+      "content": [
+       {
+        "cache_write_tokens": 0,
+        "cached_tokens": 0,
+        "input_tokens": 240,
+        "output_tokens": 0
+       }
+      ],
+      "input_tokens": 240,
+      "output_tokens": 0
+     },
+     "rs_02f0cf96a1330520016ab412693a0887d289453566b9a9f72e": {
+      "cache_write_tokens": 0,
+      "cached_tokens": 0,
+      "input_tokens": 2,
+      "output_tokens": 191
+     },
+     "fc_02f0cf96a1330520016ab41272da1c87d2a580c499962b7652": {
+      "cache_write_tokens": 0,
+      "cached_tokens": 0,
+      "input_tokens": 0,
+      "output_tokens": 50
+     }
+    },
+    "request_fields": {
+     "tools": {
+      "cache_write_tokens": 0,
+      "cached_tokens": 430,
+      "input_tokens": 430,
+      "output_tokens": 0
+     },
+     "instructions": {
+      "cache_write_tokens": 0,
+      "cached_tokens": 896,
+      "input_tokens": 896,
+      "output_tokens": 0
+     }
+    }
+   },
+   "input_tokens": 3649,
+   "input_tokens_details": {
+    "cache_write_tokens": 0,
+    "cached_tokens": 2816
+   },
+   "output_tokens": 241,
+   "output_tokens_details": {
+    "reasoning_tokens": 191
+   },
+   "total_tokens": 3890
+  },
+  "status": "completed",
+  "created_at": 1790186087,
+  "metadata": {},
+  "_omniroute": {
+   "claudePromptCacheUsage": {
+    "cacheReadTokens": 2816,
+    "cacheCreationTokens": 0
+   }
+  }
+ },
+ "error": null
+}
