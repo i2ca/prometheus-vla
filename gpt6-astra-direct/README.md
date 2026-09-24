@@ -6,8 +6,7 @@ Depois de cada episódio, um crítico (o mesmo modelo, com esforço máximo) lê
 simulador, e reescreve regras gerais que entram no prompt do episódio seguinte.
 
 Nenhum episódio foi aceito até 23/09/2026. Os melhores (`p-29` e `q-36`) cumpriram todos os critérios por vários
-passos seguidos e só falharam porque o robô não declarou a tarefa concluída. Detalhes e histórico em
-`runtime/g1-cup-grasp/docs/CHECKPOINT-DIRECT-REFLEXAO.md`. Os episódios 01 a 07 rodaram sem imagens de verdade
+passos seguidos e só falharam porque o robô não declarou a tarefa concluída. Os episódios 01 a 07 rodaram sem imagens de verdade
 (ver `docs/NOTA-VISAO.md`).
 
 ## Onde está cada coisa
@@ -26,7 +25,7 @@ passos seguidos e só falharam porque o robô não declarou a tarefa concluída.
 
 Log bruto: `raw/` guarda o pedido exato enviado ao modelo e a resposta exata, chamada por chamada (inclusive as
 sondagens e prévias de cada decisão e a do crítico), tirados do log do gateway, com o resumo do raciocínio que a
-OpenAI devolve. As imagens aparecem só como hash e tamanho (estão em `obs/` na máquina onde rodou). O gateway apaga
+OpenAI devolve. As imagens aparecem só como hash e tamanho (ficam em `obs/` na máquina onde o episódio rodou). O gateway apaga
 os logs mais antigos, então do episódio 08 ao c-18 o log bruto já não existe; a partir dos próximos episódios o
 runner grava o seu próprio em `raw-runner/`.
 
@@ -36,8 +35,7 @@ Em cada pasta de episódio: `policy-calls/call-NNN.json` tem o que o modelo viu 
 
 ## Como rodar
 
-Precisa do OmniRoute com uma conta Codex (rota `cx/gpt-6-astra`) e de GPU com EGL. Hoje roda na spark-aff4
-(`fercout@10.9.8.66`), onde o gateway também está.
+Precisa de um gateway OmniRoute com uma conta Codex (rota `cx/gpt-6-astra`) e de uma máquina com GPU e EGL.
 
 ```bash
 cd runtime/g1-cup-grasp
@@ -56,8 +54,6 @@ export MUJOCO_GL=egl OMNIROUTE_API_KEY=...   # chave de cliente do OmniRoute
 .venv/bin/python scripts/make_direct_story.py results/meu-ep/x0.40_y-0.20 --workers 18
 ```
 
-Na spark-aff4 há dois atalhos: `~/run-ep.sh <nome>` (episódio mais crítico) e `~/ciclo.sh <prefixo> <início>
-<rodadas> <esforço>` (episódio, avaliação, crítico e próximo, até 2 aceitos).
 
 ## Estado em 23/09/2026
 
