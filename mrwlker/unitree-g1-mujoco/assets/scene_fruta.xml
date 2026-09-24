@@ -1,0 +1,211 @@
+<mujoco model="g1_43dof fruta no prato">
+<!-- ══════════════════════════════════════════════════════════════════════
+     FRUTA NO PRATO — a cena da xícara (`scene_43dof.xml`) mais um prato e duas
+     frutas, para testar a tarefa `G1_Dex1_Put_Fruit_On_Plate` da Unitree, que é
+     10% do que treinou a WLA.
+
+     Modelos do YCB (https://www.ycbbenchmarks.com), versão `google_16k`,
+     baixados do bucket oficial em 22/09/2026: 029_plate, 014_lemon, 011_banana.
+     Estão em metros, Z para cima, base em z≈0 — entram sem rotação.
+
+     A cena DELES (quadros do dataset): mesa clara, prato AZUL-CLARO redondo,
+     fruta amarela (manga). Daí:
+       · prato com a malha do YCB mas pintado de azul-claro, e escala 0,8
+         (26 cm no YCB → 21 cm, perto do deles);
+       · fruta amarela: limão (6 cm) ou banana (18 cm), com a textura escaneada.
+
+     A xícara e o coador continuam no arquivo porque a classe `Cena` do demo
+     depende deles; o código os tira de cima da mesa neste modo.
+
+     Mesa, fruta e prato são posicionados PELO CÓDIGO: a `Cena` rebaixa a mesa
+     5 cm ao carregar, e o que estivesse fixo aqui ficaria flutuando.
+     ══════════════════════════════════════════════════════════════════════ -->
+
+  <include file="g1_29dof_with_hand.xml"/>
+  <statistic center="0 0 0.5" extent="2.0"/>
+
+  <visual>
+    <headlight diffuse="0.6 0.6 0.6" ambient="0.3 0.3 0.3" specular="0 0 0"/>
+    <rgba haze="0.15 0.25 0.35 1"/>
+    <global azimuth="-130" elevation="-20" offwidth="848" offheight="480"/>
+  </visual>
+
+  <asset>
+    <texture type="skybox" builtin="gradient" rgb1="0.3 0.5 0.7" rgb2="0 0 0" width="512" height="3072"/>
+    <texture type="2d" name="groundplane" builtin="checker" mark="edge" rgb1="0.2 0.3 0.4" rgb2="0.1 0.2 0.3"
+      markrgb="0.8 0.8 0.8" width="300" height="300"/>
+    <material name="groundplane" texture="groundplane" texuniform="true" texrepeat="5 5" reflectance="0.2"/>
+    
+    <mesh name="mesh_copo" file="../copo_texturizado.obj" scale="1 1 1" />
+    <mesh name="chaleira" file="../chaleira.obj" scale="0.2 0.2 0.2" />
+    <!-- Coador convertido de `~/Downloads/coador.glb`.
+         GLB é Y-up e MuJoCo é Z-up: rotação de +90° em X (o -90° da primeira
+         tentativa deixou de cabeça para baixo) mais 180° em Z para acertar o
+         yaw. Base assentada em z=0 para o mocap pousá-la no tampo.
+         Escala 0.195 (150% da primeira tentativa, que era 0.13) → 19,5 cm de
+         altura por 10,7 cm de largura. O 0.26 saía do enquadramento da
+         `head_camera`.
+         O `include_texture` do trimesh é o que preserva os `vt` no OBJ; sem
+         eles o MuJoCo carrega a malha e IGNORA a textura em silêncio, e o
+         objeto sai da cor chapada do `rgba` do geom. -->
+    <mesh name="mesh_coador" file="../coador.obj" scale="0.195 0.195 0.195" />
+    <texture name="tex_coador" type="2d" file="coador_textura.png"/>
+    <material name="mat_coador" texture="tex_coador" specular="0.3" shininess="0.3"/>
+    <!-- ── fruta e prato (YCB) ── meshdir é assets/meshes, textura é relativa a assets/ -->
+    <mesh name="mesh_prato" file="../ycb/029_plate/google_16k/textured.obj" scale="0.8 0.8 0.8"/>
+    <mesh name="mesh_limao" file="../ycb/014_lemon/google_16k/textured.obj"/>
+    <mesh name="mesh_banana" file="../ycb/011_banana/google_16k/textured.obj"/>
+    <material name="mat_prato" rgba="0.55 0.72 0.90 1" specular="0.05" shininess="0.1"/>
+    <texture name="tex_limao" type="2d" file="ycb/014_lemon/google_16k/texture_map.png"/>
+    <material name="mat_limao" texture="tex_limao" specular="0.2" shininess="0.3"/>
+    <texture name="tex_banana" type="2d" file="ycb/011_banana/google_16k/texture_map.png"/>
+    <material name="mat_banana" texture="tex_banana" specular="0.2" shininess="0.3"/>
+  </asset>
+
+<worldbody>
+    <light pos="0 0 1.5" dir="0 0 -1" directional="true"/>
+    <geom name="floor" size="0 0 0.05" type="plane" material="groundplane"/>
+    <site name="com_marker" pos="0.1 0 0" size="0.05" rgba="1 0 0 1" type="sphere"/>
+
+    <body name="mesa" pos="0.48 0 0.88">
+      <!-- COR DO TAMPO, 18/09: era 0.565/0.569/0.549, um cinza claro que RENDERIZA QUASE
+           BRANCO — a mesma cor do copo. Nas capturas da inferencia a mesa ocupa 75% do
+           quadro em pixels quase brancos, e o copo branco em cima dela quase nao tem
+           borda. O robo ia ao coador fechando a mao no ar, como quem pega um copo
+           imaginario. Marrom escuro da contraste sem virar uma cor impossivel para uma
+           mesa.
+           ATENCAO: isto tira a cena da distribuicao de treino. Os 302 episodios da
+           xicara foram gravados com o tampo CLARO, entao o modelo nunca viu uma mesa
+           marrom. Se piorar, o culpado e este, e o backup esta em
+           `scene_43dof.xml.antes_cor`. -->
+      <geom name="geometria_mesa" type="box" size="0.40 0.8 0.02" rgba="0.36 0.25 0.17 1" friction="1 0.005 0.0001"/>
+
+      <!-- <body name="corpo_botao" pos="0 0.3 0.02">
+        <joint name="junta_botao" type="slide" axis="0 0 1" range="-0.015 0" springref="0" stiffness="100" damping="5"/>
+        <geom name="geometria_botao" type="cylinder" size="0.03 0.02" rgba="0 1 0 1" mass="0.01" friction="1 0.005 0.0001"/>
+      </body> -->
+    </body>
+
+    <!-- x=0.45 e não 0.15: esta é a posição que o cliente de inferência ao vivo
+         usa, porque só o `gerar_dataset_mujoco.py` sobrescreve a pose da xícara
+         (via `sorteia_copo`) — o cliente não mexe nela e herda o que está aqui.
+         Com x=0.15 a xícara assentava na beirada da mesa, 30 cm mais perto do
+         robô do que QUALQUER um dos 422 episódios de treino (x entre 0.40 e
+         0.50), e o `sorteia_copo` documenta que abaixo de 0.40 o cotovelo bate
+         no tronco e não existe pose que alcance. O modelo recebia uma cena fora
+         da distribuição e um alvo inalcançável. z=0.948 é o repouso sobre o
+         tampo (0.900 + meio copo 0.048).
+
+         CORRIGIDO 18/09/2026 — y era 0.00 e agora é -0.11.
+         O `demo_pega_copo_mujoco.py` sorteava o copo em `X_COPO = (0.45, 0.48)` e
+         `Y_DIREITA = (0.06, 0.16)` COM SINAL NEGATIVO: os 422 episódios de treino têm o copo
+         na METADE DIREITA da mesa, entre 6 e 16 cm do centro. Com y=0.00 ele nascia no meio,
+         fora de tudo que o modelo viu — e a única coisa reconhecível na cena passava a ser o
+         coador (y=+0.18, esse dentro da faixa `Y_ESQUERDA`). O π0.5 ia direto para o coador
+         sem pegar nada. x=0.465 e y=-0.11 são os centros das duas faixas. -->
+    <body name="objeto_customizado" pos="0.465 -0.11 0.948">
+      <freejoint name="junta_livre_bloco"/>
+
+      <geom name="visual_copo" type="mesh" mesh="mesh_copo" contype="0" conaffinity="0" group="1" rgba="1 1 1 1" euler="1.5708 -1.5708 0" pos="0.00 0.013 -0.045"/>
+
+      <geom name="colisao_copo" type="cylinder" size="0.039 0.048" rgba="0 0 0 0" mass="0.1" 
+            condim="4" 
+            friction="1 0.1 0.005" 
+            solimp="0.99 0.99 0.01" 
+            solref="0.01 1"/>
+    </body>
+    
+    <!-- Marcador de destino: o "X" na mesa. -->
+    <!-- É um body MOCAP, e não um desenho no `viewer.user_scn`, porque o
+         `user_scn` é camada de decoração da JANELA: os renderizadores
+         offscreen chamam `update_scene`, que remonta a cena a partir do
+         MODELO, e nada do `user_scn` entra ali. Com o X só na janela, os
+         vídeos gravados não tinham marcador nenhum, e o alvo é sorteado por
+         episódio (±Y) — o dataset ficava ambíguo: mesma imagem, ações
+         opostas. Como mocap ele aparece em TODA câmera.
+         `contype`/`conaffinity` zerados: é marcação pintada na mesa, não
+         obstáculo. Se colidisse, entraria no `bateu_na_mesa()` e derrubaria
+         justamente os episódios que pousam em cima dele. -->
+    <body name="marca_alvo" mocap="true" pos="0.45 0.18 0.902">
+      <!-- Era um X de duas barras cruzadas; agora é o coador. O body segue
+           MOCAP e sem colisão pelos mesmos motivos de antes: quem o posiciona é
+           o `desenha_alvo` via `d.mocap_pos`, e com colisão ele entraria no
+           `bateu_na_mesa()` e derrubaria justamente os episódios que pousam a
+           xícara em cima dele. Consequência de não colidir: a xícara ATRAVESSA
+           o coador visualmente ao ser pousada, em vez de encostar nele. -->
+      <geom name="marca_alvo_coador" type="mesh" mesh="mesh_coador"
+            material="mat_coador" contype="0" conaffinity="0"/>
+      <!-- Tampa de colisão na BOCA DO FUNIL, onde ficaria o pano. Medido na
+           malha: a boca está a ~18,5 cm da base, com raio de 3,5 a 4,8 cm (a
+           xícara tem 3,9 cm). É o único geom do coador que colide, e existe
+           para o braço não entrar dentro do funil — as checagens
+           `bateu_na_mesa`/`auto_colisao` leem pares de geoms específicos e não
+           veem este, então ele não derruba episódio por si.
+           Cobre os 20% DE CIMA do filtro: o funil vai de 8,8 a 19,5 cm da
+           base, então os 20% superiores são 17,4-19,5 cm — centro em
+           18,43 cm, meia-altura 1,07 cm.
+           NÃO é isto que impede a xícara de atravessar: esta simulação usa
+           `mj_forward` e nunca `mj_step`, então contato é DETECTADO e nunca
+           RESOLVIDO. Quem faz a xícara pousar em cima é a altura de pouso, no
+           `z_boca_coador` do demo. -->
+      <!-- SEM COLISÃO (`contype`/`conaffinity` zerados). Ele existia para o
+           braço não entrar no funil, mas a checagem que o usava
+           (`bateu_no_coador`) está desligada — com ela ligada o braço travava
+           em 8 de 8 episódios, porque o antebraço varre esta região no
+           caminho. Enquanto isso, o cilindro ATIVO batia na caneca durante a
+           descida do transporte (24 cm) para o pouso (8 cm), já que ela
+           atravessa a faixa 15,6-19,5 cm. Inerte, ele não atrapalha e fica
+           documentado para quem for ligar o desvio de verdade — o que exige
+           um planejador, não este seguidor de waypoints. -->
+      <geom name="coador_boca" type="cylinder" pos="0 0 0.1753" size="0.048 0.0195"
+            rgba="0.9 0.2 0.2 0" contype="0" conaffinity="0"/>
+    </body>
+
+    <camera name="global_view" pos="2.910 -5.040 3.860" xyaxes="0.866 0.500 0.000 -0.250 0.433 0.866" fovy="45"/>
+    <!-- ── Prato: mocap, como o coador. Só visual (colisão desligada): a cena
+         é cinemática (`mj_forward`), e a fruta é pousada nele por código. -->
+    <body name="prato" mocap="true" pos="0.46 0.14 0.90">
+      <geom name="visual_prato" type="mesh" mesh="mesh_prato" material="mat_prato"
+            contype="0" conaffinity="0" group="1"/>
+      <!-- Fundo do prato, para a fruta pousar NELE e não atravessar até a mesa.
+           Mocap não colide com a mesa (os dois são estáticos), só com o que se
+           mexe. Altura medida na malha: o fundo interno fica ~6 mm acima da base. -->
+      <geom name="colisao_prato" type="cylinder" size="0.085 0.003" pos="0 0 0.006"
+            rgba="0 0 0 0" friction="1.2 0.02 0.001"/>
+    </body>
+
+    <!-- ── Frutas: corpo livre, igual à xícara, para poderem ir na mão.
+         Só UMA fica na mesa por vez; a outra é guardada debaixo dela. -->
+    <body name="fruta_limao" pos="0.46 -0.10 0.95">
+      <freejoint name="junta_limao"/>
+      <geom name="visual_limao" type="mesh" mesh="mesh_limao" material="mat_limao"
+            contype="0" conaffinity="0" group="1" pos="0.011 -0.022 0" density="0"/>
+      <!-- condim 4 (atrito de torção) e atrito 1,5: com o padrão (1, condim 3)
+           o limão gira entre os três dedos da Dex3 e escapa ao levantar. -->
+      <geom name="colisao_limao" type="sphere" size="0.029" pos="0 0 0.027"
+            rgba="0 0 0 0" mass="0.1" condim="4" friction="1.5 0.02 0.001"/>
+    </body>
+    <body name="fruta_banana" pos="0.46 -0.10 0.10">
+      <freejoint name="junta_banana"/>
+      <geom name="visual_banana" type="mesh" mesh="mesh_banana" material="mat_banana"
+            contype="0" conaffinity="0" group="1" pos="-0.011 0.007 0" density="0"/>
+      <geom name="colisao_banana" type="capsule" size="0.018 0.07" pos="0 0 0.018"
+            euler="1.5708 0 0" rgba="0 0 0 0" mass="0.12" condim="4" friction="1.5 0.02 0.001"/>
+    </body>
+  </worldbody>
+
+  <default>
+    <geom friction="1.0"/>
+  </default>
+  <!-- ── Pega: solda mão↔objeto, DESLIGADA de início ─────────────────────
+       O código liga quando a garra está fechada E pelo menos dois dedos
+       diferentes encostam no objeto (contato de verdade, da física), e
+       desliga quando a garra abre. Sem isso a Dex3, calibrada para a xícara de
+       7,8 cm, deixa o limão de 6 cm girar entre os dedos e cair com qualquer
+       desalinhamento. O objeto continua físico: é empurrado, rola, cai. -->
+  <equality>
+    <weld name="pega_limao" body1="right_wrist_yaw_link" body2="fruta_limao" active="false"/>
+    <weld name="pega_banana" body1="right_wrist_yaw_link" body2="fruta_banana" active="false"/>
+    <weld name="pega_copo" body1="right_wrist_yaw_link" body2="objeto_customizado" active="false"/>
+  </equality>
+</mujoco>

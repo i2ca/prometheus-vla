@@ -1,0 +1,192 @@
+# ── Balanceamento (22/09/2026) ────────────────────────────────────────────
+# O `weight` abaixo SÓ vale com `WLA_PESOS=1` no ambiente: no código deles o
+# campo é declarado e nunca lido, e a amostragem sai proporcional ao TAMANHO de
+# cada fonte. Sem isso, o `nosso_sim_pega` sozinho era 88% do treino e a rede
+# aprendeu a ignorar o texto — medido: trocar a frase muda a trajetória menos do
+# que trocar a semente de ruído.
+#
+# Os pesos são relativos e somam 100, então cada um é a porcentagem do lote.
+# ==========================================================
+# FONTES DE DADOS — os nossos (robô real + simulação) misturados com os da Unitree.
+# Preenchido em 21/09/2026. Modelado no `configs/unitree.yaml` deles; nada de código foi
+# alterado, isto é configuração.
+#
+# AS NOSSAS DUAS FONTES foram convertidas por `lerobot-ext/pontes/wla/converte_dataset_wla.py`:
+# as 29 juntas viram pose de mão por cinemática direta, nas colunas que eles esperam. Por isso
+# `ee_format: "xyz_rvec"` nelas e `"xyz_rpy"` na deles — a FK devolve matriz de rotação, e
+# rotvec sai dela sem passar por Euler.
+#
+# PAPÉIS DE CÂMERA: só os DOIS que as três fontes têm em comum. Eles têm punho esquerdo, nós
+# não — e declarar um papel que uma fonte não preenche é problema. Quando o nosso robô ganhar
+# estéreo e câmera na mão, é aqui que entra.
+#
+# `arm_type: "dual"` e não `dual_with_legs` nas nossas: não temos perna, base nem altura.
+# ==========================================================
+target_fps: 30
+chunk_size: 30
+image_size: [336, 448]     # redimensiona TUDO: resolve as resoluções diferentes entre fontes
+norm_type: "minmax_q"
+rel_norm_type: "zscore"
+state_norm_type: "minmax_q"
+gripper_norm_type: "minmax_q"
+data_base: "/data/mrwlker/meu_dataset_wla"
+cache_dir: "/data/mrwlker/cache_wla"
+
+.nosso: &nosso
+  enabled: true
+  weight: 1.0
+  robot_type: "unitree"
+  source_fps: 30
+  arm_type: "dual"
+  ee_format: "xyz_rvec"
+  multi_task: false
+  merge_left_right_ee_stats: true
+  precollected_stats_path: "unifolm_wla/dataloader/multi_source_dataset/stats"
+  action_keys:
+    left_ee_pose: "action.left_ee_pose_gripper_base"
+    right_ee_pose: "action.right_ee_pose_gripper_base"
+    left_gripper: "action.left_gripper"
+    right_gripper: "action.right_gripper"
+    waist_joint: "action.waist_action_joint"
+  state_keys:
+    left_ee_pose: "observation.state.left_ee_pose_gripper_base"
+    right_ee_pose: "observation.state.right_ee_pose_gripper_base"
+    left_gripper: "observation.state.left_gripper"
+    right_gripper: "observation.state.right_gripper"
+    waist_joint: "observation.state.waist_state_joint"
+  relative_stats_key_map:
+    left_ee_pose: "left_ee_pose_gripper_base"
+    right_ee_pose: "right_ee_pose_gripper_base"
+
+.deles: &deles
+  enabled: true
+  weight: 1.0
+  robot_type: "unitree"
+  source_fps: 30
+  arm_type: "dual_with_legs"
+  ee_format: "xyz_rpy"
+  multi_task: false
+  merge_left_right_ee_stats: true
+  precollected_stats_path: "unifolm_wla/dataloader/multi_source_dataset/stats"
+  action_keys:
+    left_ee_pose: "action.left_ee_pose_gripper_base"
+    right_ee_pose: "action.right_ee_pose_gripper_base"
+    left_gripper: "action.left_gripper"
+    right_gripper: "action.right_gripper"
+    waist_joint: "action.waist_action_joint"
+    left_leg: "action.left_leg"
+    right_leg: "action.right_leg"
+    base_command: "action.base_command"
+  state_keys:
+    left_ee_pose: "observation.state.left_ee_pose_gripper_base"
+    right_ee_pose: "observation.state.right_ee_pose_gripper_base"
+    left_gripper: "observation.state.left_gripper"
+    right_gripper: "observation.state.right_gripper"
+    waist_joint: "observation.state.waist_state_joint"
+    left_leg: "observation.state.left_leg"
+    right_leg: "observation.state.right_leg"
+  relative_stats_key_map:
+    left_ee_pose: "left_ee_pose_gripper_base"
+    right_ee_pose: "right_ee_pose_gripper_base"
+  base_command_dims:
+    vx: 0
+    vy: 1
+    vw: 2
+    height: 3
+
+.img_nosso: &img_nosso
+  - key: "observation.images.head_camera"
+    role: "head_left"
+  - key: "observation.images.right_wrist_camera"
+    role: "cam_wrist_right"
+
+# Metade dos datasets deles não tem a cabeça retificada; nesses, o papel
+# `head_left` é a estéreo esquerda crua.
+.img_deles_sem_rec: &img_deles_sem_rec
+  - key: "observation.images.head_stereo_left"
+    role: "head_left"
+  - key: "observation.images.wrist_right"
+    role: "cam_wrist_right"
+
+.img_deles: &img_deles
+  - key: "observation.images.head_stereo_left_rec"
+    role: "head_left"
+  - key: "observation.images.wrist_right"
+    role: "cam_wrist_right"
+
+image_roles:
+  - "head_left"
+  - "cam_wrist_right"
+
+datasets:
+  - <<: *nosso
+    name: "nosso_sim_pega"          # 1.828 eps / 797.759 quadros — MuJoCo, "pick up the white cup"
+    data_path: "nosso_sim_pega"
+    image_keys: *img_nosso
+    weight: 30
+
+  - <<: *nosso
+    name: "nosso_real_copo"         # 27 eps / 12.848 quadros — robô REAL
+    data_path: "nosso_real_copo"
+    image_keys: *img_nosso
+    # 8% com 12.848 quadros quer dizer ver CADA quadro real umas 40 vezes mais
+    # que um quadro de simulação. É pouco dado para tanto peso; se o treino
+    # decorar os 27 episódios, baixe para 3.
+    weight: 8
+
+  - <<: *deles
+    name: "deles_fruta"             # G1_Dex1_Put_Fruit_On_Plate — pegar e pôr no prato
+    data_path: "deles_fruta"
+    image_keys: *img_deles
+    weight: 12
+
+  # ── Datasets novos da Unitree, baixados em 22/09 ──────────────────────────
+  # Os da geração 2026 (`G1_Dex1_*`) já vêm com as colunas `*_ee_pose_gripper_base`
+  # que a WLA quer: entram sem conversão nenhuma, com a mesma âncora `*deles`.
+  # Os `G1_Dex3_*` (2025), que são da NOSSA mão, NÃO têm essas colunas — só
+  # ângulo de junta — e precisam passar pelo `converte_dataset_wla.py`.
+  #
+  # Baixados só com as duas câmeras que o `image_roles` usa: 50 GB em vez de
+  # 113. Alguns têm a cabeça retificada (`_rec`) e outros não, daí os dois
+  # blocos de `image_keys` abaixo.
+  - <<: *deles
+    name: "deles_guarda_xicara"     # G1_Dex1_Cup_Storage — 200 eps / 125k quadros
+    data_path: "G1_Dex1_Cup_Storage"
+    image_keys: *img_deles
+    weight: 8
+
+  - <<: *deles
+    name: "deles_serve_bebida"      # G1_Dex1_Pour_Drink — 200 eps / 288k quadros
+    data_path: "G1_Dex1_Pour_Drink"
+    image_keys: *img_deles
+    weight: 8
+
+  - <<: *deles
+    name: "deles_pendura_xicara"    # G1_Dex1_HangCup — 1.043 eps / 195k quadros
+    data_path: "G1_Dex1_HangCup"
+    image_keys: *img_deles_sem_rec
+    weight: 8
+
+  - <<: *deles
+    name: "deles_separa_fruta"      # G1_Dex1_FruitSorting — 1.032 eps / 330k quadros
+    data_path: "G1_Dex1_FruitSorting"
+    image_keys: *img_deles_sem_rec
+    weight: 8
+
+  - <<: *deles
+    name: "deles_empilha_copos"     # G1_Dex1_PaperCupStacking — 969 eps / 403k quadros
+    data_path: "G1_Dex1_PaperCupStacking"
+    image_keys: *img_deles_sem_rec
+    weight: 6
+
+  - <<: *deles
+    name: "deles_guarda_copos"      # G1_Dex1_StoreCups — 1.025 eps / 609k quadros
+    data_path: "G1_Dex1_StoreCups"
+    image_keys: *img_deles_sem_rec
+    weight: 6
+
+  - <<: *deles
+    name: "deles_arruma_pratos"     # G1_Dex1_ArrangePlates — 1.069 eps / 684k quadros
+    data_path: "G1_Dex1_ArrangePlates"
+    image_keys: *img_deles_sem_rec
+    weight: 6

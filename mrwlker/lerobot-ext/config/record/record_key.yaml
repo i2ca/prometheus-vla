@@ -1,0 +1,19 @@
+robot:
+  type: unitree_g1_dex3
+  control_mode: "upper_body"
+
+teleop:
+  type: keyboard_g1_arm
+
+dataset:
+  repo_id: Mrwlker/teste3
+  root: "meu_dataset/teste3"
+  push_to_hub: true
+  single_task: "teste3"
+  # Na 0.6.1 o codec vive dentro de `rgb_encoder`. Profundidade não passa por
+  # aqui: usa o `depth_encoder` (HEVC gray12le sem perda).
+  rgb_encoder:
+    vcodec: "h264"
+
+
+play_sounds: false

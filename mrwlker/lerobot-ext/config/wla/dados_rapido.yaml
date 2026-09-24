@@ -1,0 +1,135 @@
+# ── Corrida RÁPIDA de 23/09/2026 ───────────────────────────────────────────
+# Só as três fontes nossas mais a fruta, para ter um checkpoint testável no
+# MuJoCo no mesmo dia (2 mil passos, ~1h40 na GPU-1). Tudo entre este
+# cabeçalho e `datasets:` é cópia do `dados_prometheus.yaml`; mudam só as
+# fontes e os pesos. Os pesos também só valem com `WLA_PESOS=1`.
+#
+# `nosso_sim_xicara` é fonte nova, gerada em 23/09 (42 s) com:
+#   python pontes/wla/converte_dataset_wla.py \
+#       --origem  /data/mrwlker/meu_dataset/sim_copo_mujoco_2026-09-03 \
+#       --destino /data/mrwlker/meu_dataset_wla/nosso_sim_xicara
+#   python pontes/wla/tira_profundidade.py /data/mrwlker/meu_dataset_wla/nosso_sim_xicara
+#
+# A fruta leva mais peso que o tamanho dela pediria: é a única fonte com outra
+# mão (Dex1) e outro formato de pose (`xyz_rpy`), e em 2 mil passos ela
+# precisa aparecer o bastante para a frase "fruit/plate" pesar.
+target_fps: 30
+chunk_size: 30
+image_size: [336, 448]     # redimensiona TUDO: resolve as resoluções diferentes entre fontes
+norm_type: "minmax_q"
+rel_norm_type: "zscore"
+state_norm_type: "minmax_q"
+gripper_norm_type: "minmax_q"
+data_base: "/data/mrwlker/meu_dataset_wla"
+cache_dir: "/data/mrwlker/cache_wla"
+
+.nosso: &nosso
+  enabled: true
+  weight: 1.0
+  robot_type: "unitree"
+  source_fps: 30
+  arm_type: "dual"
+  ee_format: "xyz_rvec"
+  multi_task: false
+  merge_left_right_ee_stats: true
+  precollected_stats_path: "unifolm_wla/dataloader/multi_source_dataset/stats"
+  action_keys:
+    left_ee_pose: "action.left_ee_pose_gripper_base"
+    right_ee_pose: "action.right_ee_pose_gripper_base"
+    left_gripper: "action.left_gripper"
+    right_gripper: "action.right_gripper"
+    waist_joint: "action.waist_action_joint"
+  state_keys:
+    left_ee_pose: "observation.state.left_ee_pose_gripper_base"
+    right_ee_pose: "observation.state.right_ee_pose_gripper_base"
+    left_gripper: "observation.state.left_gripper"
+    right_gripper: "observation.state.right_gripper"
+    waist_joint: "observation.state.waist_state_joint"
+  relative_stats_key_map:
+    left_ee_pose: "left_ee_pose_gripper_base"
+    right_ee_pose: "right_ee_pose_gripper_base"
+
+.deles: &deles
+  enabled: true
+  weight: 1.0
+  robot_type: "unitree"
+  source_fps: 30
+  arm_type: "dual_with_legs"
+  ee_format: "xyz_rpy"
+  multi_task: false
+  merge_left_right_ee_stats: true
+  precollected_stats_path: "unifolm_wla/dataloader/multi_source_dataset/stats"
+  action_keys:
+    left_ee_pose: "action.left_ee_pose_gripper_base"
+    right_ee_pose: "action.right_ee_pose_gripper_base"
+    left_gripper: "action.left_gripper"
+    right_gripper: "action.right_gripper"
+    waist_joint: "action.waist_action_joint"
+    left_leg: "action.left_leg"
+    right_leg: "action.right_leg"
+    base_command: "action.base_command"
+  state_keys:
+    left_ee_pose: "observation.state.left_ee_pose_gripper_base"
+    right_ee_pose: "observation.state.right_ee_pose_gripper_base"
+    left_gripper: "observation.state.left_gripper"
+    right_gripper: "observation.state.right_gripper"
+    waist_joint: "observation.state.waist_state_joint"
+    left_leg: "observation.state.left_leg"
+    right_leg: "observation.state.right_leg"
+  relative_stats_key_map:
+    left_ee_pose: "left_ee_pose_gripper_base"
+    right_ee_pose: "right_ee_pose_gripper_base"
+  base_command_dims:
+    vx: 0
+    vy: 1
+    vw: 2
+    height: 3
+
+.img_nosso: &img_nosso
+  - key: "observation.images.head_camera"
+    role: "head_left"
+  - key: "observation.images.right_wrist_camera"
+    role: "cam_wrist_right"
+
+# Metade dos datasets deles não tem a cabeça retificada; nesses, o papel
+# `head_left` é a estéreo esquerda crua.
+.img_deles_sem_rec: &img_deles_sem_rec
+  - key: "observation.images.head_stereo_left"
+    role: "head_left"
+  - key: "observation.images.wrist_right"
+    role: "cam_wrist_right"
+
+.img_deles: &img_deles
+  - key: "observation.images.head_stereo_left_rec"
+    role: "head_left"
+  - key: "observation.images.wrist_right"
+    role: "cam_wrist_right"
+
+image_roles:
+  - "head_left"
+  - "cam_wrist_right"
+
+datasets:
+  - <<: *nosso
+    name: "nosso_sim_pega"          # 1.828 eps / 797.759 quadros — MuJoCo, "pick up the white cup"
+    data_path: "nosso_sim_pega"
+    image_keys: *img_nosso
+    weight: 30
+
+  - <<: *nosso
+    name: "nosso_sim_xicara"        # 275 eps / 158.851 quadros — MuJoCo, "place the white cup on the dripper"
+    data_path: "nosso_sim_xicara"   # sim_copo_mujoco_2026-09-03, convertido em 23/09
+    image_keys: *img_nosso
+    weight: 25
+
+  - <<: *nosso
+    name: "nosso_real_copo"         # 27 eps / 12.848 quadros — robô REAL, mesma frase do dripper
+    data_path: "nosso_real_copo"
+    image_keys: *img_nosso
+    weight: 10
+
+  - <<: *deles
+    name: "deles_fruta"             # 490 eps / 93.410 quadros — G1_Dex1_Put_Fruit_On_Plate
+    data_path: "deles_fruta"
+    image_keys: *img_deles
+    weight: 35

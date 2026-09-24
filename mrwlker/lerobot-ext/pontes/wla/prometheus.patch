@@ -1,0 +1,98 @@
+diff --git a/unifolm_wla/dataloader/multi_source_dataset/dataloader.py b/unifolm_wla/dataloader/multi_source_dataset/dataloader.py
+index c72aa26..c90fc24 100644
+--- a/unifolm_wla/dataloader/multi_source_dataset/dataloader.py
++++ b/unifolm_wla/dataloader/multi_source_dataset/dataloader.py
+@@ -184,8 +184,40 @@ def create_training_dataloader(
+             len(dataset),
+         )
+ 
++    # ── PATCH PROMETHEUS ────────────────────────────────────────────────
++    # O `weight` por fonte é declarado no YAML e NUNCA usado: a amostragem sai
++    # proporcional ao TAMANHO de cada fonte (está dito na docstring acima). Com
++    # os nossos dados isso dava 88% de um único dataset. Com `WLA_PESOS=1` o
++    # peso passa a valer: cada amostra da fonte i recebe probabilidade
++    # weight_i / len_i, então a fração de cada fonte no lote fica proporcional
++    # ao weight, e não ao tamanho. Sem a variável, nada muda.
+     sampler = None
+-    if distributed:
++    if os.environ.get("WLA_PESOS") and len(source_datasets) > 1:
++        from torch.utils.data import WeightedRandomSampler
++        pesos = []
++        for fonte in source_datasets:
++            w = float(getattr(fonte.config, "weight", 1.0) or 1.0)
++            pesos.extend([w / max(1, len(fonte))] * len(fonte))
++        # `distributed` é True mesmo com UM processo, porque o accelerate
++        # inicializa o `dist`. Por isso o peso vale aqui também: cada réplica
++        # sorteia a sua parte com semente própria. Como o sorteio é COM
++        # reposição, réplicas diferentes podem repetir amostras — o que numa
++        # amostragem aleatória já é o caso, e é o preço de manter a proporção
++        # por fonte em vez da proporção por tamanho.
++        n = len(dataset) // max(1, num_replicas or 1) if distributed else len(dataset)
++        g = torch.Generator()
++        g.manual_seed(1234 + int(rank or 0))
++        sampler = WeightedRandomSampler(pesos, num_samples=n, replacement=True, generator=g)
++        # `print` e não `logger.info`: o logger deste módulo não chega ao arquivo
++        # de log do treino (nem a mensagem `Concatenated` deles aparece lá), e
++        # sem confirmação visível não dá para saber se o balanceamento entrou.
++        total = sum(float(getattr(f.config, "weight", 1.0) or 1.0) for f in source_datasets)
++        print(f"[PROMETHEUS] amostragem por peso, {n} amostras por época:", flush=True)
++        for f in source_datasets:
++            w = float(getattr(f.config, "weight", 1.0) or 1.0)
++            print(f"[PROMETHEUS]   {f.config.name:22s} peso {w:5.1f} -> {100*w/total:4.1f}% "
++                  f"(tem {len(f)} amostras)", flush=True)
++    elif distributed:
+         sampler = DistributedSampler(
+             dataset, num_replicas=num_replicas, rank=rank, shuffle=shuffle,
+         )
+diff --git a/unifolm_wla/model/modules/action_model/DiT_modules/mmdit.py b/unifolm_wla/model/modules/action_model/DiT_modules/mmdit.py
+index d7df858..0fe8bcf 100644
+--- a/unifolm_wla/model/modules/action_model/DiT_modules/mmdit.py
++++ b/unifolm_wla/model/modules/action_model/DiT_modules/mmdit.py
+@@ -1,3 +1,4 @@
++import os as _os                      # ver o PATCH PROMETHEUS abaixo
+ from typing import Optional, List, Dict, Any, Tuple, Union
+ import torch
+ import torch.nn.functional as F
+@@ -172,7 +173,24 @@ class QwenDoubleStreamAttnProcessor2_0:
+     implements joint attention computation where text and image streams are processed together.
+     """
+ 
+-    _attention_backend = None
++    # PATCH PROMETHEUS 21/09/2026 — opt-in, o padrao continua identico ao deles.
++    #
++    # `None` faz o `forward` escolher FLASH/FLASH_VARLEN, e o despachante do diffusers
++    # chama `flash_attn_varlen_func`, que e `None` quando o flash-attn nao carrega. Na
++    # athena ele NAO carrega: o binario exige GLIBC 2.32 e a maquina tem 2.31 (Ubuntu
++    # 20.04). Compilar da fonte nao resolveu — o pip entrega o wheel pre-compilado.
++    #
++    # Com `WLA_ATTN_BACKEND=native` o DiT usa a atencao nativa do PyTorch (SDPA), que e
++    # matematicamente equivalente e apenas mais lenta. O proprio codigo deles ja preve
++    # esse caminho: o comentario do `forward` diz "NATIVE runs in whatever dtype the
++    # module is already in", e o `QWen3.py` deles faz exatamente esse desvio para o VLM —
++    # a cabeca DiT e que nao tinha a mesma protecao.
++    #
++    # SEM a variavel, o comportamento e byte a byte o original.
++    _attention_backend = (
++        AttentionBackendName(_os.environ["WLA_ATTN_BACKEND"])
++        if _os.environ.get("WLA_ATTN_BACKEND") else None
++    )
+     _parallel_config = None
+ 
+     def __init__(self):
+diff --git a/unifolm_wla/training/train_unifolm_wla.py b/unifolm_wla/training/train_unifolm_wla.py
+index 2349bf1..28a4323 100644
+--- a/unifolm_wla/training/train_unifolm_wla.py
++++ b/unifolm_wla/training/train_unifolm_wla.py
+@@ -175,7 +175,11 @@ class VLATrainer(TrainerUtils):
+                 project=self.config.wandb_project,
+                 entity=self.config.wandb_entity,
+                 group="vla-train",
+-                mode="offline"
++                # PATCH PROMETHEUS 21/09/2026 — opt-in, o padrao continua "offline".
++                # Estava fixo em "offline", e argumento explicito vence WANDB_MODE do
++                # ambiente, entao nao havia como ligar a sincronizacao sem mexer aqui.
++                # Com WANDB_MODE=online no ambiente, a corrida aparece no painel.
++                mode=os.environ.get("WANDB_MODE", "offline"),
+             )
+ 
+     def _save_initial_configs(self):

@@ -1,0 +1,36 @@
+diff --git a/gear_sonic/utils/mujoco_sim/configs.py b/gear_sonic/utils/mujoco_sim/configs.py
+index 5ec03fa..1c5e9df 100644
+--- a/gear_sonic/utils/mujoco_sim/configs.py
++++ b/gear_sonic/utils/mujoco_sim/configs.py
+@@ -326,6 +326,11 @@ class BaseConfig(ArgsConfigTemplate):
+ 
+         wbc_config = override_wbc_config(wbc_config, self)
+ 
++        # SONIC_CENA=<xml>: outra cena (ex.: a do café, com mesa e objetos). Caminho
++        # absoluto ou relativo à raiz do repositório, como o ROBOT_SCENE do yaml.
++        if os.environ.get("SONIC_CENA"):
++            wbc_config["ROBOT_SCENE"] = os.environ["SONIC_CENA"]
++
+         return wbc_config
+ 
+ 
+diff --git a/gear_sonic_deploy/src/g1/g1_deploy_onnx_ref/CMakeLists.txt b/gear_sonic_deploy/src/g1/g1_deploy_onnx_ref/CMakeLists.txt
+index b713922..051b18d 100644
+--- a/gear_sonic_deploy/src/g1/g1_deploy_onnx_ref/CMakeLists.txt
++++ b/gear_sonic_deploy/src/g1/g1_deploy_onnx_ref/CMakeLists.txt
+@@ -91,7 +91,14 @@ if(CMAKE_SYSTEM_PROCESSOR MATCHES "aarch64|arm64")
+     message(STATUS "   Thor doesn't have DLA engines")
+   else()
+     # Match bare-metal Jetson builds: link cudla from the CUDA toolkit (targets/aarch64-linux/lib)
+-    set(CUDLA_LIBRARY "cudla")
++    # Só se existir: ARM que não é Jetson (DGX Spark / GB10) não tem DLA nem cudla.
++    find_library(_CUDLA_ENCONTRADA cudla HINTS ${CUDA_ARM_LIB_PATH})
++    if(_CUDLA_ENCONTRADA)
++      set(CUDLA_LIBRARY "cudla")
++    else()
++      set(CUDLA_LIBRARY "")
++      message(STATUS "   cudla não encontrada (ARM sem DLA) - seguindo sem DLA")
++    endif()
+     message(STATUS "✅ ARM64 detected - enabling DLA (cudla) support")
+     message(STATUS "   Using CUDA library path: ${CUDA_ARM_LIB_PATH}")
+     message(STATUS "   Using CUDLA library: -l${CUDLA_LIBRARY}")

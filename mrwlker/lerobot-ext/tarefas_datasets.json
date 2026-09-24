@@ -1,0 +1,212 @@
+{
+  "gerado_em": "2026-09-10",
+  "sobre": "Tarefas de todos os datasets do projeto: os nossos, os externos convertidos e os externos ainda no formato de origem.",
+  "esquema_alvo": {
+    "robot_type": "unitree_g1_dex3",
+    "fps": 30,
+    "acao_e_estado": 29,
+    "cameras": [
+      "head_camera 848x480",
+      "head_camera_depth 848x480x1",
+      "right_wrist_camera 224x224"
+    ],
+    "extras": [
+      "left_hand_pressure 33",
+      "right_hand_pressure 33"
+    ]
+  },
+  "nossos": [
+    {
+      "dataset": "white_cup_on_dripper_2026-08-11",
+      "origem": "robô real",
+      "tarefa": "place the white cup on the dripper",
+      "episodios": 27,
+      "quadros": 12848,
+      "nota": "24 bons; 0, 25 e 26 são demonstrações ruins ou tomada abortada"
+    },
+    {
+      "dataset": "sim_copo_mujoco_2026-09-03",
+      "origem": "MuJoCo",
+      "tarefa": "place the white cup on the dripper",
+      "episodios": 275,
+      "quadros": 158851,
+      "nota": "ver docs/ARTEFATOS_SIM.md: brilho 1,7x o do real e profundidade sem buracos"
+    },
+    {
+      "dataset": "sim_coador_pega_2026-09-04",
+      "origem": "MuJoCo",
+      "tarefa": "pick up the white cup",
+      "episodios": 273,
+      "quadros": 123172
+    },
+    {
+      "dataset": "sim_coador_poe_2026-09-04",
+      "origem": "MuJoCo",
+      "tarefa": "place the white cup on the dripper",
+      "episodios": 270,
+      "quadros": 122534
+    }
+  ],
+  "externos_convertidos": {
+    "sobre": "unitreerobotics/G1_Dex3_* — mesmo robô e mesmas mãos. Convertidos para o nosso esquema por converte_dex3_unitree.py. Profundidade e pressão vão ZERADAS: só usar com use_depth_3d=false e use_pressure=false.",
+    "destino": "/data/mrwlker/meu_dataset/ext_unitree_dex3_2026-09-10",
+    "datasets": [
+      {
+        "dataset": "G1_Dex3_Pouring_Dataset",
+        "tarefa": "pour water",
+        "episodios": 311,
+        "quadros": 121587,
+        "o_que_e": "pegar a garrafa de agua e simular despejar num copo de vidro (7x8 cm). Bimanual: a esquerda segura o copo, a direita inclina",
+        "relevancia_cafe": "alta — e o gesto de despejar"
+      },
+      {
+        "dataset": "G1_Dex3_ObjectPlacement_Dataset",
+        "tarefa": "object placement",
+        "episodios": 210,
+        "quadros": 98266,
+        "o_que_e": "pegar pasta de dente e saco de lixo da mesa e por dentro do cesto azul",
+        "relevancia_cafe": "media — objeto dentro de recipiente"
+      },
+      {
+        "dataset": "G1_Dex3_CameraPackaging_Dataset",
+        "tarefa": "camera packaging",
+        "episodios": 201,
+        "quadros": 256253,
+        "o_que_e": "encaixar uma RealSense D-405 na cavidade da caixa e fechar a tampa",
+        "relevancia_cafe": "alta — unico encaixe preciso em alvo com tolerancia pequena"
+      },
+      {
+        "dataset": "G1_Dex3_ToastedBread_Dataset",
+        "tarefa": "toasted bread",
+        "episodios": 418,
+        "quadros": 352022,
+        "o_que_e": "por o pao da bandeja na torradeira e, depois de torrar, entregar a torrada a pessoa",
+        "relevancia_cafe": "media — interacao com eletrodomestico"
+      }
+    ],
+    "total": {
+      "episodios": 1140,
+      "quadros": 828128,
+      "horas_a_30fps": 7.7
+    }
+  },
+  "externos_no_formato_de_origem": {
+    "sobre": "USC-PSI-Lab/humanoid-everyday, fatia de cafe do G1. LeRobot v2.1, uma camera egocentrica, COM profundidade real em mm e tatil. Precisa de convert_dataset_v21_to_v30.py antes de qualquer coisa.",
+    "local": "/data/mrwlker/datasets/humanoid_everyday_cafe",
+    "tarefas": [
+      {
+        "task_index": 5,
+        "tarefa": "Articulated/close_a_kettle_lid_g1",
+        "episodios": 40,
+        "quadros": 10098,
+        "faixa_de_episodios": [
+          200,
+          239
+        ]
+      },
+      {
+        "task_index": 83,
+        "tarefa": "Basic/pour_sunflower_seeds_on_plate_g1",
+        "episodios": 40,
+        "quadros": 20742,
+        "faixa_de_episodios": [
+          3332,
+          3371
+        ]
+      },
+      {
+        "task_index": 84,
+        "tarefa": "Basic/pour_water_from_a_kettle_into_a_cup",
+        "episodios": 40,
+        "quadros": 20565,
+        "faixa_de_episodios": [
+          3372,
+          3411
+        ]
+      },
+      {
+        "task_index": 180,
+        "tarefa": "Locomanip/pick_up_a_kettle_place_it_on_base_and_turn_on",
+        "episodios": 3,
+        "quadros": 5785,
+        "faixa_de_episodios": [
+          7022,
+          7024
+        ]
+      },
+      {
+        "task_index": 184,
+        "tarefa": "Locomanip/place_kettle_near_coffee_maker",
+        "episodios": 3,
+        "quadros": 3048,
+        "faixa_de_episodios": [
+          7034,
+          7036
+        ]
+      },
+      {
+        "task_index": 193,
+        "tarefa": "Locomanip/walk_towards_a_desk_and_pick_up_the_boiling_pot_from_its_base",
+        "episodios": 40,
+        "quadros": 23146,
+        "faixa_de_episodios": [
+          7320,
+          7359
+        ]
+      },
+      {
+        "task_index": 198,
+        "tarefa": "Locomanip/walk_towards_a_desk_and_pour_water_from_the_pot_to_a_cup",
+        "episodios": 40,
+        "quadros": 33446,
+        "faixa_de_episodios": [
+          7520,
+          7559
+        ]
+      },
+      {
+        "task_index": 202,
+        "tarefa": "Locomanip/walk_towards_a_desk_and_turn_on_the_boiling_pot",
+        "episodios": 40,
+        "quadros": 20706,
+        "faixa_de_episodios": [
+          7680,
+          7719
+        ]
+      },
+      {
+        "task_index": 210,
+        "tarefa": "Locomanip/walk_towards_coffee_maker_and_close_lid",
+        "episodios": 3,
+        "quadros": 1602,
+        "faixa_de_episodios": [
+          7778,
+          7780
+        ]
+      }
+    ],
+    "total": {
+      "episodios": 249,
+      "quadros": 139138
+    },
+    "excluida": {
+      "task_index": 85,
+      "tarefa": "Basic/pour_water_from_a_kettle_into_a_cup_g1",
+      "motivo": "duplicata da 84: acao, juntas e profundidade identicas byte a byte nos episodios 3372x3412 e 3373x3413"
+    }
+  },
+  "descartados": [
+    {
+      "o_que": "unitreerobotics/G1_Dex3_GraspSquare_Dataset",
+      "motivo": "e o BlockStacking republicado — mesmo parquet, exatamente 63.247.041 bytes"
+    },
+    {
+      "o_que": "os sete unitreerobotics/G1_Dex3_Pick*",
+      "motivo": "so duas cameras de cabeca, sem camera de pulso"
+    },
+    {
+      "o_que": "subconjunto H1 do Humanoid Everyday (440 episodios)",
+      "motivo": "maos Inspire, outro corpo"
+    }
+  ]
+}

@@ -1,0 +1,81 @@
+diff --git a/gr00t/eval/rollout_policy.py b/gr00t/eval/rollout_policy.py
+index c0d9449..a4a807c 100644
+--- a/gr00t/eval/rollout_policy.py
++++ b/gr00t/eval/rollout_policy.py
+@@ -1,4 +1,5 @@
+ import argparse
++import os
+ from collections import defaultdict
+ from dataclasses import dataclass, field
+ from functools import partial
+@@ -103,7 +104,8 @@ def get_groot_locomanip_env_fn(
+ 
+         gym_env = gym.make(
+             env_name,
+-            onscreen=False,
++            # GR00T_SIM_JANELA=1: abre também o visualizador do MuJoCo na tela.
++            onscreen=os.environ.get("GR00T_SIM_JANELA") == "1",
+             offscreen=True,
+             enable_waist=True,
+             randomize_cameras=False,
+diff --git a/gr00t/model/modules/eagle_backbone.py b/gr00t/model/modules/eagle_backbone.py
+index 6424dda..23ae094 100755
+--- a/gr00t/model/modules/eagle_backbone.py
++++ b/gr00t/model/modules/eagle_backbone.py
+@@ -33,7 +33,8 @@ class EagleBackbone(torch.nn.Module):
+         # Add attention kwargs
+         extra_kwargs = {}
+         if use_flash_attention:
+-            extra_kwargs["attn_implementation"] = "flash_attention_2"
++            # GR00T_ATTN=sdpa: sem flash-attn (aarch64/GB10 sem wheel). Mesma conta, outro kernel.
++            extra_kwargs["attn_implementation"] = os.environ.get("GR00T_ATTN", "flash_attention_2")
+         if load_bf16:
+             extra_kwargs["torch_dtype"] = torch.bfloat16
+ 
+@@ -44,6 +45,9 @@ class EagleBackbone(torch.nn.Module):
+             assert load_bf16, "nvidia/Eagle-Block2A-2B-v2 requires bfloat16 by default"
+             eagle_path = os.path.join(os.path.dirname(__file__), "nvidia", "Eagle-Block2A-2B-v2")
+             config = AutoConfig.from_pretrained(eagle_path, trust_remote_code=True)
++            if os.environ.get("GR00T_ATTN"):
++                for c in (config, config.text_config, config.vision_config):
++                    c._attn_implementation = os.environ["GR00T_ATTN"]
+             self.model = AutoModel.from_config(config, trust_remote_code=True)
+         else:
+             raise ValueError(f"Model {model_name} not supported")
+diff --git a/gr00t/model/modules/nvidia/Eagle-Block2A-2B-v2/modeling_eagle3_vl.py b/gr00t/model/modules/nvidia/Eagle-Block2A-2B-v2/modeling_eagle3_vl.py
+index e9201f6..c99d396 100644
+--- a/gr00t/model/modules/nvidia/Eagle-Block2A-2B-v2/modeling_eagle3_vl.py
++++ b/gr00t/model/modules/nvidia/Eagle-Block2A-2B-v2/modeling_eagle3_vl.py
+@@ -1,3 +1,4 @@
++import os
+ # --------------------------------------------------------
+ # NVIDIA
+ # Copyright (c) 2025 NVIDIA
+@@ -106,10 +107,10 @@ class Eagle3_VLForConditionalGeneration(Eagle3_VLPreTrainedModel, GenerationMixi
+             if config.vision_config.model_type == "intern_vit_6b":
+                 self.vision_model = InternVisionModel(config.vision_config)
+             elif config.vision_config.model_type == "siglip_vision_model":
+-                config.vision_config._attn_implementation = "flash_attention_2"
++                config.vision_config._attn_implementation = os.environ.get("GR00T_ATTN", "flash_attention_2")
+                 self.vision_model = SiglipVisionModel(config.vision_config)
+             elif config.vision_config.model_type == "siglip2_vision_model":
+-                config.vision_config._attn_implementation = "flash_attention_2"
++                config.vision_config._attn_implementation = os.environ.get("GR00T_ATTN", "flash_attention_2")
+                 self.vision_model = Siglip2VisionModel(config.vision_config)
+             elif config.vision_config.model_type == "radio":
+                 self.vision_model = RADIOModel(config.vision_config)
+@@ -123,12 +124,12 @@ class Eagle3_VLForConditionalGeneration(Eagle3_VLPreTrainedModel, GenerationMixi
+                 self.language_model = Phi3ForCausalLM(config.text_config)
+             elif config.text_config.architectures[0] == "Qwen2ForCausalLM":
+                 assert (
+-                    config.text_config._attn_implementation == "flash_attention_2"
++                    config.text_config._attn_implementation == os.environ.get("GR00T_ATTN", "flash_attention_2")
+                 ), f"Qwen2 must use flash_attention_2 but got {config.text_config._attn_implementation}"
+                 self.language_model = Qwen2ForCausalLM(config.text_config)
+             elif config.text_config.architectures[0] == "Qwen3ForCausalLM":
+                 assert (
+-                    config.text_config._attn_implementation == "flash_attention_2"
++                    config.text_config._attn_implementation == os.environ.get("GR00T_ATTN", "flash_attention_2")
+                 ), f"Qwen3 must use flash_attention_2 but got {config.text_config._attn_implementation}"
+                 self.language_model = Qwen3ForCausalLM(config.text_config)
+             else:

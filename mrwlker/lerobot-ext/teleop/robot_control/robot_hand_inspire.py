@@ -1,0 +1,1 @@
+../../../../lerobot-ext/teleop/robot_control/robot_hand_inspire.py
