@@ -1,0 +1,152 @@
+{
+  "layout": {
+    "chaleira": [
+      [
+        0.58,
+        -0.36
+      ],
+      180.0
+    ],
+    "coador": [
+      [
+        0.36,
+        -0.16
+      ],
+      180.0
+    ],
+    "pote": [
+      [
+        0.34,
+        0.14
+      ],
+      0.0
+    ],
+    "scoop": [
+      [
+        0.26,
+        0.3
+      ],
+      200.0
+    ]
+  },
+  "markers": {
+    "red": [
+      0.46,
+      -0.4
+    ],
+    "cyan": [
+      0.64,
+      0.16
+    ],
+    "blue": [
+      0.62,
+      0.44
+    ],
+    "magenta": [
+      0.46,
+      0.4
+    ]
+  },
+  "mass_kg": {
+    "chaleira": 1.2,
+    "pote": 0.5,
+    "tampa": 0.1,
+    "scoop": 0.03
+  },
+  "objects": {
+    "chaleira": {
+      "source": "assets/glb/chaleira.glb",
+      "scale": 0.20773743197877112,
+      "extents_m": [
+        0.20728633911661698,
+        0.16501957189710292,
+        0.205
+      ],
+      "collision_parts": 19,
+      "dimension_spec": {
+        "axis": "z",
+        "size_m": 0.205,
+        "note": "corpo sem a base eletrica: fichas Mondial CE-17 / Cadence CEL850 dao 22,5 cm de altura total COM a base (~2 cm); diametro do corpo 16 cm; massa vazia 0,8 kg; 1,7 L (pesquisa 16/09, subagente)",
+        "max_parts": 32
+      }
+    },
+    "coador": {
+      "source": "assets/glb/coador.glb",
+      "scale": 0.2502823453431808,
+      "extents_m": [
+        0.13727944161604322,
+        0.13368041678716674,
+        0.25
+      ],
+      "collision_parts": 32,
+      "dimension_spec": {
+        "axis": "z",
+        "size_m": 0.25,
+        "note": "PROVISORIO 25 cm (faixa domestica 15,5 a 33). Ponta do pano a 0,486 da altura: 12,2 cm livres; com o copo a 12 mm da base (borda a 10,8 cm) sobra 1,4 cm. Com 19 cm (Facile n3) este modelo nao aceitaria o copo de 9,2. Confirmar com o objeto real.",
+        "max_parts": 32
+      },
+      "base_top_m": 0.004,
+      "base_visual_center_top_m": 0.002303,
+      "filter_tip_z_m": 0.121518
+    },
+    "pote": {
+      "source": "assets/glb/pote.glb",
+      "scale": 0.15723793140764358,
+      "extents_m": [
+        0.1570302735431803,
+        0.1268334676460981,
+        0.07499999999999998
+      ],
+      "collision_parts": 24,
+      "dimension_spec": {
+        "axis": "z",
+        "size_m": 0.075,
+        "note": "mini cacarola tipo Ceraflame Premiere 11 cm: 7,5 cm sem tampa, corpo 12,5 cm, boca 11 cm, 15,5 cm com alcas, 0,48 kg com tampa (pesquisa 16/09)",
+        "max_parts": 24
+      }
+    },
+    "tampa": {
+      "source": "assets/glb/tampa.glb",
+      "scale": 0.12515663587352255,
+      "extents_m": [
+        0.125,
+        0.12514574439496168,
+        0.05759312408127394
+      ],
+      "collision_parts": 8,
+      "dimension_spec": {
+        "axis": "x",
+        "size_m": 0.125,
+        "note": "aba = diametro externo do corpo do pote (12,5 cm), 3 cm de altura (derivado das fichas do pote)",
+        "max_parts": 8
+      }
+    },
+    "scoop": {
+      "source": "assets/glb/scoop.glb",
+      "scale": 0.1498030628946302,
+      "extents_m": [
+        0.15,
+        0.07724843671797206,
+        0.0352113807372129
+      ],
+      "collision_parts": 12,
+      "dimension_spec": {
+        "axis": "x",
+        "size_m": 0.15,
+        "note": "comprimento total com cabo; PROVISORIO",
+        "max_parts": 12
+      }
+    }
+  },
+  "coador_fixed": true,
+  "calibration_check": {
+    "markers_used": [
+      "red",
+      "cyan",
+      "blue",
+      "magenta"
+    ],
+    "fit_rms_px": 0.47586259456708696,
+    "heldout_max_px": 1.2416527380668902
+  }
+}

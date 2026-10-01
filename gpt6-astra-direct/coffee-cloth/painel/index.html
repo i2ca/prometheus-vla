@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>G1 Café</title>
+<style>
+  :root{
+    --bg:#0a0e14; --panel:#111721; --panel2:#0d131c; --line:#1e2836;
+    --txt:#e6edf3; --muted:#7d8da3; --accent:#4aa3ff; --ok:#3fb950; --bad:#f85149; --warn:#d29922;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--txt);
+       font:14px/1.5 ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif}
+  header{display:flex;align-items:center;gap:16px;padding:14px 20px;
+         border-bottom:1px solid var(--line);background:var(--panel2);flex-wrap:wrap}
+  header h1{font-size:17px;margin:0;letter-spacing:.2px}
+  header .sub{color:var(--muted);font-size:12px;font-family:ui-monospace,monospace}
+  .pill{padding:3px 10px;border-radius:999px;border:1px solid var(--line);
+        font-size:11px;font-family:ui-monospace,monospace;color:var(--muted)}
+  .pill.on{color:var(--ok);border-color:#1d3b26}
+  .pill.off{color:var(--bad);border-color:#43201f}
+  main{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,420px);gap:16px;padding:16px;
+       align-items:start}
+  @media (max-width:980px){main{grid-template-columns:1fr}}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:10px;overflow:hidden}
+  .card h2{margin:0;padding:11px 14px;font-size:12px;font-weight:600;letter-spacing:.6px;
+           text-transform:uppercase;color:var(--muted);border-bottom:1px solid var(--line)}
+  .card .body{padding:14px}
+  .grade{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px}
+  .metric{background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:10px 12px}
+  .metric .rot{font-size:10px;text-transform:uppercase;letter-spacing:.6px;color:var(--muted)}
+  .metric .val{font-size:20px;font-family:ui-monospace,monospace;margin-top:3px}
+  .metric.ok .val{color:var(--ok)} .metric.bad .val{color:var(--bad)}
+  img#camera{width:100%;display:block;background:#000}
+  .turno{border-bottom:1px solid var(--line);padding:11px 14px}
+  .turno:last-child{border-bottom:0}
+  .turno .cab{display:flex;align-items:center;gap:8px;margin-bottom:5px}
+  .n{font-family:ui-monospace,monospace;color:var(--muted);font-size:11px}
+  .tool{font-family:ui-monospace,monospace;font-size:12px;color:var(--accent)}
+  .fala{color:var(--txt);font-size:13px;margin:4px 0}
+  .res{font-family:ui-monospace,monospace;font-size:11.5px;color:var(--muted);
+       background:var(--panel2);border:1px solid var(--line);border-radius:6px;
+       padding:7px 9px;margin-top:6px;white-space:pre-wrap;word-break:break-word}
+  .res.ok{border-left:3px solid var(--ok)} .res.bad{border-left:3px solid var(--bad)}
+  .veredito{padding:14px}
+  .veredito .tag{display:inline-block;padding:4px 12px;border-radius:6px;font-weight:600;
+                 font-size:13px;margin-bottom:9px}
+  .tag.no{background:#2a1517;color:var(--bad);border:1px solid #43201f}
+  .tag.sim{background:#122119;color:var(--ok);border:1px solid #1d3b26}
+  footer{color:var(--muted);font-size:11.5px;padding:0 20px 24px;line-height:1.7}
+  code{font-family:ui-monospace,monospace;color:#9db3cc}
+</style>
+</head>
+<body>
+<header>
+  <h1>G1 · Café coado em pano</h1>
+  <span class="sub" id="modelo">—</span>
+  <span class="pill" id="fonte">—</span>
+  <span class="pill" id="relogio">—</span>
+</header>
+
+<main>
+  <div>
+    <div class="card" style="margin-bottom:16px">
+      <h2>Câmera da cabeça · o que o modelo enxerga</h2>
+      <img id="camera" alt="visão do robô">
+    </div>
+    <div class="card">
+      <h2>Turnos do orquestrador</h2>
+      <div id="turnos"></div>
+    </div>
+  </div>
+
+  <div>
+    <div class="card" style="margin-bottom:16px">
+      <h2>Estado do preparo</h2>
+      <div class="body"><div class="grade" id="metricas"></div></div>
+    </div>
+    <div class="card">
+      <h2>Veredito</h2>
+      <div class="veredito" id="veredito"><span class="pill">aguardando</span></div>
+    </div>
+  </div>
+</main>
+
+<footer>
+  Cada turno é uma chamada de ferramenta escolhida pelo modelo via function calling; a imagem da
+  câmera vai no contexto junto com os números. As primitivas leem a pose dos objetos direto do
+  MuJoCo, então o modelo decide <em>qual</em> etapa e <em>quando</em>, não localiza nada por pixel.
+  Fonte: <code>results/&lt;episodio&gt;/progress.json</code>.
+</footer>
+
+<script>
+const EPISODIO = new URLSearchParams(location.search).get('ep') || 'agent-cafe-001';
+
+const rotulos = {
+  po_no_filtro_g:   ['Pó no filtro', 'g'],
+  temperatura_C:    ['Temperatura', '°C'],
+  agua_na_chaleira_ml:['Água na chaleira','ml'],
+  agua_na_xicara_ml:['Café na xícara','ml'],
+  agua_derramada_ml:['Derramado','ml'],
+  po_derramado_g:   ['Pó derramado','g'],
+};
+
+function ultimaObservacao(d){
+  for(let i=d.turnos.length-1;i>=0;i--){
+    for(const r of (d.turnos[i].resultados||[])){
+      if(r.observar_cena) return {obs:r.observar_cena, idx:d.turnos[i].turno-1};
+    }
+  }
+  return null;
+}
+
+async function atualizar(){
+  let d;
+  try{ d = await (await fetch(`../results/${EPISODIO}/progress.json?t=`+Date.now())).json(); }
+  catch(e){ return; }
+
+  document.getElementById('modelo').textContent = d.model || '';
+  document.getElementById('fonte').textContent = (d.fonte_atual||'').split('/').pop();
+  document.getElementById('relogio').textContent = `${d.turnos.length} turnos`;
+
+  const u = ultimaObservacao(d);
+  if(u){
+    const m = document.getElementById('metricas');
+    m.innerHTML = Object.entries(rotulos).map(([k,[rot,un]])=>{
+      if(u.obs[k]===undefined) return '';
+      let cls='';
+      if(k==='agua_na_xicara_ml') cls = u.obs[k]>0?'ok':'bad';
+      if(k==='agua_derramada_ml'||k==='po_derramado_g') cls = u.obs[k]>0?'bad':'ok';
+      return `<div class="metric ${cls}"><div class="rot">${rot}</div>
+              <div class="val">${u.obs[k]}<span style="font-size:12px;color:var(--muted)"> ${un}</span></div></div>`;
+    }).join('') + `<div class="metric ${u.obs.aquecedor_ligado?'ok':''}">
+        <div class="rot">Aquecedor</div><div class="val" style="font-size:15px">
+        ${u.obs.aquecedor_ligado?'ligado':(u.obs.ultimo_evento_aquecedor||'—')}</div></div>`;
+    document.getElementById('camera').src = `../results/${EPISODIO}/obs-${u.idx}/view.png?t=`+Date.now();
+  }
+
+  document.getElementById('turnos').innerHTML = d.turnos.map(t=>{
+    const res = (t.resultados||[]).map(r=>Object.entries(r).map(([nome,v])=>{
+      const ruim = v && (v.sucesso===false || v.erro);
+      const bom  = v && v.sucesso===true;
+      const txt = JSON.stringify(v,null,1).replace(/[{}"]/g,'').trim();
+      return `<div class="res ${ruim?'bad':(bom?'ok':'')}">${txt}</div>`;
+    }).join('')).join('');
+    return `<div class="turno">
+      <div class="cab"><span class="n">turno ${t.turno}</span>
+        <span class="tool">${(t.chamadas||[]).join(', ')||'—'}</span></div>
+      ${t.texto?`<div class="fala">${t.texto}</div>`:''}
+      ${res}</div>`;
+  }).join('');
+
+  const v = document.getElementById('veredito');
+  if(d.justificativa_final){
+    v.innerHTML = `<span class="tag ${d.coffee_completed?'sim':'no'}">
+        ${d.coffee_completed?'CAFÉ PRONTO':'CAFÉ NÃO PRONTO'}</span>
+      <div style="color:var(--muted);font-size:13px">${d.justificativa_final}</div>`;
+  }else{
+    v.innerHTML = `<span class="pill">episódio em andamento</span>`;
+  }
+}
+atualizar(); setInterval(atualizar, 3000);
+</script>
+</body>
+</html>

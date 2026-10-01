@@ -1,0 +1,41 @@
+{
+  "model": "gpt-6-astra",
+  "scene": "results/handle-layout-search-003/layout-05/scene.xml",
+  "asset_generation": "results/kettle-handle-v2-003",
+  "geometry_check": "results/kettle-handle-check-002/report.json",
+  "preview": "results/kettle-handle-check-002/visual.png",
+  "status": "rebuilt nominal geometry; approximate real dimensions",
+  "grasp_validated": true,
+  "hot_body_geom": "chaleira_hot_body",
+  "permitted_handle_geoms_prefix": "handle_col",
+  "nominal_handle_mm": {
+    "height": 140,
+    "clear_width": 25
+  },
+  "external_envelope_xyz_mm": [
+    213,
+    159,
+    232
+  ],
+  "old_trials_preserved": true,
+  "scene_physics_revision": "free-props-001",
+  "grasp_validation": "results/loadable-dynamics-011/report.json",
+  "validation_scope": "nominal fixed-base MuJoCo grasp and lift only, no coffee completion",
+  "latest_loaded_lift": "results/loadable-dynamics-019/report.json",
+  "loaded_lift_kg": 1.58,
+  "loaded_lift_mass_model": "results/loadable-dynamics-019/liquid_mass.py",
+  "loaded_lift_checkpoint": "results/loadable-dynamics-019/continuation.npz",
+  "latest_spout_control": "results/handle-pour-dynamics-008/report.json",
+  "spout_control_payload_kg": 1.0,
+  "latest_loaded_video": "results/loadable-dynamics-018-multicam/attempt-six-cameras.mp4",
+  "water_transfer_validated": true,
+  "coffee_completed": false,
+  "latest_water_cycle": "results/kettle-water-feedback-015",
+  "water_transfer_validation_scope": "single simulated water-only cycle, source lift019 + prefix009 + resumed012; free props, coupled liquid mass, fixed pelvis; not coffee",
+  "water_ml_in_cup": 194.5001435561188,
+  "water_spilled_ml": 0.0,
+  "latest_water_video": "results/kettle-water-cycle-002-multicam/attempt-six-cameras.mp4",
+  "latest_placement_rest": "results/kettle-rest-002",
+  "latest_placement": "results/kettle-place-020",
+  "latest_physical_checkpoint": "results/kettle-place-020/continuation.npz"
+}

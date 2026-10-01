@@ -1,0 +1,88 @@
+"""Raise from arms-down and follow collision-planned pregrasp path with free props."""
+import json,shutil,sys
+from pathlib import Path
+import numpy as np,mujoco
+sys.path.insert(0,str(Path(__file__).resolve().parents[2]/'g1-cup-grasp/scripts'))
+from g1_sim import G1Sim,ARM_JOINTS
+from kinematics import ArmIK
+from scipy.spatial.transform import Rotation,Slerp
+out=Path('results/neutral-handle-dynamics-003');out.mkdir(exist_ok=False);shutil.copy2(__file__,out/Path(__file__).name)
+scene=Path('results/free-props-001/scene.xml');s=G1Sim(str(scene.resolve()));m,d=s.m,s.d;initial=np.load('results/free-props-001/initial-qpos.npy');d.qpos[:]=initial;mujoco.mj_forward(m,d)
+roll=m.jnt_qposadr[m.joint('left_shoulder_roll_joint').id];elbow=m.jnt_qposadr[m.joint('left_elbow_joint').id]
+raised=initial.copy();raised[roll]=1.2
+above=raised.copy();above[elbow]=0.1
+planned=np.load('results/neutral-wrist-path-003/path.npz')['qpos']
+ik=ArmIK(s,['waist_yaw_joint']+[n.replace('right_','left_') for n in ARM_JOINTS],palm='left_wrist_yaw_link')
+ik.bounds=ik.bounds.copy();ik.bounds[0]=[-.8,.25];ik.bounds[-3:]=np.deg2rad([[-60,60],[-45,45],[-30,30]])
+right_pitch=m.jnt_qposadr[m.joint('right_shoulder_pitch_joint').id]
+fit=json.loads(Path('results/handle-fit-001/candidates.json').read_text())['candidates'][11]
+hnames=[n.replace('right_','left_') for n in fit['hand_joint_names']];ha=np.array([m.jnt_qposadr[m.joint(n).id] for n in hnames]);hq=np.array(fit['hand_q'])*np.array([1,-1,-1,-1,-1,-1,-1]);F=np.diag([1,-1,1]);grasp_start=None;maxik=0;grasp_rows=[]
+for n,i in s.act_joint.items():
+ if 'hand' in n:s.kp[i]=8;s.kd[i]=.2
+ elif n.startswith('left_') and any(x in n for x in ['shoulder','elbow','wrist']):s.kp[i]*=3;s.kd[i]*=np.sqrt(3)*2
+props=['coador','copo','pote','tampa','scoop','base_eletrica','chaleira'];bs=[m.body(n).id for n in props];ref=None
+handgeoms=[g for g in range(m.ngeom) if m.body(int(m.geom_bodyid[g])).name.startswith(('left_hand','left_wrist')) and (m.geom_contype[g] or m.geom_conaffinity[g])];table=m.geom('tampo').id
+rows=[];states=[];bad=None;gapmin=1.;dt=m.opt.timestep;peak=np.zeros(m.nu);cleared=False
+for k in range(int(34/dt)):
+ t=k*dt
+ if t<2:target=initial;phase='settle'
+ elif t<5:
+  u=(t-2)/3;u=u*u*(3-2*u);target=initial*(1-u)+raised*u;phase='raise_outside_table'
+ elif t<7:
+  u=(t-5)/2;u=u*u*(3-2*u);target=raised*(1-u)+above*u;phase='bend_above_table'
+ elif t<8:target=above;phase='hold_above_table'
+ elif t<20:
+  u=(t-8)/12;u=u*u*(3-2*u)*(len(planned)-1);i=min(int(u),len(planned)-2);f=u-i;target=planned[i]*(1-f)+planned[i+1]*f;phase='move_to_pregrasp'
+ else:
+  if grasp_start is None:
+   grasp_start=d.xpos[m.body('left_wrist_yaw_link').id].copy();startR=d.xmat[m.body('left_wrist_yaw_link').id].reshape(3,3).copy();bid=m.body('chaleira').id;cp=d.xpos[bid].copy();CR=d.xmat[bid].reshape(3,3).copy();gp=cp+CR@F@np.array(fit['palm_position_kettle_frame_m']);gR=CR@F@np.array(fit['palm_rotation_kettle_frame'])@F;rotation=Slerp([0,1],Rotation.from_matrix([startR,gR]));q=planned[-1][ik.qa].copy();grasp_base=planned[-1].copy();z0=cp[2]
+  target=grasp_base.copy()
+  u=np.clip((t-20)/6,0,1);u=u*u*(3-2*u);pos=grasp_start*(1-u)+gp*u;rot=rotation(u).as_matrix();phase='approach_handle'
+  target[ha]=hq*.95
+  if t>=26:
+   phase='close_handle';f=np.clip(t-26,0,1);target[ha]=hq*(.95+.05*f)+np.sign(hq)*.12*f
+  if t>=28:
+   phase='lift_handle' if t<32 else 'hold_handle';v=np.clip((t-28)/4,0,1);v=v*v*(3-2*v);pos=gp+np.array([0,0,.08*v])
+  if k%10==0:q,e=ik.solve(pos,rot,q,reference=grasp_base[ik.qa],iterations=150);maxik=max(maxik,e['position_error_m'])
+  target[ik.qa]=q
+  target[right_pitch]=initial[right_pitch]+.8*max(0.,q[0])
+  if e['position_error_m']>.002 or e['orientation_error_rad']>np.deg2rad(3):bad={'time_s':t,'reason':'IK target infeasible within posture bounds','errors':e};break
+  for idx,n in zip(ha,hnames):target[idx]=np.clip(target[idx],*m.jnt_range[m.joint(n).id])
+ tau=s.kp*(target[s.qadr]-d.qpos[s.qadr])-s.kd*d.qvel[s.vadr]+d.qfrc_bias[s.vadr]
+ if False:
+  jp=np.zeros((3,m.nv));jr=np.zeros((3,m.nv));bid=m.body('chaleira').id;mujoco.mj_jac(m,d,jp,jr,d.xipos[bid],m.body('left_wrist_yaw_link').id);ramp=np.clip((t-28)/1.,0,1);tau+=(jp[:,s.vadr].T@(-m.opt.gravity*m.body_mass[bid]))*ramp
+ d.ctrl[:]=np.clip(tau,m.actuator_ctrlrange[:,0],m.actuator_ctrlrange[:,1]);peak=np.maximum(peak,np.abs(d.ctrl));mujoco.mj_step(m,d)
+ if ref is None and t>=2:ref=d.xpos[bs].copy()
+ for ct in d.contact:
+  bn=[m.body(int(m.geom_bodyid[g])).name for g in [ct.geom1,ct.geom2]]
+  gn=[m.geom(int(g)).name or '' for g in [ct.geom1,ct.geom2]]
+  allowed=any(g.startswith('handle_col') for g in gn) and any(b.startswith('left_hand') for b in bn)
+  if ct.dist<0 and not allowed and any(n.startswith(('left_','right_','torso','waist','pelvis','head')) for n in bn):bad={'time_s':t,'bodies':bn,'geoms':gn};break
+ # Conservative global hand envelope from collision meshes / bounding radii.
+ pts=[]
+ for g in handgeoms:
+  if m.geom_type[g]==mujoco.mjtGeom.mjGEOM_MESH:
+   mesh=m.geom_dataid[g];v=m.mesh_vert[m.mesh_vertadr[mesh]:m.mesh_vertadr[mesh]+m.mesh_vertnum[mesh]];pts.append(v@d.geom_xmat[g].reshape(3,3).T+d.geom_xpos[g])
+  else:
+   p=d.geom_xpos[g];r=m.geom_rbound[g];pts.append(np.array([p-r,p+r]))
+ points=np.concatenate(pts);minz=float(points[:,2].min());maxx=float(points[:,0].max());gap=min(mujoco.mj_geomDistance(m,d,g,table,1,None) for g in handgeoms);gapmin=min(gapmin,gap)
+ if minz>=.77:cleared=True
+ if not cleared and maxx>.18:bad={'time_s':t,'reason':'hand entered table edge margin before clearing height','maxx':maxx,'minz':minz}
+ if gap<.02:bad={'time_s':t,'reason':'hand-table gap below 20mm','gap_m':gap}
+ forces={};supports=set()
+ for ci,ct in enumerate(d.contact):
+  if ct.dist>=0:continue
+  bn=[m.body(int(m.geom_bodyid[g])).name for g in [ct.geom1,ct.geom2]]
+  if 'chaleira' not in bn:continue
+  other=bn[1-bn.index('chaleira')]
+  if other.startswith('left_hand'):
+   cf=np.zeros(6);mujoco.mj_contactForce(m,d,ci,cf);forces[other]=forces.get(other,0.)+float(cf[0])
+  else:supports.add(other)
+ bid=m.body('chaleira').id
+ if k%16==0:grasp_rows.append({'t':t,'phase':phase,'jar_position_m':d.xpos[bid].tolist(),'jar_tilt_deg':float(np.rad2deg(np.arccos(np.clip(d.xmat[bid].reshape(3,3)[2,2],-1,1)))),'finger_normal_force_N':forces,'external_supports':sorted(supports),'wrist_deg':np.rad2deg(d.qpos[ik.qa[-3:]]).tolist()})
+ if k%16==0:rows.append({'t':t,'phase':phase,'hand_min_z_m':minz,'hand_max_x_m':maxx,'table_gap_m':gap,'prop_displacements_m':None if ref is None else np.linalg.norm(d.xpos[bs]-ref,axis=1).tolist()});states.append(d.qpos.copy())
+ if bad:break
+# Completion alone is insufficient: this exploratory run never certifies sustained grasp.
+report={'model':'gpt-6-astra','scene':str(scene.resolve()),'pass':False,'completed_without_forbidden_contact':bad is None and cleared and t>33.9 and not s.warnings(),'payload_compensation':'disabled for vertical lift comparison','max_ik_error_m':maxik,'failure':bad,'min_table_gap_m':gapmin,'warnings':s.warnings(),'objects':props,'grasp_samples':grasp_rows,'rows':rows,'peak_motor_torques_Nm':{n:float(peak[i]) for n,i in s.act_joint.items()},'limitations':'fixed robot base, object masses/friction approximate; exploratory grasp; sustained support criteria not yet implemented in this script'}
+(out/'report.json').write_text(json.dumps(report,indent=2));np.savez_compressed(out/'trajectory.npz',qpos=states);np.save(out/'final-qpos.npy',d.qpos);np.save(out/'final-qvel.npy',d.qvel)
+print({k:v for k,v in report.items() if k not in ['rows','grasp_samples','peak_motor_torques_Nm']});print(rows[-1])

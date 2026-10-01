@@ -1,0 +1,47 @@
+{
+  "scene": "scene/setup-luiz-020.xml",
+  "seconds": 2.0,
+  "initial_penetrations_over_1mm": [
+    [
+      "copo_parede_11",
+      "coador_col03",
+      -1.0
+    ]
+  ],
+  "max_penetration_mm": 1.38,
+  "warnings": 0,
+  "objects": {
+    "copo": {
+      "moved_mm": 0.9,
+      "dz_mm": -0.4,
+      "tilt_deg": 1.3
+    },
+    "chaleira": {
+      "moved_mm": 0.2,
+      "dz_mm": -0.2,
+      "tilt_deg": 0.1
+    },
+    "pote": {
+      "moved_mm": 0.3,
+      "dz_mm": -0.3,
+      "tilt_deg": 0.1
+    },
+    "tampa": {
+      "moved_mm": 0.9,
+      "dz_mm": -0.9,
+      "tilt_deg": 0.6
+    },
+    "scoop": {
+      "moved_mm": 1.5,
+      "dz_mm": -1.4,
+      "tilt_deg": 0.1
+    }
+  },
+  "contact_pairs_end": {
+    "mesa x pote": 6,
+    "mesa x scoop": 3,
+    "coador x copo": 6,
+    "base_eletrica x chaleira": 4,
+    "pote x tampa": 8
+  }
+}

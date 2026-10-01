@@ -1,0 +1,104 @@
+{
+  "schema_version": 1,
+  "model": "gpt-6-astra",
+  "unit": "mm",
+  "identification": {
+    "manufacturer": "Electrolux",
+    "candidate_model": "Efficient EEK10",
+    "status": "strong visual match; product label not visible/readable",
+    "matching_features": [
+      "brushed stainless tapered body",
+      "round black lid with central release button",
+      "switch on top of handle",
+      "four rounded grip undulations",
+      "spout shape and lower indicator"
+    ]
+  },
+  "user_measurements": {
+    "handle_internal_height": {
+      "nominal_mm": 140,
+      "status": "approximate physical measurement reported by user"
+    },
+    "handle_clear_width": {
+      "nominal_mm": 25,
+      "status": "approximate physical measurement reported by user; not uniform along the handle"
+    },
+    "quest3_check": {
+      "inserted_tip_length_mm": 25,
+      "status": "qualitative fit observation only; insertion length is not controller cross-section width"
+    }
+  },
+  "photo_assessment": {
+    "clearance_varies_with_height": true,
+    "rounded_internal_grip_undulations_visible": true,
+    "approximate_visible_undulation_count": 4,
+    "undulation_depth_mm": null,
+    "undulation_spacing_mm": null,
+    "exact_metric_reconstruction_possible": false,
+    "reason": "Tape and front handle edges are at different depths; camera pose/scale is unknown, several extremities cropped; no coplanar calibrated view.",
+    "independent_photo_only_dimensions_mm": null,
+    "adopted_working_estimate_mm": {
+      "internal_height": 140,
+      "clear_width": 25
+    },
+    "sensitivity_cases_not_confidence_intervals": {
+      "height_mm": [
+        130,
+        140,
+        150
+      ],
+      "clear_width_mm": [
+        22,
+        25,
+        30
+      ]
+    }
+  },
+  "manufacturer_specs": {
+    "source": "https://content.electrolux.com.br/brasil/electrolux/EEK10/index.html",
+    "height_mm": 232,
+    "width_mm": 159,
+    "depth_mm": 213,
+    "listed_weight_kg": 0.78,
+    "capacity_l": 1.8,
+    "weight_scope": "Catalog product weight; not verified as vessel-only mass excluding base",
+    "dimension_scope": "Outer product dimensions; not internal handle or body diameters"
+  },
+  "geometry_revision": {
+    "old_total_spout_to_handle_mm": 159,
+    "status": "disputed; do not use as confirmed full span",
+    "probable_spout_to_handle_envelope_mm": 213,
+    "probable_span_axis_status": "inference from official labeled outer dimensions and product image, not direct measurement",
+    "old_base_diameter_110_and_top_90_mm": "drawing-derived, not independently confirmed by these new photos/catalog",
+    "old_mesh_central_gap_mm": 11.5,
+    "old_mesh_fidelity_accepted": false,
+    "required_handle_shape": "curved closed loop with rounded inner finger undulations; not constant-width rectangular slot"
+  },
+  "manual": {
+    "source": "https://www.electrolux-ui.com/DocumentDownLoad.aspx?DocURL=2021%5CEEK%5C10_PORT_REV00umPT.pdf",
+    "minimum_water_l": 0.5,
+    "maximum_water_l": 1.8
+  },
+  "geometry_rebuilt": true,
+  "geometry_revision_result": {
+    "model": "gpt-6-astra",
+    "scene": "scene/setup-luiz-handle-v2.xml",
+    "asset_generation": "results/kettle-handle-v2-003",
+    "geometry_check": "results/kettle-handle-check-002/report.json",
+    "preview": "results/kettle-handle-check-002/visual.png",
+    "status": "rebuilt nominal geometry; approximate real dimensions",
+    "grasp_validated": false,
+    "hot_body_geom": "chaleira_hot_body",
+    "permitted_handle_geoms_prefix": "handle_col",
+    "nominal_handle_mm": {
+      "height": 140,
+      "clear_width": 25
+    },
+    "external_envelope_xyz_mm": [
+      213,
+      159,
+      232
+    ],
+    "old_trials_preserved": true
+  }
+}

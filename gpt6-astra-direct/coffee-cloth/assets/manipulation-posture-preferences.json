@@ -1,0 +1,23 @@
+{
+  "model": "gpt-6-astra",
+  "task_bounds_deg": {
+    "wrist_roll": [
+      -60,
+      60
+    ],
+    "wrist_pitch": [
+      -45,
+      45
+    ],
+    "wrist_yaw": [
+      -30,
+      30
+    ]
+  },
+  "meaning": "engineering posture preferences for this task, NOT human anatomical limits or changed robot motor limits",
+  "dynamic_allowance_deg": 2,
+  "require_collision_and_torque_checks": true,
+  "next_stage_requirement": "Re-solve handle approach/closure under these preferences; do not reuse old 81-degree pregrasp",
+  "remaining_tradeoff": "yaw excursion increased from12 to30deg; initial shoulder abduction remains69deg",
+  "last_validated": "results/neutral-wrist-dynamics-002/report.json"
+}

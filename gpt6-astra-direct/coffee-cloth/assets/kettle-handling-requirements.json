@@ -1,0 +1,24 @@
+{
+  "model": "gpt-6-astra",
+  "source": "Explicit user instruction: move kettle by handle, like a human.",
+  "kettle_grasp_region": "handle_only",
+  "forbidden_hand_contact_regions": [
+    "metal_body",
+    "spout",
+    "lid",
+    "base"
+  ],
+  "handle_material_reference": "plastic, per JAR-001 drawing; thermal properties unverified",
+  "robot_finger_material_and_temperature_limit": null,
+  "handle_internal_width_mm": 25,
+  "handle_internal_height_mm": 140,
+  "no_unsupported_geometry_changes": true,
+  "legacy_body_grasp": "cold mechanical reference only; never counts as coffee workflow completion",
+  "measurement_reference": "assets/desenhos/JAR-001-jarra.png",
+  "handle_measurement_status": "Approximate user measurements, supported by supplied photos; not exact photogrammetric reconstruction",
+  "handle_profile": "rounded inner undulations; width varies with height",
+  "new_evidence": "assets/references/electrolux-handle-20260919/measurements.json",
+  "current_kettle_mesh_dimensionally_accepted": false,
+  "active_geometry": "assets/kettle-active-model.json",
+  "geometry_status": "Nominal reconstruction verified against declared approximate targets; not an exact dimensional replica of physical kettle"
+}

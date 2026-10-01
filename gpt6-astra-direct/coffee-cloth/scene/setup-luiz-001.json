@@ -1,0 +1,125 @@
+{
+  "layout": {
+    "chaleira": [
+      [
+        0.55,
+        -0.22
+      ],
+      180.0
+    ],
+    "coador": [
+      [
+        0.36,
+        0.0
+      ],
+      0.0
+    ],
+    "pote": [
+      [
+        0.5,
+        0.28
+      ],
+      0.0
+    ],
+    "scoop": [
+      [
+        0.32,
+        0.22
+      ],
+      200.0
+    ]
+  },
+  "mass_kg": {
+    "chaleira": 1.2,
+    "pote": 0.5,
+    "tampa": 0.1,
+    "scoop": 0.03
+  },
+  "objects": {
+    "chaleira": {
+      "source": "assets/glb/chaleira.glb",
+      "scale": 0.22293773187965682,
+      "extents_m": [
+        0.2224536322227109,
+        0.17709417471884215,
+        0.21999999999999997
+      ],
+      "collision_parts": 19,
+      "dimension_spec": {
+        "axis": "z",
+        "size_m": 0.22,
+        "note": "altura total com tampa; VALOR PROVISORIO, confirmar com o Luiz",
+        "max_parts": 32
+      }
+    },
+    "coador": {
+      "source": "assets/glb/coador.glb",
+      "scale": 0.23025975771572632,
+      "extents_m": [
+        0.12629708628675976,
+        0.1229859834441934,
+        0.23000000000000004
+      ],
+      "collision_parts": 32,
+      "dimension_spec": {
+        "axis": "z",
+        "size_m": 0.23,
+        "note": "altura total do suporte; PROVISORIO. Com 0,20 a ponta do pano ficava a 10 cm da base e o copo de 9,2 cm encostava; com 0,23 a ponta fica a 11,5 cm",
+        "max_parts": 32
+      },
+      "base_top_m": 0.004,
+      "base_visual_center_top_m": 0.002134,
+      "filter_tip_z_m": 0.111796
+    },
+    "pote": {
+      "source": "assets/glb/pote.glb",
+      "scale": 0.16772046016815317,
+      "extents_m": [
+        0.167498958446059,
+        0.13528903215583798,
+        0.08
+      ],
+      "collision_parts": 24,
+      "dimension_spec": {
+        "axis": "z",
+        "size_m": 0.08,
+        "note": "altura sem tampa; PROVISORIO. Corpo fica com ~13,5 cm de diametro",
+        "max_parts": 24
+      }
+    },
+    "tampa": {
+      "source": "assets/glb/tampa.glb",
+      "scale": 0.13617041983039255,
+      "extents_m": [
+        0.136,
+        0.13615856990171832,
+        0.06266131900042607
+      ],
+      "collision_parts": 8,
+      "dimension_spec": {
+        "axis": "x",
+        "size_m": 0.136,
+        "note": "diametro da aba; PROVISORIO, casado com o corpo do pote a 0,08 de altura",
+        "max_parts": 8
+      }
+    },
+    "scoop": {
+      "source": "assets/glb/scoop.glb",
+      "scale": 0.1498030628946302,
+      "extents_m": [
+        0.15,
+        0.07724843671797206,
+        0.0352113807372129
+      ],
+      "collision_parts": 12,
+      "dimension_spec": {
+        "axis": "x",
+        "size_m": 0.15,
+        "note": "comprimento total com cabo; PROVISORIO",
+        "max_parts": 12
+      }
+    }
+  },
+  "coador_fixed": true,
+  "cup": "copo do g1-cup-grasp, sob o coador"
+}

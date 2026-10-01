@@ -1,0 +1,67 @@
+{
+ "chaleira": {
+  "fit": {
+   "height_m": 0.232,
+   "diameter_m": 0.11,
+   "band": [
+    0.0,
+    0.08
+   ],
+   "radius_percentile": 90
+  },
+  "note": "JAR-001: altura 232, base 110, boca 90, largura com alca e bico 159. O diametro e ancorado na FAIXA da base (8% inferiores da altura), nao no percentil da malha inteira, que punha a base em 201 mm",
+  "max_parts": 32
+ },
+ "coador": {
+  "fit": {
+   "height_m": 0.205,
+   "diameter_m": 0.08,
+   "radius_percentile": 95
+  },
+  "note": "SUP-001: haste 205 mm de altura total, base 80 de diametro, filtro 70 de profundidade. Percentil 95 ~ borda da base/aro; o saco do modelo 3D tinha 105 mm de profundidade e foi comprimido para os 70 mm do desenho (a ponta sobe de 100 para 135 mm)",
+  "max_parts": 32,
+  "shorten_cone": {
+   "z_min": 0.09,
+   "r_max": 0.05,
+   "x_min": -0.03,
+   "axis_xy": [
+    -0.006,
+    0.0
+   ],
+   "haste_half_y": 0.012,
+   "depth_m": 0.07
+  }
+ },
+ "pote": {
+  "fit": {
+   "height_m": 0.06,
+   "diameter_m": 0.11,
+   "band": [
+    0.0,
+    0.15
+   ],
+   "radius_percentile": 90
+  },
+  "note": "PAC-001A: 110 mm de base e de abertura, 60 de altura, alcas com semicirculo de raio 15. Diametro ancorado na faixa da base; o percentil 50 sobre a malha inteira dava base 89 e topo 119, ou seja um cone no lugar de um cilindro",
+  "max_parts": 24
+ },
+ "tampa": {
+  "fit": {
+   "height_m": 0.035,
+   "diameter_m": 0.11,
+   "band": [
+    0.0,
+    0.25
+   ],
+   "radius_percentile": 90
+  },
+  "note": "TAM-001: 110 mm de diametro, 35 de altura, torre central de 20 por 8. Ancorada na saia, nao no topo, que e a torre e dava 24,5 mm",
+  "max_parts": 8
+ },
+ "scoop": {
+  "axis": "x",
+  "size_m": 0.12,
+  "note": "PAB-003: colher de 120 mm, concha eliptica 30 x 25",
+  "max_parts": 12
+ }
+}

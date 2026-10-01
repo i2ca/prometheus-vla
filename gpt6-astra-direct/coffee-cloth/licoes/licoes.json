@@ -1,0 +1,1791 @@
+{
+  "versao": 1,
+  "licoes": {
+    "ligar_chaleira/prensar/forca_de_contato": {
+      "problema": "ligar_chaleira/prensar/forca_de_contato",
+      "primeira_vez": "2026-09-21T11:36:40",
+      "tentativas": [],
+      "solucao": {
+        "quando": "2026-09-21T11:36:40",
+        "episodio": "agent-cafe-003",
+        "parametros": {
+          "curso_mm": 30,
+          "desloc_y_mm": -6,
+          "cintura_deg": 25,
+          "recuo_mm": 40
+        },
+        "evidencia": {
+          "temperatura_C": 100.0,
+          "evento": "automatic_boil_cutoff",
+          "pico_de_forca_N": 2.311
+        },
+        "tentativas_ate_resolver": 0
+      }
+    },
+    "pegar_chaleira/?/folga_metal_quente": {
+      "problema": "pegar_chaleira/?/folga_metal_quente",
+      "primeira_vez": "2026-09-21T11:36:40",
+      "tentativas": [
+        {
+          "quando": "2026-09-21T11:36:40",
+          "episodio": "agent-cafe-001",
+          "parametros": {},
+          "medido": null,
+          "motivo": "{'reason': 'hand clearance', 'hot_m': 0.005980053627366771, 'table_m': 0.08487865458049292}",
+          "resolveu": false
+        }
+      ],
+      "solucao": null
+    },
+    "pegar_chaleira/?/pega_sem_oposicao": {
+      "problema": "pegar_chaleira/?/pega_sem_oposicao",
+      "primeira_vez": "2026-09-21T11:36:40",
+      "tentativas": [
+        {
+          "quando": "2026-09-21T11:36:40",
+          "episodio": "agent-cafe-001",
+          "parametros": {},
+          "medido": null,
+          "motivo": "nenhuma pega valida na alca",
+          "resolveu": false
+        },
+        {
+          "quando": "2026-09-21T11:36:40",
+          "episodio": "agent-cafe-001",
+          "parametros": {},
+          "medido": null,
+          "motivo": "nenhuma pega valida na alca",
+          "resolveu": false
+        }
+      ],
+      "solucao": null
+    },
+    "pegar_chaleira/planejar_pega/pega_sem_oposicao": {
+      "problema": "pegar_chaleira/planejar_pega/pega_sem_oposicao",
+      "primeira_vez": "2026-09-21T11:36:40",
+      "tentativas": [
+        {
+          "quando": "2026-09-21T11:36:40",
+          "episodio": "agent-cafe-003",
+          "parametros": {
+            "mao": "direita",
+            "folga_alvo_mm": 8.0,
+            "sementes": 16,
+            "peso_oposicao": 200.0
+          },
+          "medido": {
+            "melhor_folga_mm": 81.91,
+            "oposicao_dos_dedos": [
+              0.0,
+              0.0
+            ],
+            "portao_oposicao": "ambos os cossenos precisam ficar abaixo de -0,3",
+            "folga_das_pontas_mm": [
+              100.0,
+              100.0,
+              100.0
+            ]
+          },
+          "motivo": "nenhuma pega valida na alca",
+          "resolveu": false
+        },
+        {
+          "quando": "2026-09-21T11:36:40",
+          "episodio": "agent-cafe-003",
+          "parametros": {
+            "mao": "direita",
+            "folga_alvo_mm": 7.0,
+            "sementes": 24,
+            "peso_oposicao": 300.0
+          },
+          "medido": {
+            "melhor_folga_mm": 81.91,
+            "oposicao_dos_dedos": [
+              0.0,
+              0.0
+            ],
+            "portao_oposicao": "ambos os cossenos precisam ficar abaixo de -0,3",
+            "folga_das_pontas_mm": [
+              100.0,
+              100.0,
+              100.0
+            ]
+          },
+          "motivo": "nenhuma pega valida na alca",
+          "resolveu": false
+        },
+        {
+          "quando": "2026-09-21T11:36:40",
+          "episodio": "agent-cafe-003",
+          "parametros": {
+            "mao": "esquerda",
+            "folga_alvo_mm": 8.0,
+            "sementes": 24,
+            "peso_oposicao": 250.0
+          },
+          "medido": {
+            "melhor_folga_mm": 40.78,
+            "oposicao_dos_dedos": [
+              0.747,
+              0.932
+            ],
+            "portao_oposicao": "ambos os cossenos precisam ficar abaixo de -0,3",
+            "folga_das_pontas_mm": [
+              0.81,
+              14.92,
+              14.94
+            ]
+          },
+          "motivo": "nenhuma pega valida na alca",
+          "resolveu": false
+        },
+        {
+          "quando": "2026-09-21T11:36:40",
+          "episodio": "agent-cafe-003",
+          "parametros": {
+            "mao": "esquerda",
+            "folga_alvo_mm": 8.0,
+            "sementes": 32,
+            "peso_oposicao": 400.0
+          },
+          "medido": {
+            "melhor_folga_mm": 39.75,
+            "oposicao_dos_dedos": [
+              0.941,
+              0.992
+            ],
+            "portao_oposicao": "ambos os cossenos precisam ficar abaixo de -0,3",
+            "folga_das_pontas_mm": [
+              0.79,
+              14.98,
+              14.98
+            ]
+          },
+          "motivo": "nenhuma pega valida na alca",
+          "resolveu": false
+        },
+        {
+          "quando": "2026-09-21T11:36:40",
+          "episodio": "agent-cafe-003",
+          "parametros": {
+            "mao": "direita",
+            "folga_alvo_mm": 7.0,
+            "sementes": 32,
+            "peso_oposicao": 350.0
+          },
+          "medido": {
+            "melhor_folga_mm": 36.92,
+            "oposicao_dos_dedos": [
+              0.896,
+              -0.498
+            ],
+            "portao_oposicao": "ambos os cossenos precisam ficar abaixo de -0,3",
+            "folga_das_pontas_mm": [
+              6.73,
+              14.95,
+              4.9
+            ]
+          },
+          "motivo": "nenhuma pega valida na alca",
+          "resolveu": false
+        },
+        {
+          "quando": "2026-09-21T11:36:40",
+          "episodio": "agent-cafe-003",
+          "parametros": {
+            "mao": "direita",
+            "folga_alvo_mm": 7.5,
+            "sementes": 48,
+            "peso_oposicao": 250.0
+          },
+          "medido": {
+            "melhor_folga_mm": 39.11,
+            "oposicao_dos_dedos": [
+              0.997,
+              0.323
+            ],
+            "portao_oposicao": "ambos os cossenos precisam ficar abaixo de -0,3",
+            "folga_das_pontas_mm": [
+              0.75,
+              14.94,
+              14.84
+            ]
+          },
+          "motivo": "nenhuma pega valida na alca",
+          "resolveu": false
+        },
+        {
+          "quando": "2026-09-21T11:36:40",
+          "episodio": "agent-cafe-005",
+          "parametros": {
+            "mao": "direita",
+            "folga_alvo_mm": 8.0,
+            "sementes": 16,
+            "peso_oposicao": 200.0,
+            "peso_orientacao": 8.0
+          },
+          "medido": {
+            "candidatos": 16,
+            "com_os_tres_dedos_na_alca": 0,
+            "melhor_candidato": {
+              "dedos_encostando": 2,
+              "folga_das_pontas_mm": [
+                2.92,
+                14.82,
+                0.74
+              ],
+              "oposicao_dos_dedos": [
+                0.479,
+                -0.979
+              ],
+              "folga_ao_metal_quente_mm": 8.69
+            },
+            "portao_oposicao": "os dois cossenos precisam ficar abaixo de -0,3; o primeiro e polegar contra indicador, o segundo polegar contra medio",
+            "leitura": "ponta em 15 mm significa que o dedo nem chegou na alca; oposicao positiva com dedos longe nao quer dizer nada"
+          },
+          "motivo": "nenhuma pega valida na alca",
+          "resolveu": false
+        },
+        {
+          "quando": "2026-09-21T11:36:40",
+          "episodio": "agent-cafe-005",
+          "parametros": {
+            "mao": "direita",
+            "folga_alvo_mm": 8.0,
+            "sementes": 32,
+            "peso_oposicao": 350.0,
+            "peso_orientacao": 0.0
+          },
+          "medido": {
+            "candidatos": 32,
+            "com_os_tres_dedos_na_alca": 3,
+            "melhor_candidato": {
+              "dedos_encostando": 3,
+              "folga_das_pontas_mm": [
+                1.27,
+                1.8,
+                3.04
+              ],
+              "oposicao_dos_dedos": [
+                -0.5,
+                -0.865
+              ],
+              "folga_ao_metal_quente_mm": 7.89
+            },
+            "portao_oposicao": "os dois cossenos precisam ficar abaixo de -0,3; o primeiro e polegar contra indicador, o segundo polegar contra medio",
+            "leitura": "ponta em 15 mm significa que o dedo nem chegou na alca; oposicao positiva com dedos longe nao quer dizer nada"
+          },
+          "motivo": "nenhuma pega valida na alca",
+          "resolveu": false
+        },
+        {
+          "quando": "2026-09-21T11:36:40",
+          "episodio": "agent-cafe-005",
+          "parametros": {
+            "mao": "direita",
+            "folga_alvo_mm": 7.5,
+            "sementes": 48,
+            "peso_oposicao": 300.0,
+            "peso_orientacao": 6.0
+          },
+          "medido": {
+            "candidatos": 48,
+            "com_os_tres_dedos_na_alca": 0,
+            "melhor_candidato": {
+              "dedos_encostando": 2,
+              "folga_das_pontas_mm": [
+                0.82,
+                13.88,
+                2.92
+              ],
+              "oposicao_dos_dedos": [
+                -0.261,
+                -0.766
+              ],
+              "folga_ao_metal_quente_mm": 7.42
+            },
+            "portao_oposicao": "os dois cossenos precisam ficar abaixo de -0,3; o primeiro e polegar contra indicador, o segundo polegar contra medio",
+            "leitura": "ponta em 15 mm significa que o dedo nem chegou na alca; oposicao positiva com dedos longe nao quer dizer nada"
+          },
+          "motivo": "nenhuma pega valida na alca",
+          "resolveu": false
+        },
+        {
+          "quando": "2026-09-21T11:36:40",
+          "episodio": "agent-cafe-006",
+          "parametros": {
+            "mao": "direita",
+            "folga_alvo_mm": 8.0,
+            "sementes": 20,
+            "peso_oposicao": 200.0,
+            "peso_orientacao": 8.0
+          },
+          "medido": {
+            "candidatos": 20,
+            "com_os_tres_dedos_na_alca": 0,
+            "melhor_candidato": {
+              "dedos_encostando": 2,
+              "folga_das_pontas_mm": [
+                2.92,
+                14.82,
+                0.74
+              ],
+              "oposicao_dos_dedos": [
+                0.479,
+                -0.979
+              ],
+              "folga_ao_metal_quente_mm": 8.69
+            },
+            "portao_oposicao": "os dois cossenos precisam ficar abaixo de -0,3; o primeiro e polegar contra indicador, o segundo polegar contra medio",
+            "portao_das_pontas": "as tres pontas precisam ficar entre 0 e 1,8 mm da alca ao mesmo tempo",
+            "portao_folga_quente": "a folga ao metal quente precisa ficar acima da folga alvo pedida",
+            "leitura": "ponta em 15 mm significa que o dedo nem chegou na alca; oposicao positiva com dedos longe nao quer dizer nada"
+          },
+          "motivo": "nenhuma pega valida na alca",
+          "resolveu": false
+        },
+        {
+          "quando": "2026-09-21T11:36:40",
+          "episodio": "agent-cafe-006",
+          "parametros": {
+            "mao": "esquerda",
+            "folga_alvo_mm": 7.0,
+            "sementes": 30,
+            "peso_oposicao": 250.0,
+            "peso_orientacao": 15.0
+          },
+          "medido": {
+            "candidatos": 30,
+            "com_os_tres_dedos_na_alca": 4,
+            "melhor_candidato": {
+              "dedos_encostando": 3,
+              "folga_das_pontas_mm": [
+                1.22,
+                0.95,
+                3.6
+              ],
+              "oposicao_dos_dedos": [
+                -0.581,
+                -0.632
+              ],
+              "folga_ao_metal_quente_mm": 6.59
+            },
+            "portao_oposicao": "os dois cossenos precisam ficar abaixo de -0,3; o primeiro e polegar contra indicador, o segundo polegar contra medio",
+            "portao_das_pontas": "as tres pontas precisam ficar entre 0 e 1,8 mm da alca ao mesmo tempo",
+            "portao_folga_quente": "a folga ao metal quente precisa ficar acima da folga alvo pedida",
+            "leitura": "ponta em 15 mm significa que o dedo nem chegou na alca; oposicao positiva com dedos longe nao quer dizer nada"
+          },
+          "motivo": "nenhuma pega valida na alca",
+          "resolveu": false
+        },
+        {
+          "quando": "2026-09-21T11:36:40",
+          "episodio": "agent-cafe-007",
+          "parametros": {
+            "mao": "direita",
+            "folga_alvo_mm": 8.0,
+            "sementes": 12,
+            "peso_oposicao": 250.0,
+            "peso_orientacao": 8.0
+          },
+          "medido": {
+            "candidatos": 12,
+            "com_os_tres_dedos_na_alca": 0,
+            "melhor_candidato": {
+              "dedos_encostando": 2,
+              "folga_das_pontas_mm": [
+                14.94,
+                1.58,
+                2.17
+              ],
+              "oposicao_dos_dedos": [
+                0.771,
+                -0.652
+              ],
+              "folga_ao_metal_quente_mm": 8.01
+            },
+            "portao_oposicao": "os dois cossenos precisam ficar abaixo de -0,3; o primeiro e polegar contra indicador, o segundo polegar contra medio",
+            "portao_das_pontas": "as tres pontas precisam ficar entre 0 e 1,8 mm da alca ao mesmo tempo",
+            "portao_folga_quente": "a folga ao metal quente precisa ficar acima da folga alvo pedida",
+            "leitura": "ponta em 15 mm significa que o dedo nem chegou na alca; oposicao positiva com dedos longe nao quer dizer nada"
+          },
+          "motivo": "nenhuma pega valida na alca",
+          "resolveu": false
+        },
+        {
+          "quando": "2026-09-21T11:36:40",
+          "episodio": "agent-cafe-007",
+          "parametros": {
+            "mao": "direita",
+            "folga_alvo_mm": 7.0,
+            "sementes": 30,
+            "peso_oposicao": 350.0,
+            "peso_orientacao": 0.0
+          },
+          "medido": {
+            "candidatos": 30,
+            "com_os_tres_dedos_na_alca": 2,
+            "melhor_candidato": {
+              "dedos_encostando": 3,
+              "folga_das_pontas_mm": [
+                2.89,
+                1.85,
+                2.26
+              ],
+              "oposicao_dos_dedos": [
+                -0.5,
+                -0.803
+              ],
+              "folga_ao_metal_quente_mm": 9.72
+            },
+            "portao_oposicao": "os dois cossenos precisam ficar abaixo de -0,3; o primeiro e polegar contra indicador, o segundo polegar contra medio",
+            "portao_das_pontas": "as tres pontas precisam ficar entre 0 e 1,8 mm da alca ao mesmo tempo",
+            "portao_folga_quente": "a folga ao metal quente precisa ficar acima da folga alvo pedida",
+            "leitura": "ponta em 15 mm significa que o dedo nem chegou na alca; oposicao positiva com dedos longe nao quer dizer nada"
+          },
+          "motivo": "nenhuma pega valida na alca",
+          "resolveu": false
+        },
+        {
+          "quando": "2026-09-21T11:36:40",
+          "episodio": "agent-cafe-007",
+          "parametros": {
+            "mao": "esquerda",
+            "folga_alvo_mm": 11.0,
+            "sementes": 60,
+            "peso_oposicao": 300.0,
+            "peso_orientacao": 10.0
+          },
+          "medido": {
+            "candidatos": 60,
+            "com_os_tres_dedos_na_alca": 1,
+            "melhor_candidato": {
+              "dedos_encostando": 3,
+              "folga_das_pontas_mm": [
+                0.91,
+                1.2,
+                2.81
+              ],
+              "oposicao_dos_dedos": [
+                -0.499,
+                -0.501
+              ],
+              "folga_ao_metal_quente_mm": 10.85
+            },
+            "portao_oposicao": "os dois cossenos precisam ficar abaixo de -0,3; o primeiro e polegar contra indicador, o segundo polegar contra medio",
+            "portao_das_pontas": "as tres pontas precisam ficar entre 0 e 1,8 mm da alca ao mesmo tempo",
+            "portao_folga_quente": "a folga ao metal quente precisa ficar acima da folga alvo pedida",
+            "leitura": "ponta em 15 mm significa que o dedo nem chegou na alca; oposicao positiva com dedos longe nao quer dizer nada"
+          },
+          "motivo": "nenhuma pega valida na alca",
+          "resolveu": false
+        },
+        {
+          "quando": "2026-09-21T11:36:40",
+          "episodio": "agent-cafe-007",
+          "parametros": {
+            "mao": "esquerda",
+            "folga_alvo_mm": 9.5,
+            "sementes": 80,
+            "peso_oposicao": 320.0,
+            "peso_orientacao": 0.0
+          },
+          "medido": {
+            "candidatos": 80,
+            "com_os_tres_dedos_na_alca": 4,
+            "melhor_candidato": {
+              "dedos_encostando": 3,
+              "folga_das_pontas_mm": [
+                0.99,
+                0.87,
+                2.09
+              ],
+              "oposicao_dos_dedos": [
+                -0.732,
+                -0.499
+              ],
+              "folga_ao_metal_quente_mm": 9.4
+            },
+            "portao_oposicao": "os dois cossenos precisam ficar abaixo de -0,3; o primeiro e polegar contra indicador, o segundo polegar contra medio",
+            "portao_das_pontas": "as tres pontas precisam ficar entre 0 e 1,8 mm da alca ao mesmo tempo",
+            "portao_folga_quente": "a folga ao metal quente precisa ficar acima da folga alvo pedida",
+            "leitura": "ponta em 15 mm significa que o dedo nem chegou na alca; oposicao positiva com dedos longe nao quer dizer nada"
+          },
+          "motivo": "nenhuma pega valida na alca",
+          "resolveu": false
+        },
+        {
+          "quando": "2026-09-21T11:50:23",
+          "episodio": "agent-cafe-010",
+          "parametros": {
+            "mao": "direita",
+            "folga_alvo_mm": 8.5,
+            "sementes": 100,
+            "peso_oposicao": 400.0,
+            "peso_orientacao": 4.0
+          },
+          "medido": {
+            "candidatos": 100,
+            "com_os_tres_dedos_na_alca": 1,
+            "melhor_candidato": {
+              "dedos_encostando": 3,
+              "folga_das_pontas_mm": [
+                0.1,
+                2.84,
+                0.26
+              ],
+              "oposicao_dos_dedos": [
+                -0.5,
+                -0.668
+              ],
+              "folga_ao_metal_quente_mm": 8.3
+            },
+            "portao_oposicao": "os dois cossenos precisam ficar abaixo de -0,3; o primeiro e polegar contra indicador, o segundo polegar contra medio",
+            "portao_das_pontas": "as tres pontas precisam ficar entre 0 e 1,8 mm da alca ao mesmo tempo",
+            "portao_folga_quente": "a folga ao metal quente precisa ficar acima da folga alvo pedida",
+            "leitura": "ponta em 15 mm significa que o dedo nem chegou na alca; oposicao positiva com dedos longe nao quer dizer nada"
+          },
+          "motivo": "nenhuma pega valida na alca",
+          "resolveu": false
+        },
+        {
+          "quando": "2026-09-21T12:20:17",
+          "episodio": "agent-cafe-010",
+          "parametros": {
+            "mao": "direita",
+            "folga_alvo_mm": 7.0,
+            "sementes": 300,
+            "peso_oposicao": 380.0,
+            "peso_orientacao": 3.0
+          },
+          "medido": {
+            "candidatos": 300,
+            "com_os_tres_dedos_na_alca": 5,
+            "melhor_candidato": {
+              "dedos_encostando": 3,
+              "folga_das_pontas_mm": [
+                -0.89,
+                4.25,
+                0.75
+              ],
+              "oposicao_dos_dedos": [
+                -0.662,
+                -0.59
+              ],
+              "folga_ao_metal_quente_mm": 3.89
+            },
+            "portao_oposicao": "os dois cossenos precisam ficar abaixo de -0,3; o primeiro e polegar contra indicador, o segundo polegar contra medio",
+            "portao_das_pontas": "as tres pontas precisam ficar entre 0 e 1,8 mm da alca ao mesmo tempo",
+            "portao_folga_quente": "a folga ao metal quente precisa ficar acima da folga alvo pedida",
+            "leitura": "ponta em 15 mm significa que o dedo nem chegou na alca; oposicao positiva com dedos longe nao quer dizer nada"
+          },
+          "motivo": "nenhuma pega valida na alca",
+          "resolveu": false
+        },
+        {
+          "quando": "2026-09-21T12:23:32",
+          "episodio": "agent-cafe-010",
+          "parametros": {
+            "mao": "esquerda",
+            "folga_alvo_mm": 7.5,
+            "sementes": 50,
+            "peso_oposicao": 200.0,
+            "peso_orientacao": 30.0
+          },
+          "medido": {
+            "candidatos": 50,
+            "com_os_tres_dedos_na_alca": 3,
+            "melhor_candidato": {
+              "dedos_encostando": 3,
+              "folga_das_pontas_mm": [
+                2.86,
+                2.78,
+                1.86
+              ],
+              "oposicao_dos_dedos": [
+                -0.899,
+                -0.495
+              ],
+              "folga_ao_metal_quente_mm": 7.39
+            },
+            "portao_oposicao": "os dois cossenos precisam ficar abaixo de -0,3; o primeiro e polegar contra indicador, o segundo polegar contra medio",
+            "portao_das_pontas": "as tres pontas precisam ficar entre 0 e 1,8 mm da alca ao mesmo tempo",
+            "portao_folga_quente": "a folga ao metal quente precisa ficar acima da folga alvo pedida",
+            "leitura": "ponta em 15 mm significa que o dedo nem chegou na alca; oposicao positiva com dedos longe nao quer dizer nada"
+          },
+          "motivo": "nenhuma pega valida na alca",
+          "resolveu": false
+        },
+        {
+          "quando": "2026-09-21T15:19:55",
+          "episodio": "agent-cafe-011",
+          "parametros": {
+            "mao": "direita",
+            "folga_alvo_mm": 9.0,
+            "sementes": 50,
+            "peso_oposicao": 300.0,
+            "peso_orientacao": 12.0
+          },
+          "medido": {
+            "candidatos": 50,
+            "com_os_tres_dedos_na_alca": 1,
+            "melhor_candidato": {
+              "dedos_encostando": 3,
+              "folga_das_pontas_mm": [
+                -0.55,
+                4.08,
+                3.37
+              ],
+              "oposicao_dos_dedos": [
+                -0.365,
+                -0.869
+              ],
+              "folga_ao_metal_quente_mm": 13.25
+            },
+            "portao_oposicao": "os dois cossenos precisam ficar abaixo de -0,3; o primeiro e polegar contra indicador, o segundo polegar contra medio",
+            "portao_das_pontas": "as tres pontas precisam ficar entre 0 e 1,8 mm da alca ao mesmo tempo",
+            "portao_folga_quente": "a folga ao metal quente precisa ficar acima da folga alvo pedida",
+            "leitura": "ponta em 15 mm significa que o dedo nem chegou na alca; oposicao positiva com dedos longe nao quer dizer nada"
+          },
+          "motivo": "nenhuma pega valida na alca",
+          "resolveu": false
+        },
+        {
+          "quando": "2026-09-21T15:34:22",
+          "episodio": "agent-cafe-011",
+          "parametros": {
+            "mao": "direita",
+            "folga_alvo_mm": 8.5,
+            "sementes": 150,
+            "peso_oposicao": 280.0,
+            "peso_orientacao": 10.0
+          },
+          "medido": {
+            "candidatos": 150,
+            "com_os_tres_dedos_na_alca": 3,
+            "melhor_candidato": {
+              "dedos_encostando": 3,
+              "folga_das_pontas_mm": [
+                2.25,
+                3.88,
+                0.35
+              ],
+              "oposicao_dos_dedos": [
+                -0.496,
+                -0.95
+              ],
+              "folga_ao_metal_quente_mm": 8.26
+            },
+            "portao_oposicao": "os dois cossenos precisam ficar abaixo de -0,3; o primeiro e polegar contra indicador, o segundo polegar contra medio",
+            "portao_das_pontas": "as tres pontas precisam ficar entre 0 e 1,8 mm da alca ao mesmo tempo",
+            "portao_folga_quente": "a folga ao metal quente precisa ficar acima da folga alvo pedida",
+            "leitura": "ponta em 15 mm significa que o dedo nem chegou na alca; oposicao positiva com dedos longe nao quer dizer nada"
+          },
+          "motivo": "nenhuma pega valida na alca",
+          "resolveu": false
+        },
+        {
+          "quando": "2026-09-21T16:02:42",
+          "episodio": "agent-cafe-012",
+          "parametros": {
+            "mao": "direita",
+            "folga_alvo_mm": 8.0,
+            "sementes": 80,
+            "peso_oposicao": 250.0,
+            "cintura_deg": 28.0,
+            "abertura": 0.0,
+            "forca_fechamento_N": 20.0,
+            "folga_conexao_mm": 5.5,
+            "peso_orientacao": 8.0
+          },
+          "medido": {
+            "candidatos": 80,
+            "com_os_tres_dedos_na_alca": 0,
+            "melhor_candidato": {
+              "dedos_encostando": 2,
+              "folga_das_pontas_mm": [
+                0.8,
+                1.31,
+                11.3
+              ],
+              "oposicao_dos_dedos": [
+                -0.5,
+                -0.534
+              ],
+              "folga_ao_metal_quente_mm": 10.32
+            },
+            "portao_oposicao": "os dois cossenos precisam ficar abaixo de -0,3; o primeiro e polegar contra indicador, o segundo polegar contra medio",
+            "portao_das_pontas": "as tres pontas precisam ficar entre 0 e 1,8 mm da alca ao mesmo tempo",
+            "portao_folga_quente": "a folga ao metal quente precisa ficar acima da folga alvo pedida",
+            "leitura": "ponta em 15 mm significa que o dedo nem chegou na alca; oposicao positiva com dedos longe nao quer dizer nada"
+          },
+          "motivo": "nenhuma pega valida na alca",
+          "resolveu": false
+        },
+        {
+          "quando": "2026-09-21T16:05:14",
+          "episodio": "agent-cafe-012",
+          "parametros": {
+            "mao": "esquerda",
+            "folga_alvo_mm": 7.0,
+            "sementes": 50,
+            "peso_oposicao": 150.0,
+            "cintura_deg": 25.0,
+            "abertura": 0.0,
+            "forca_fechamento_N": 20.0,
+            "folga_conexao_mm": 5.5,
+            "peso_orientacao": 20.0
+          },
+          "medido": {
+            "candidatos": 50,
+            "com_os_tres_dedos_na_alca": 0,
+            "melhor_candidato": {
+              "dedos_encostando": 2,
+              "folga_das_pontas_mm": [
+                0.65,
+                3.33,
+                10.01
+              ],
+              "oposicao_dos_dedos": [
+                -0.48,
+                -0.325
+              ],
+              "folga_ao_metal_quente_mm": 6.92
+            },
+            "portao_oposicao": "os dois cossenos precisam ficar abaixo de -0,3; o primeiro e polegar contra indicador, o segundo polegar contra medio",
+            "portao_das_pontas": "as tres pontas precisam ficar entre 0 e 1,8 mm da alca ao mesmo tempo",
+            "portao_folga_quente": "a folga ao metal quente precisa ficar acima da folga alvo pedida",
+            "leitura": "ponta em 15 mm significa que o dedo nem chegou na alca; oposicao positiva com dedos longe nao quer dizer nada"
+          },
+          "motivo": "nenhuma pega valida na alca",
+          "resolveu": false
+        },
+        {
+          "quando": "2026-09-21T16:26:01",
+          "episodio": "agent-cafe-012",
+          "parametros": {
+            "mao": "direita",
+            "folga_alvo_mm": 7.5,
+            "sementes": 250,
+            "peso_oposicao": 220.0,
+            "cintura_deg": 28.0,
+            "abertura": 0.0,
+            "forca_fechamento_N": 20.0,
+            "folga_conexao_mm": 5.5,
+            "peso_orientacao": 6.0
+          },
+          "medido": {
+            "candidatos": 250,
+            "com_os_tres_dedos_na_alca": 5,
+            "melhor_candidato": {
+              "dedos_encostando": 3,
+              "folga_das_pontas_mm": [
+                -0.14,
+                3.83,
+                0.64
+              ],
+              "oposicao_dos_dedos": [
+                -0.618,
+                -0.604
+              ],
+              "folga_ao_metal_quente_mm": 7.25
+            },
+            "portao_oposicao": "os dois cossenos precisam ficar abaixo de -0,3; o primeiro e polegar contra indicador, o segundo polegar contra medio",
+            "portao_das_pontas": "as tres pontas precisam ficar entre 0 e 1,8 mm da alca ao mesmo tempo",
+            "portao_folga_quente": "a folga ao metal quente precisa ficar acima da folga alvo pedida",
+            "leitura": "ponta em 15 mm significa que o dedo nem chegou na alca; oposicao positiva com dedos longe nao quer dizer nada"
+          },
+          "motivo": "nenhuma pega valida na alca",
+          "resolveu": false
+        },
+        {
+          "quando": "2026-09-21T20:42:15",
+          "episodio": "agent-cafe-014",
+          "parametros": {
+            "mao": "direita",
+            "folga_alvo_mm": 10.0,
+            "sementes": 60,
+            "peso_oposicao": 250.0,
+            "cintura_deg": 12.0,
+            "abertura": 0.0,
+            "forca_fechamento_N": 8.0,
+            "folga_conexao_mm": 3.5,
+            "peso_orientacao": 8.0
+          },
+          "run": "results-claude/agent-cafe-014/kettle-grasp-4",
+          "medido": {
+            "candidatos": 60,
+            "com_os_tres_dedos_na_alca": 2,
+            "melhor_candidato": {
+              "dedos_encostando": 3,
+              "folga_das_pontas_mm": [
+                2.72,
+                1.23,
+                2.98
+              ],
+              "oposicao_dos_dedos": [
+                -0.497,
+                -0.887
+              ],
+              "folga_ao_metal_quente_mm": 9.52
+            },
+            "portao_oposicao": "os dois cossenos precisam ficar abaixo de -0,3; o primeiro e polegar contra indicador, o segundo polegar contra medio",
+            "portao_das_pontas": "as tres pontas precisam ficar entre 0 e 1,8 mm da alca ao mesmo tempo",
+            "portao_folga_quente": "a folga ao metal quente precisa ficar acima da folga alvo pedida",
+            "leitura": "ponta em 15 mm significa que o dedo nem chegou na alca; oposicao positiva com dedos longe nao quer dizer nada"
+          },
+          "motivo": "nenhuma pega valida na alca",
+          "resolveu": false
+        },
+        {
+          "quando": "2026-09-21T20:56:51",
+          "episodio": "agent-cafe-014",
+          "parametros": {
+            "mao": "esquerda",
+            "folga_alvo_mm": 15.0,
+            "sementes": 150,
+            "peso_oposicao": 0.0,
+            "cintura_deg": 12.0,
+            "abertura": 0.0,
+            "forca_fechamento_N": 8.0,
+            "folga_conexao_mm": 3.5,
+            "peso_orientacao": 15.0
+          },
+          "run": "results-claude/agent-cafe-014/kettle-grasp-6",
+          "medido": {
+            "candidatos": 150,
+            "com_os_tres_dedos_na_alca": 106,
+            "melhor_candidato": {
+              "dedos_encostando": 3,
+              "folga_das_pontas_mm": [
+                0.8,
+                0.8,
+                0.8
+              ],
+              "oposicao_dos_dedos": [
+                -0.533,
+                -0.45
+              ],
+              "folga_ao_metal_quente_mm": 15.0
+            },
+            "portao_oposicao": "os dois cossenos precisam ficar abaixo de -0,3; o primeiro e polegar contra indicador, o segundo polegar contra medio",
+            "portao_das_pontas": "as tres pontas precisam ficar entre 0 e 1,8 mm da alca ao mesmo tempo",
+            "portao_folga_quente": "a folga ao metal quente precisa ficar acima da folga alvo pedida",
+            "leitura": "ponta em 15 mm significa que o dedo nem chegou na alca; oposicao positiva com dedos longe nao quer dizer nada"
+          },
+          "motivo": "nenhuma pega valida na alca",
+          "resolveu": false
+        }
+      ],
+      "solucao": {
+        "quando": "2026-09-21T15:55:25",
+        "episodio": "agent-cafe-012",
+        "parametros": {
+          "peso_orientacao": 8,
+          "folga_alvo_mm": 8,
+          "forca_fechamento_N": 20,
+          "peso_oposicao": 250,
+          "sementes": 60,
+          "mao": "direita",
+          "folga_conexao_mm": 6.5,
+          "cintura_deg": 25
+        },
+        "evidencia": {
+          "nota": "etapa vencida; a falha foi depois, em aproximacao",
+          "falha_seguinte": "nenhum candidato com aproximacao valida",
+          "medido_da_falha_seguinte": {
+            "ultimo_passo": {
+              "distance_m": 0.0,
+              "error_m": 2.220157710297933e-08,
+              "orientation_error_deg": 0.0017812235411134325,
+              "collision_free": false
+            }
+          }
+        },
+        "valia_no_estado": {
+          "po_no_filtro_g": 19.8513,
+          "po_na_colher_g": 0.0,
+          "po_derramado_g": 0.0,
+          "temperatura_C": 100.0,
+          "aquecedor_ligado": false,
+          "ultimo_evento_aquecedor": "automatic_boil_cutoff",
+          "agua_na_chaleira_ml": 800.0,
+          "agua_no_coador_ml": 0.0,
+          "agua_na_xicara_ml": 0.0,
+          "agua_derramada_ml": 0.0
+        },
+        "tentativas_ate_resolver": 20
+      }
+    },
+    "pegar_chaleira/levantar/folga_metal_quente": {
+      "problema": "pegar_chaleira/levantar/folga_metal_quente",
+      "primeira_vez": "2026-09-21T11:36:40",
+      "tentativas": [
+        {
+          "quando": "2026-09-21T11:36:40",
+          "episodio": "agent-cafe-006",
+          "parametros": {
+            "mao": "esquerda",
+            "forca_fechamento_N": 20.0
+          },
+          "medido": {
+            "folga_minima_ao_metal_quente_mm": 5.9992,
+            "portao_mm": 6.0,
+            "passos_abaixo_do_portao": 1
+          },
+          "motivo": "{'reason': 'hand clearance', 'hot_m': 0.0059992213868159715, 'table_m': 0.12588229596424544}",
+          "resolveu": false
+        },
+        {
+          "quando": "2026-09-21T11:36:40",
+          "episodio": "agent-cafe-007",
+          "parametros": {
+            "mao": "esquerda",
+            "forca_fechamento_N": 20.0
+          },
+          "medido": {
+            "folga_minima_ao_metal_quente_mm": 4.888,
+            "portao_mm": 6.0,
+            "passos_abaixo_do_portao": 26
+          },
+          "motivo": "{'reason': 'hand clearance', 'hot_m': 0.004888013726873634, 'table_m': 0.14410907575210544}",
+          "resolveu": false
+        },
+        {
+          "quando": "2026-09-21T11:36:40",
+          "episodio": "agent-cafe-007",
+          "parametros": {
+            "mao": "esquerda",
+            "forca_fechamento_N": 20.0
+          },
+          "medido": {
+            "folga_minima_ao_metal_quente_mm": 5.887,
+            "portao_mm": 6.0,
+            "passos_abaixo_do_portao": 26
+          },
+          "motivo": "{'reason': 'hand clearance', 'hot_m': 0.005887037080196699, 'table_m': 0.13575072991981962}",
+          "resolveu": false
+        },
+        {
+          "quando": "2026-09-21T11:36:40",
+          "episodio": "agent-cafe-007",
+          "parametros": {
+            "mao": "esquerda",
+            "forca_fechamento_N": 20.0
+          },
+          "medido": {
+            "folga_minima_ao_metal_quente_mm": 5.7764,
+            "portao_mm": 6.0,
+            "passos_abaixo_do_portao": 26
+          },
+          "motivo": "{'reason': 'hand clearance', 'hot_m': 0.005776442651770971, 'table_m': 0.14397708489361286}",
+          "resolveu": false
+        },
+        {
+          "quando": "2026-09-21T12:58:56",
+          "episodio": "agent-cafe-010",
+          "parametros": {
+            "mao": "esquerda",
+            "forca_fechamento_N": 20.0
+          },
+          "medido": {
+            "folga_minima_ao_metal_quente_mm": 5.3731,
+            "portao_mm": 6.0,
+            "passos_abaixo_do_portao": 26
+          },
+          "motivo": "{'reason': 'hand clearance', 'hot_m': 0.005373063248632979, 'table_m': 0.09108909794720277}",
+          "resolveu": false
+        },
+        {
+          "quando": "2026-09-21T13:15:26",
+          "episodio": "agent-cafe-010",
+          "parametros": {
+            "mao": "esquerda",
+            "forca_fechamento_N": 25.0
+          },
+          "medido": {
+            "folga_minima_ao_metal_quente_mm": 5.419,
+            "portao_mm": 6.0,
+            "passos_abaixo_do_portao": 26
+          },
+          "motivo": "{'reason': 'hand clearance', 'hot_m': 0.005418956248207332, 'table_m': 0.09637099014010664}",
+          "resolveu": false
+        },
+        {
+          "quando": "2026-09-21T13:40:16",
+          "episodio": "agent-cafe-010",
+          "parametros": {
+            "mao": "esquerda",
+            "forca_fechamento_N": 30.0
+          },
+          "medido": {
+            "folga_minima_ao_metal_quente_mm": 5.6355,
+            "portao_mm": 6.0,
+            "passos_abaixo_do_portao": 26
+          },
+          "motivo": "{'reason': 'hand clearance', 'hot_m': 0.00563552238345724, 'table_m': 0.10407024171527413}",
+          "resolveu": false
+        },
+        {
+          "quando": "2026-09-21T17:53:13",
+          "episodio": "agent-cafe-012",
+          "parametros": {
+            "mao": "esquerda",
+            "folga_alvo_mm": 8.0,
+            "sementes": 300,
+            "peso_oposicao": 220.0,
+            "cintura_deg": 25.0,
+            "abertura": 0.0,
+            "forca_fechamento_N": 20.0,
+            "folga_conexao_mm": 6.5,
+            "peso_orientacao": 25.0
+          },
+          "medido": {
+            "folga_minima_ao_metal_quente_mm": 5.5899,
+            "portao_mm": 6.0,
+            "passos_abaixo_do_portao": 26
+          },
+          "motivo": "{'reason': 'hand clearance', 'hot_m': 0.005589943983081533, 'table_m': 0.09939641239394015}",
+          "resolveu": false
+        },
+        {
+          "quando": "2026-09-21T20:05:11",
+          "episodio": "agent-cafe-013",
+          "parametros": {
+            "mao": "esquerda",
+            "folga_alvo_mm": 7.0,
+            "sementes": 20,
+            "peso_oposicao": 0.0,
+            "cintura_deg": 12.0,
+            "abertura": 0.0,
+            "forca_fechamento_N": 8.0,
+            "folga_conexao_mm": 7.0,
+            "peso_orientacao": 30.0
+          },
+          "medido": {
+            "folga_minima_ao_metal_quente_mm": 5.3506,
+            "portao_mm": 6.0,
+            "passos_abaixo_do_portao": 26
+          },
+          "motivo": "{'reason': 'hand clearance', 'hot_m': 0.0053506190897772855, 'table_m': 0.10056031056834457}",
+          "resolveu": false
+        },
+        {
+          "quando": "2026-09-21T20:37:10",
+          "episodio": "agent-cafe-014",
+          "parametros": {
+            "mao": "esquerda",
+            "folga_alvo_mm": 8.8,
+            "sementes": 60,
+            "peso_oposicao": 0.0,
+            "cintura_deg": 12.0,
+            "abertura": 0.0,
+            "forca_fechamento_N": 8.0,
+            "folga_conexao_mm": 3.5,
+            "peso_orientacao": 30.0
+          },
+          "run": "results-claude/agent-cafe-014/kettle-lift-2",
+          "medido": {
+            "folga_minima_ao_metal_quente_mm": 5.2233,
+            "portao_mm": 6.0,
+            "passos_abaixo_do_portao": 26
+          },
+          "motivo": "{'reason': 'hand clearance', 'hot_m': 0.005223316241654479, 'table_m': 0.08982102084582877}",
+          "resolveu": false
+        },
+        {
+          "quando": "2026-09-21T20:48:27",
+          "episodio": "agent-cafe-014",
+          "parametros": {
+            "mao": "esquerda",
+            "folga_alvo_mm": 12.0,
+            "sementes": 100,
+            "peso_oposicao": 0.0,
+            "cintura_deg": 12.0,
+            "abertura": 0.0,
+            "forca_fechamento_N": 8.0,
+            "folga_conexao_mm": 3.5,
+            "peso_orientacao": 30.0
+          },
+          "run": "results-claude/agent-cafe-014/kettle-lift-5",
+          "medido": {
+            "folga_minima_ao_metal_quente_mm": 5.66,
+            "portao_mm": 6.0,
+            "passos_abaixo_do_portao": 26
+          },
+          "motivo": "{'reason': 'hand clearance', 'hot_m': 0.005659963649345285, 'table_m': 0.09214176886532709}",
+          "resolveu": false
+        }
+      ],
+      "solucao": null
+    },
+    "pegar_chaleira/aproximacao/aproximacao_invalida": {
+      "problema": "pegar_chaleira/aproximacao/aproximacao_invalida",
+      "primeira_vez": "2026-09-21T11:36:40",
+      "tentativas": [
+        {
+          "quando": "2026-09-21T11:36:40",
+          "episodio": "agent-cafe-007",
+          "parametros": {
+            "abertura": 0.0,
+            "folga_conexao_mm": 6.5
+          },
+          "medido": {
+            "ultimo_passo": {
+              "distance_m": 0.0,
+              "error_m": 5.2831739910307045e-09,
+              "orientation_error_deg": 0.00033331797825102974,
+              "collision_free": false
+            }
+          },
+          "motivo": "nenhum candidato com aproximacao valida",
+          "resolveu": false
+        },
+        {
+          "quando": "2026-09-21T11:36:40",
+          "episodio": "agent-cafe-007",
+          "parametros": {
+            "abertura": 0.0,
+            "folga_conexao_mm": 6.0
+          },
+          "medido": {
+            "ultimo_passo": {
+              "distance_m": 0.0,
+              "error_m": 5.2831739910307045e-09,
+              "orientation_error_deg": 0.00033331797825102974,
+              "collision_free": false
+            }
+          },
+          "motivo": "nenhum candidato com aproximacao valida",
+          "resolveu": false
+        },
+        {
+          "quando": "2026-09-21T12:34:14",
+          "episodio": "agent-cafe-010",
+          "parametros": {
+            "abertura": 1.0,
+            "folga_conexao_mm": 6.5
+          },
+          "medido": {
+            "ultimo_passo": {
+              "distance_m": 0.002,
+              "error_m": 8.177974235807776e-11,
+              "orientation_error_deg": 1.0580637167890785e-05,
+              "collision_free": false
+            }
+          },
+          "motivo": "nenhum candidato com aproximacao valida",
+          "resolveu": false
+        },
+        {
+          "quando": "2026-09-21T12:46:26",
+          "episodio": "agent-cafe-010",
+          "parametros": {
+            "abertura": 0.9,
+            "folga_conexao_mm": 7.5
+          },
+          "medido": {
+            "ultimo_passo": {
+              "distance_m": 0.0,
+              "error_m": 0.0,
+              "orientation_error_deg": 0.0,
+              "collision_free": false
+            }
+          },
+          "motivo": "nenhum candidato com aproximacao valida",
+          "resolveu": false
+        },
+        {
+          "quando": "2026-09-21T15:55:25",
+          "episodio": "agent-cafe-012",
+          "parametros": {
+            "mao": "direita",
+            "folga_alvo_mm": 8.0,
+            "sementes": 60,
+            "peso_oposicao": 250.0,
+            "cintura_deg": 25.0,
+            "abertura": 0.0,
+            "forca_fechamento_N": 20.0,
+            "folga_conexao_mm": 6.5,
+            "peso_orientacao": 8.0
+          },
+          "medido": {
+            "ultimo_passo": {
+              "distance_m": 0.0,
+              "error_m": 2.220157710297933e-08,
+              "orientation_error_deg": 0.0017812235411134325,
+              "collision_free": false
+            }
+          },
+          "motivo": "nenhum candidato com aproximacao valida",
+          "resolveu": false
+        },
+        {
+          "quando": "2026-09-21T16:59:51",
+          "episodio": "agent-cafe-012",
+          "parametros": {
+            "mao": "direita",
+            "folga_alvo_mm": 6.8,
+            "sementes": 400,
+            "peso_oposicao": 220.0,
+            "cintura_deg": 28.0,
+            "abertura": 0.0,
+            "forca_fechamento_N": 20.0,
+            "folga_conexao_mm": 5.5,
+            "peso_orientacao": 6.0
+          },
+          "medido": {
+            "ultimo_passo": {
+              "distance_m": 0.0,
+              "error_m": 3.595980474211011e-07,
+              "orientation_error_deg": 0.0009593904474037022,
+              "collision_free": false
+            }
+          },
+          "motivo": "nenhum candidato com aproximacao valida",
+          "resolveu": false
+        },
+        {
+          "quando": "2026-09-21T17:34:56",
+          "episodio": "agent-cafe-012",
+          "parametros": {
+            "mao": "direita",
+            "folga_alvo_mm": 6.8,
+            "sementes": 400,
+            "peso_oposicao": 220.0,
+            "cintura_deg": 29.0,
+            "abertura": 0.0,
+            "forca_fechamento_N": 20.0,
+            "folga_conexao_mm": 4.0,
+            "peso_orientacao": 6.0
+          },
+          "medido": {
+            "ultimo_passo": {
+              "distance_m": 0.0,
+              "error_m": 5.774279725388946e-07,
+              "orientation_error_deg": 0.0024936651710003445,
+              "collision_free": false
+            }
+          },
+          "motivo": "nenhum candidato com aproximacao valida",
+          "resolveu": false
+        },
+        {
+          "quando": "2026-09-21T20:06:22",
+          "episodio": "agent-cafe-013",
+          "parametros": {
+            "mao": "esquerda",
+            "folga_alvo_mm": 8.8,
+            "sementes": 20,
+            "peso_oposicao": 0.0,
+            "cintura_deg": 12.0,
+            "abertura": 0.0,
+            "forca_fechamento_N": 8.0,
+            "folga_conexao_mm": 7.0,
+            "peso_orientacao": 30.0
+          },
+          "medido": {
+            "ultimo_passo": {
+              "distance_m": 0.0,
+              "error_m": 0.0,
+              "orientation_error_deg": 0.0,
+              "collision_free": false
+            }
+          },
+          "motivo": "nenhum candidato com aproximacao valida",
+          "resolveu": false
+        }
+      ],
+      "solucao": {
+        "quando": "2026-09-21T17:53:13",
+        "episodio": "agent-cafe-012",
+        "parametros": {
+          "peso_oposicao": 220,
+          "peso_orientacao": 25,
+          "folga_conexao_mm": 6.5,
+          "cintura_deg": 25,
+          "sementes": 300,
+          "forca_fechamento_N": 20,
+          "mao": "esquerda",
+          "folga_alvo_mm": 8
+        },
+        "evidencia": {
+          "nota": "etapa vencida; a falha foi depois, em levantar",
+          "falha_seguinte": "{'reason': 'hand clearance', 'hot_m': 0.005589943983081533, 'table_m': 0.09939641239394015}",
+          "medido_da_falha_seguinte": {
+            "folga_minima_ao_metal_quente_mm": 5.5899,
+            "portao_mm": 6.0,
+            "passos_abaixo_do_portao": 26
+          }
+        },
+        "valia_no_estado": {
+          "po_no_filtro_g": 19.8513,
+          "po_na_colher_g": 0.0,
+          "po_derramado_g": 0.0,
+          "temperatura_C": 100.0,
+          "aquecedor_ligado": false,
+          "ultimo_evento_aquecedor": "automatic_boil_cutoff",
+          "agua_na_chaleira_ml": 800.0,
+          "agua_no_coador_ml": 0.0,
+          "agua_na_xicara_ml": 0.0,
+          "agua_derramada_ml": 0.0
+        },
+        "tentativas_ate_resolver": 7
+      }
+    },
+    "ligar_chaleira/prensar/tempo_esgotado": {
+      "problema": "ligar_chaleira/prensar/tempo_esgotado",
+      "primeira_vez": "2026-09-21T11:38:44",
+      "tentativas": [
+        {
+          "quando": "2026-09-21T11:38:44",
+          "episodio": "agent-cafe-008",
+          "parametros": {
+            "curso_mm": 30.0,
+            "desloc_y_mm": -6.0
+          },
+          "medido": {
+            "pico_de_forca_N": 2.6721977279348508
+          },
+          "motivo": "{'reason': 'physical button press timed out'}",
+          "resolveu": false
+        },
+        {
+          "quando": "2026-09-21T11:41:08",
+          "episodio": "agent-cafe-009",
+          "parametros": {
+            "curso_mm": 30.0,
+            "desloc_y_mm": -6.0
+          },
+          "medido": {
+            "pico_de_forca_N": 2.6721977279348508
+          },
+          "motivo": "{'reason': 'physical button press timed out'}",
+          "resolveu": false
+        }
+      ],
+      "solucao": null
+    },
+    "pegar_chaleira/levantar/penetracao": {
+      "problema": "pegar_chaleira/levantar/penetracao",
+      "primeira_vez": "2026-09-21T18:20:19",
+      "tentativas": [
+        {
+          "quando": "2026-09-21T18:20:19",
+          "episodio": "agent-cafe-012",
+          "parametros": {
+            "mao": "esquerda",
+            "folga_alvo_mm": 8.8,
+            "sementes": 400,
+            "peso_oposicao": 220.0,
+            "cintura_deg": 25.0,
+            "abertura": 0.0,
+            "forca_fechamento_N": 20.0,
+            "folga_conexao_mm": 6.5,
+            "peso_orientacao": 25.0
+          },
+          "medido": {
+            "folga_minima_ao_metal_quente_mm": 6.6367,
+            "portao_mm": 6.0,
+            "passos_abaixo_do_portao": 0
+          },
+          "motivo": "{'reason': 'handle contact penetration', 'm': 0.0005002303720081028}",
+          "resolveu": false
+        },
+        {
+          "quando": "2026-09-21T18:43:13",
+          "episodio": "agent-cafe-012",
+          "parametros": {
+            "mao": "esquerda",
+            "folga_alvo_mm": 8.8,
+            "sementes": 400,
+            "peso_oposicao": 220.0,
+            "cintura_deg": 25.0,
+            "abertura": 0.0,
+            "forca_fechamento_N": 14.0,
+            "folga_conexao_mm": 6.5,
+            "peso_orientacao": 25.0
+          },
+          "medido": {
+            "folga_minima_ao_metal_quente_mm": 6.7454,
+            "portao_mm": 6.0,
+            "passos_abaixo_do_portao": 0
+          },
+          "motivo": "{'reason': 'handle contact penetration', 'm': 0.0005002885454270725}",
+          "resolveu": false
+        },
+        {
+          "quando": "2026-09-21T19:06:35",
+          "episodio": "agent-cafe-012",
+          "parametros": {
+            "mao": "esquerda",
+            "folga_alvo_mm": 8.8,
+            "sementes": 400,
+            "peso_oposicao": 220.0,
+            "cintura_deg": 25.0,
+            "abertura": 0.0,
+            "forca_fechamento_N": 8.0,
+            "folga_conexao_mm": 6.5,
+            "peso_orientacao": 25.0
+          },
+          "medido": {
+            "folga_minima_ao_metal_quente_mm": 6.8497,
+            "portao_mm": 6.0,
+            "passos_abaixo_do_portao": 0
+          },
+          "motivo": "{'reason': 'handle contact penetration', 'm': 0.0005010724795249477}",
+          "resolveu": false
+        }
+      ],
+      "solucao": {
+        "quando": "2026-09-21T20:02:04",
+        "episodio": "validacao-manual-2026-09-21",
+        "parametros": {
+          "portao_de_penetracao_mm": 1.0,
+          "portao_de_auto_contato_mm": 0.5,
+          "forca_fechamento_N": 8,
+          "mao": "esquerda"
+        },
+        "evidencia": {
+          "resultado": "subida de 81,3 mm, pega estavel",
+          "medido": {
+            "subida_mm": 81.317,
+            "penetracao_alca_mm": 0.58,
+            "folga_metal_quente_mm": 6.85,
+            "rotacao_na_mao_deg": 1.5,
+            "deriva_na_sustentacao_mm": 1.99,
+            "angulo_na_sustentacao_deg": 1.72,
+            "auto_contato_max_mm": 0.285
+          },
+          "causa_das_3_falhas_anteriores": "portao de penetracao em 0,5 mm, que e o ponto medio do solimp dos geoms da mao e da alca; a penetracao ficava travada em 0,5002/0,5003/0,5011 mm com forca de 20, 14 e 8 N, ou seja nao respondia a forca nenhuma porque era o proprio portao",
+          "segunda_causa": "auto-contato ombro-tronco era booleano; um raspao de 7,7 micrometros entre left_shoulder_roll_link e torso_link reprovava uma corrida que ja tinha levantado 30,7 mm. A chaleira parada penetra 227 micrometros, entao 7,7 estava trinta vezes abaixo do piso de ruido",
+          "verificacao_visual": "results-claude/lift-regate-13c-video/attempt-six-cameras.mp4, chaleira no ar com sombra na mesa em hold_handle",
+          "run": "results-claude/lift-regate-13c"
+        },
+        "valia_no_estado": null,
+        "tentativas_ate_resolver": 3
+      }
+    },
+    "pegar_chaleira/planejar_pega/rendimento_do_planejador": {
+      "problema": "pegar_chaleira/planejar_pega/rendimento_do_planejador",
+      "primeira_vez": "2026-09-21T19:56:01",
+      "tentativas": [],
+      "solucao": {
+        "quando": "2026-09-21T19:56:01",
+        "episodio": "validacao-manual-2026-09-21",
+        "parametros": {
+          "cintura_deg": 12,
+          "peso_oposicao": 0,
+          "semente": 1,
+          "folga_conexao_mm": 7.0,
+          "mao": "esquerda"
+        },
+        "evidencia": {
+          "taxa_medida_48_sementes": {
+            "padrao": "3/48",
+            "cintura_25": "2/48",
+            "oposicao_250": "2/48"
+          },
+          "conclusao": "a taxa e 4-6% em qualquer configuracao; a diferenca nao existe com n=48",
+          "semente_1_e_deterministica": "sementes 0 e 1 nao levam ruido, mas a pose resultante depende do hot_clearance usado: com 7,0 mm ela passa (pontas 0,14/0,88/0,85, cossenos -0,995/-0,558); com 6,5 mm ela REPROVA (pontas 0,76/6,74/3,77, cosseno +0,62, folga com mao aberta 5,33 mm). Nao trate a semente 1 como garantia: ela e reproduzivel para um hot_clearance fixo, nao entre valores.",
+          "semente_1_padrao": {
+            "pontas_mm": [
+              0.14,
+              0.88,
+              0.85
+            ],
+            "cossenos_oposicao": [
+              -0.995,
+              -0.558
+            ],
+            "folga_quente_mm": 7.0
+          },
+          "cintura_25_quebra": {
+            "cossenos_oposicao": [
+              -0.644,
+              0.991
+            ],
+            "leitura": "o segundo cosseno vira +0,991: os dois dedos empurram para o mesmo lado, nao e pega"
+          },
+          "cintura_25_mais_oposicao_250": {
+            "pontas_mm": [
+              1.48,
+              14.87,
+              13.97
+            ],
+            "leitura": "duas pontas a 14 mm da alca, fora de contato"
+          },
+          "medido_em": "results-claude/kgr-aberto-60 (hot_clearance 6,5 mm) contra results/taxa48-* (7,0 mm)"
+        },
+        "valia_no_estado": null,
+        "tentativas_ate_resolver": 0
+      }
+    },
+    "pegar_chaleira/aproximacao/abertura_da_mao": {
+      "problema": "pegar_chaleira/aproximacao/abertura_da_mao",
+      "primeira_vez": "2026-09-21T20:20:48",
+      "tentativas": [],
+      "solucao": {
+        "quando": "2026-09-21T20:20:48",
+        "episodio": "validacao-manual-2026-09-21",
+        "parametros": {
+          "abertura": "1.0 ou 0.0, nunca entre 0.2 e 0.8",
+          "folga_conexao_mm": 3.5,
+          "cintura_deg": 12,
+          "mao": "esquerda"
+        },
+        "evidencia": {
+          "geometria_medida_no_candidato_12_de_kettle-grasp-2": {
+            "abertura_1.0": {
+              "folga_quente_mm": 9.63,
+              "contatos_negativos": 0,
+              "folga_alca_mm": 0.576
+            },
+            "abertura_0.9": {
+              "folga_quente_mm": 3.54,
+              "contatos_negativos": 0
+            },
+            "abertura_0.8_ate_0.2": {
+              "folga_quente_mm": "de -1.9 a -5.7",
+              "contatos_negativos": "3 a 4",
+              "leitura": "o polegar varre POR DENTRO do corpo quente da chaleira; nenhuma abertura intermediaria e viavel"
+            },
+            "abertura_0.1": {
+              "folga_quente_mm": 0.603
+            },
+            "abertura_0.0": {
+              "folga_quente_mm": 3.787,
+              "contatos_negativos": 0
+            }
+          },
+          "por_que_abertura_0_falhava": "a conexao exigia folga_conexao_mm 6.5 e a pose de mao aberta so tem 3.787 mm; baixar folga_conexao para 3.5 aprova a conexao (41 passos)",
+          "por_que_abertura_1_falha_depois": "sem curso de fechamento as pontas param a 0.58 mm da alca e as forcas ficam em 0 -> lost three-finger handle grip",
+          "proximo_obstaculo": "com abertura 0 e folga 3.5 a conexao passa, mas o executor do lift reprova: 5.217 mm sustentados por 52 ms contra portao de 6 mm / 50 ms, e isso acontece na fase preshape, com o braco ainda parado em cima da chaleira depois de apertar o botao. O planejador de conexao abre os dedos na pose inicial antes de mover o braco; o recuo deveria vir antes da abertura",
+          "runs": [
+            "results-claude/conn-abertura-1",
+            "results-claude/lift-abertura-1",
+            "results-claude/conn-ab0-folga35",
+            "results-claude/lift-ab0-folga35"
+          ]
+        },
+        "run": "results-claude/conn-ab0-folga35",
+        "valia_no_estado": null,
+        "tentativas_ate_resolver": 0
+      }
+    },
+    "pegar_chaleira/levantar/outro": {
+      "problema": "pegar_chaleira/levantar/outro",
+      "primeira_vez": "2026-09-21T20:30:48",
+      "tentativas": [
+        {
+          "quando": "2026-09-21T20:30:48",
+          "episodio": "validacao-manual-2026-09-21",
+          "parametros": {
+            "candidato": 15,
+            "folga_fechada_estatica_mm": 10.97,
+            "folga_conexao_mm": 9.0,
+            "forca_fechamento_N": [
+              16,
+              8
+            ],
+            "alvo_contato_N": [
+              8,
+              10
+            ]
+          },
+          "run": "results-claude/lift-c15-f8",
+          "medido": {
+            "folga_executada_mm": [
+              5.429,
+              5.32
+            ],
+            "onde": "ultimo estado da trajetoria, fase close_handle, geom de left_hand_thumb_2_link",
+            "caminho_planejado_minimo_mm": 14.616,
+            "leitura": "a perda nao e erro de rastreamento nem forca do servo: baixar normal_force de 16 para 8 nao mudou (5.43 -> 5.32). O servo de contato move a pose dos dedos ALEM do candidato, e o polegar fecha em direcao ao corpo quente porque a alca fica colada nele",
+            "margem_observada": {
+              "candidato_12_de_agent-cafe-013": {
+                "estatico_mm": 9.63,
+                "executado_mm": 6.85,
+                "perda_mm": 2.78
+              },
+              "candidato_15_de_kgr-aberto-60": {
+                "estatico_mm": 10.97,
+                "executado_mm": 5.32,
+                "perda_mm": 5.65
+              }
+            },
+            "regra_provisoria": "a folga fechada do candidato precisa superar o portao em ~6 mm, porque o fechamento consome de 2,8 a 5,7 mm",
+            "runs": [
+              "results-claude/lift-c15-8mm",
+              "results-claude/lift-c15-f8"
+            ]
+          },
+          "motivo": "folga_metal_quente_no_fechamento",
+          "resolveu": false
+        }
+      ],
+      "solucao": null
+    },
+    "pegar_chaleira/planejar_pega/folga_com_a_mao_aberta": {
+      "problema": "pegar_chaleira/planejar_pega/folga_com_a_mao_aberta",
+      "primeira_vez": "2026-09-21T20:33:01",
+      "tentativas": [],
+      "solucao": {
+        "quando": "2026-09-21T20:33:01",
+        "episodio": "validacao-manual-2026-09-21",
+        "parametros": {
+          "usar": "plan_kettle_grasp_v3 com --open-check-factor igual a abertura",
+          "abertura": 0,
+          "cintura_deg": 12,
+          "mao": "esquerda"
+        },
+        "evidencia": {
+          "problema": "o planejador media a folga ao metal quente so na pose de pega, com a mao fechada, mas quem viaja ate la e a mao aberta",
+          "medido": {
+            "candidato_12": {
+              "fechado_mm": 9.63,
+              "aberto_mm": 3.79
+            },
+            "aberturas_intermediarias": "de 0.2 a 0.8 o polegar passa POR DENTRO do corpo quente, ate -5.7 mm"
+          },
+          "efeito": "candidatos inalcancaveis eram aprovados e a falha so aparecia na conexao, como reverse approach invalid na distancia zero",
+          "depois_da_correcao": "4 de 60 candidatos passam, com folga de mao aberta entre 14,4 e 21,4 mm",
+          "regra": "folga_alvo_mm precisa superar o portao do executor em cerca de 6 mm, porque o fechamento consome de 2,8 a 5,7 mm",
+          "run": "results-claude/kgr-aberto-60"
+        },
+        "run": "results-claude/kgr-aberto-60",
+        "valia_no_estado": null,
+        "tentativas_ate_resolver": 0
+      }
+    },
+    "servir_cafe/despejar/portao_de_penetracao": {
+      "problema": "servir_cafe/despejar/portao_de_penetracao",
+      "primeira_vez": "2026-09-21T20:57:42",
+      "tentativas": [],
+      "solucao": {
+        "quando": "2026-09-21T20:57:42",
+        "episodio": "validacao-manual-2026-09-21",
+        "parametros": {
+          "usar": "execute_coffee_pour_v2 e execute_coffee_place_v2",
+          "duracao_s": 20,
+          "max_segundos": 320,
+          "recuo_x": 0,
+          "recuo_levantamento": 0,
+          "taxa_retorno": 0.4
+        },
+        "evidencia": {
+          "problema": "a v1 tem hot_gap<.006 e max_penetration>.0005 fixos no codigo; o despejo reprovava em t=0, na fase approach_filter, com hot_gap 8,90 mm (otimo) e penetracao 0,58 mm",
+          "resultado_com_a_v2": {
+            "despejado_ml": 244.5,
+            "na_xicara_ml": 199.8,
+            "retido_no_pano_ml": 5.0,
+            "derramado_ml": 0.0,
+            "penetracao_mm": 0.598,
+            "folga_quente_mm": 8.895,
+            "rotacao_na_mao_deg": 1.21
+          },
+          "devolver_chaleira": {
+            "inclinacao_deg": 0.21,
+            "forca_de_apoio_N": 11.8,
+            "erro_de_centro_mm": 0.13,
+            "passos_estaveis": 1000,
+            "avisos": 0
+          },
+          "verificacao_visual": "results-claude/pour-v2-video/attempt-six-cameras.mp4; no quadro final o HUD le xicara 200, filtro 0, derrame 0.0 e a camera da cabeca mostra liquido escuro na xicara",
+          "cadeia_completa_validada": "lift-regate-13c -> pour-smoke-plan -> pour-v2 -> place-v2",
+          "runs": [
+            "results-claude/pour-v2",
+            "results-claude/place-v2"
+          ]
+        },
+        "run": "results-claude/pour-v2",
+        "valia_no_estado": null,
+        "tentativas_ate_resolver": 0
+      }
+    },
+    "pegar_chaleira/planejar_pega/pega_no_referencial_do_objeto": {
+      "problema": "pegar_chaleira/planejar_pega/pega_no_referencial_do_objeto",
+      "primeira_vez": "2026-09-22T14:45:13",
+      "tentativas": [],
+      "solucao": {
+        "quando": "2026-09-22T14:45:13",
+        "episodio": "validacao-manual-2026-09-22",
+        "parametros": {
+          "usar": "plan_kettle_grasp_v3 --seed results-claude/pega-referencia-validada --fixed-hand",
+          "sementes": 6
+        },
+        "evidencia": {
+          "problema": "a referencia padrao (results/loadable-refined-002) vem de outra geometria de alca (handle-layout-search-003/layout-05); a palma ia ao lugar mas os dedos eram reinventados a cada semente e 39-40 de 60 candidatos reprovavam so na oposicao",
+          "solucao": "pega validada (agent-cafe-012/kettle-grasp-13 c74) guardada no referencial da chaleira, dedos travados, termo das pontas desligado; so o braco e resolvido",
+          "invariancia": "nas cenas original, +5 cm em x e -5 cm em y a semente 1 cai na mesma geometria de contato ate o terceiro decimal: pontas 0,44/1,60/1,56 mm, oposicao -0,499/-0,514, palma a 0,0 mm",
+          "taxa": {
+            "original": "4/6 (antes 1/60)",
+            "x+5": "6/6 (antes 1/60)",
+            "y-5": "3/6 (antes 0/60)",
+            "giro30": "0/6, palma a 6,3 mm: problema de alcance, nao de pega"
+          },
+          "cadeia_x+5": "levantou 81,2 mm, 199,8 ml na xicara, 0 derramado, devolveu",
+          "runs": [
+            "results-claude/fix-x+5",
+            "results-claude/movida-x+5"
+          ]
+        },
+        "run": "results-claude/movida-x+5",
+        "valia_no_estado": null,
+        "tentativas_ate_resolver": 0
+      }
+    },
+    "servir_cafe/despejar/apoio_no_coador_ao_endireitar": {
+      "problema": "servir_cafe/despejar/apoio_no_coador_ao_endireitar",
+      "primeira_vez": "2026-09-22T15:08:30",
+      "tentativas": [],
+      "solucao": {
+        "quando": "2026-09-22T15:08:30",
+        "episodio": "validacao-manual-2026-09-22",
+        "parametros": {
+          "return_lift_m": 0.03,
+          "return_offset_x": 0,
+          "return_rate": 0.4
+        },
+        "evidencia": {
+          "problema": "com return_lift 0 a chaleira endireitava rente ao coador; com ela 5 cm deslocada em y ela se apoiou no coador em return_upright, depois de despejar 244,5 ml",
+          "resultado": "com 3 cm de subida as tres cenas (original, x+5, y-5) passam: 199,8 ml na xicara, 0 derramado",
+          "runs": [
+            "results-claude/movida-y-5/pour-rl3",
+            "results-claude/regr-rl3-original",
+            "results-claude/regr-rl3-x+5"
+          ]
+        },
+        "run": "results-claude/movida-y-5/pour-rl3",
+        "valia_no_estado": null,
+        "tentativas_ate_resolver": 0
+      }
+    },
+    "pegar_chaleira/planejar_pega/outro": {
+      "problema": "pegar_chaleira/planejar_pega/outro",
+      "primeira_vez": "2026-09-22T16:42:40",
+      "tentativas": [
+        {
+          "quando": "2026-09-22T16:42:40",
+          "episodio": "validacao-manual-2026-09-22",
+          "parametros": {
+            "sintetizador": "scripts/synth_wrap_grasp.py",
+            "poses": 21600,
+            "folga_termica_mm": 3
+          },
+          "run": "results-claude/wrap-synth-amplo",
+          "medido": {
+            "resultado": "0 pegas com os tres dedos na barra",
+            "geometria": "barra 16,6 x 22 mm, vao ate o corpo quente 25-27 mm; falange da Dex3 17,7 mm",
+            "causa": "o polegar da Dex3 sai perpendicular a palma, como garra; com a palma virada para a chaleira ele aponta para o corpo quente, e o vao nao comporta polegar e dedos",
+            "melhor_caso": "indicador e medio encostam, mas palma a 24,5 mm e polegar a 45-50 mm: gancho sem oposicao, nao sustenta peso numa barra vertical",
+            "conclusao": "a pinca por cima e o que esta mao permite nesta alca; baixar a mao no despejo exige outra chaleira (alca maior) ou outra altura do coador"
+          },
+          "motivo": "pega_envolvente_na_barra",
+          "resolveu": false
+        }
+      ],
+      "solucao": null
+    }
+  }
+}

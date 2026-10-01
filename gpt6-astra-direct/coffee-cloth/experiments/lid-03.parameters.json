@@ -1,0 +1,42 @@
+{
+  "scene": "/opt/i2ca/robotics-lab/coffee-cloth/scene/setup-luiz-016.xml",
+  "markers": "/opt/i2ca/robotics-lab/coffee-cloth/scene/setup-luiz-016-markers.json",
+  "photo_arm_pose": [
+    0.5,
+    -0.524,
+    -0.397,
+    -0.721,
+    0.321,
+    0.386,
+    0.082
+  ],
+  "left_arm_pose": [
+    0.3,
+    0.15,
+    0.0,
+    0.7,
+    0.0,
+    0.0,
+    0.0
+  ],
+  "reason": "lid-03: mapa de pega do botao (varredura offline de 12 posicoes do botao no referencial da palma + refino): o botao (4,8 cm de diametro, 1,8 cm de altura, centro a 4,9 cm da base da tampa) so e preso quando fica a (0,11, 0,03) da palma, com a palma para baixo e fecho ganho 3,0; a 0,125 em x os dedos fecham antes e derrubam a tampa. A Dex3 fecha ate 0,6 mm de vao, entao o tamanho nunca foi o problema, e sim a posicao. Fases como na etapa 1: giro do tronco (rumo + 25 graus, a pega lateral exige o cotovelo para fora), pre_reach com desvio de 6 cm para fora do corpo, descida de 10 cm por cima, fecho, subida de 10 cm, transporte para (0,26, 0,24), descida ate 2 cm, abertura, recuo. A tampa pende ~25 graus presa pelo botao; o criterio e ela sair do pote e ficar na mesa, nao ficar horizontal.",
+  "pinch_offset_palm": [
+    0.11,
+    0.03,
+    0.0
+  ],
+  "close_gain": 3.0,
+  "hover_m": 0.1,
+  "turn_extra_deg": 25.0,
+  "lift_m": 0.1,
+  "place_xy": [
+    0.26,
+    0.24
+  ],
+  "place_hover_m": 0.02,
+  "pre_reach_offset": [
+    -0.06,
+    -0.06,
+    0.12
+  ]
+}

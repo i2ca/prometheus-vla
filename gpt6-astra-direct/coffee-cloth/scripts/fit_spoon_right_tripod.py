@@ -1,0 +1,51 @@
+"""Offline right Dex3 handle pinch fitting in an isolated copy of actual hand geometry."""
+import json,shutil,copy,sys,xml.etree.ElementTree as ET
+from pathlib import Path
+import numpy as np,mujoco
+from scipy.optimize import least_squares
+from scipy.spatial.transform import Rotation
+sys.path.insert(0,str(Path(__file__).resolve().parents[2]/'g1-cup-grasp/scripts'))
+from g1_sim import HAND_JOINTS
+out=Path('results/spoon-right-fit-010');out.mkdir(exist_ok=False);shutil.copy2(__file__,out/Path(__file__).name);source=Path('results/prepared-layout-009');r=json.loads((source/'report.json').read_text());assert r['pass'];full=mujoco.MjModel.from_xml_path(r['scene']);fd=mujoco.MjData(full);mujoco.mj_setState(full,fd,np.load(source/'continuation.npz')['integration'],mujoco.mjtState.mjSTATE_INTEGRATION);mujoco.mj_forward(full,fd);flat=out/'full-model.xml';mujoco.mj_saveLastXML(str(flat),full);tree=ET.parse(flat);root=ET.Element('mujoco',model='offline right hand fit')
+for tag in ['compiler','option','default','asset']:
+ for node in tree.getroot().findall(tag):root.append(copy.deepcopy(node))
+world=ET.SubElement(root,'worldbody');hand=copy.deepcopy(tree.find('.//body[@name="right_wrist_yaw_link"]'));hand.set('pos','0 0 0');hand.set('quat','1 0 0 0')
+for j in hand.findall('joint'):hand.remove(j)
+ET.SubElement(hand,'freejoint',name='hand_pose');world.append(hand);spoon=copy.deepcopy(tree.find('.//body[@name="scoop"]'));b=full.body('scoop').id;spoon.set('pos',' '.join(map(str,fd.xpos[b]+np.array([-.03,0,0]))));spoon.set('quat',' '.join(map(str,fd.xquat[b])));world.append(spoon);world.append(copy.deepcopy(tree.find('.//body[@name="mesa"]')))
+body_names={n.get('name') for n in hand.iter('body')};contact=ET.SubElement(root,'contact')
+for e in tree.findall('.//contact/exclude'):
+ if e.get('body1') in body_names and e.get('body2') in body_names:contact.append(copy.deepcopy(e))
+scene=(out/'hand-scene.xml').resolve();ET.ElementTree(root).write(scene);m=mujoco.MjModel.from_xml_path(str(scene));d=mujoco.MjData(m);mujoco.mj_forward(m,d);base=d.qpos.copy();names=[n.replace('right_','right_') for n in HAND_JOINTS];ha=m.jnt_qposadr[[m.joint(n).id for n in names]];right=m.body('right_wrist_yaw_link').id;obj=m.body('scoop').id;table=m.geom('tampo').id;hg=[g for g in range(m.ngeom) if m.geom_contype[g] and m.body(int(m.geom_bodyid[g])).name.startswith('right_')];og=[g for g in range(m.ngeom) if m.geom_contype[g] and m.geom_bodyid[g]==obj];target_geoms=[g for g in og if .040<m.geom_pos[g,0]<.059];tips=[next(g for g in hg if m.body(int(m.geom_bodyid[g])).name=='right_hand_'+n+'_link') for n in ['thumb_2','index_1','middle_1']];excluded={frozenset([e.get('body1'),e.get('body2')]) for e in contact};pairs=[]
+for g in hg:
+ for h in hg:
+  if g>=h:continue
+  bg,bh=map(int,[m.geom_bodyid[g],m.geom_bodyid[h]]);ng,nh=m.body(bg).name,m.body(bh).name
+  if bg==bh or m.body_parentid[bg]==bh or m.body_parentid[bh]==bg or frozenset([ng,nh]) in excluded:continue
+  if ng.startswith('right_hand') and nh.startswith('right_hand') and ng.split('_')[2]==nh.split('_')[2]:continue
+  pairs.append((g,h))
+hand0=np.array([.05,-.48,-1.15,.95,1.30,1.0,.6]);jlim=m.jnt_range[[m.joint(n).id for n in names]];lo=np.r_[[-.05,-.55,.74],[-2.8,-1.5,-2.8],jlim[:,0]];hi=np.r_[[.32,-.08,1.05],[2.8,1.5,2.8],jlim[:,1]];records=[]
+def evaluate(x,detail=False):
+ d.qpos[:]=base;d.qpos[:3]=x[:3];mujoco.mju_mat2Quat(d.qpos[3:7],Rotation.from_rotvec(x[3:6]).as_matrix().ravel());d.qpos[ha]=hand0;d.qpos[ha]=x[6:];mujoco.mj_forward(m,d);dist=[];points=[];directions=[]
+ for ti,g in enumerate(tips):
+  options=[]
+  tg=[h for h in og if .020<m.geom_pos[h,0]<.038] if ti==2 else target_geoms
+  for h in tg:
+   pts=np.zeros(6);gap=mujoco.mj_geomDistance(m,d,g,h,.5,pts);options.append((gap,pts))
+  gap,pts=min(options,key=lambda a:a[0]);dist.append(gap);points.append((pts[3:]-d.xpos[obj])@d.xmat[obj].reshape(3,3));n=(pts[3:]-pts[:3])*np.sign(gap);directions.append(n/max(np.linalg.norm(n),1e-12))
+ tablegaps=[mujoco.mj_geomDistance(m,d,g,table,.1,None) for g in hg];selfgaps=[mujoco.mj_geomDistance(m,d,g,h,.01,None) for g,h in pairs];objgaps=[mujoco.mj_geomDistance(m,d,g,h,.003,None) for g in hg for h in og];opp=float(np.dot(directions[0],directions[1]));loc=[max(0,(.021 if i==2 else .041)-p[0])+max(0,p[0]-(.037 if i==2 else .057)) for i,p in enumerate(points)]
+ if detail:return dist,points,min(tablegaps),min(selfgaps),min(objgaps),opp
+ return np.r_[(np.array(dist)-.001)*1000,np.array(loc)*1000,np.minimum(0,np.array(tablegaps)-.010)*3000,np.minimum(0,np.array(selfgaps)-.001)*3000,np.minimum(0,np.array(objgaps))*3000,max(0,opp+.65)*10,(x[6:]-hand0)*.05,x[3:6]*.02]
+
+def coarse(x):
+ d.qpos[:]=base;d.qpos[:3]=x[:3];mujoco.mju_mat2Quat(d.qpos[3:7],Rotation.from_rotvec(x[3:6]).as_matrix().ravel());d.qpos[ha]=x[6:];mujoco.mj_forward(m,d)
+ anchors=[[0,.042,0],[.042,0,0],[.042,0,0]];goals=[[.05,-.012,.0055],[.05,.012,.0055],[.025,.012,.0055]]
+ residual=[]
+ for g,anchor,goal in zip(tips,anchors,goals):
+  body=int(m.geom_bodyid[g]);point=d.xpos[body]+d.xmat[body].reshape(3,3)@anchor;world=d.xpos[obj]+d.xmat[obj].reshape(3,3)@goal;residual.extend((point-world)*1000)
+ residual.extend([min(0,mujoco.mj_geomDistance(m,d,g,table,.03,None)-.01)*3000 for g in hg])
+ residual.extend([min(0,mujoco.mj_geomDistance(m,d,g,h,.01,None)-.001)*3000 for g,h in pairs])
+ return np.r_[residual,(x[6:]-hand0)*.05]
+
+for seed in range(6):
+ known=json.loads(Path('results/spoon-right-fit-001/report.json').read_text())['results'][3];oldR=np.array(known['palm_R']);newR=Rotation.from_euler('ZYX',[90 if seed<3 else -90,15,[-30,0,30][seed%3]],degrees=True).as_matrix();newpos=np.array([.155,-.42 if seed<3 else -.18,.81]);hq=np.array(known['hand']);hq[5:]=[1.,.6];x=np.r_[newpos,Rotation.from_matrix(newR).as_rotvec(),hq];initial=least_squares(coarse,np.clip(x,lo+1e-9,hi-1e-9),bounds=(lo,hi),max_nfev=500);fit=least_squares(evaluate,initial.x,bounds=(lo,hi),max_nfev=500,diff_step=1e-4);dist,points,tgap,sgap,ogap,opp=evaluate(fit.x,True);passed=max(abs(np.array(dist)-.001))<.001 and tgap>.0099 and sgap>.0009 and ogap>-.0001 and opp<-.5 and all((.020 if i==2 else .040)<p[0]<(.038 if i==2 else .059) for i,p in enumerate(points));row={'seed':seed,'pass':bool(passed),'palm_goal_m':fit.x[:3].tolist(),'palm_R':Rotation.from_rotvec(fit.x[3:6]).as_matrix().tolist(),'hand':d.qpos[ha].tolist(),'contact_gap_m':dist,'object_contact_local':[p.tolist() for p in points],'table_clearance_m':float(tgap),'self_gap_m':float(sgap),'object_min_gap_m':float(ogap),'normal_dot':opp,'face_pinching_objective':'tripod geometry without prescribed face normals' ,'cost':float(fit.cost)};records.append(row);print(row,flush=True)
+(out/'report.json').write_text(json.dumps({'model':'gpt-6-astra','source':str(source),'scene':r['scene'],'isolated_scene':str(scene),'proposed_initial_spoon_shift_m':[-.03,0,0],'scope':'offline hand geometry with proposed initial spoon placement shift; no whole robot reach or physical grasp validated','hand_names':names,'results':records},indent=2))

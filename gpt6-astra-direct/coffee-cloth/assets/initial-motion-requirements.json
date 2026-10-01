@@ -1,0 +1,21 @@
+{
+  "model": "gpt-6-astra",
+  "user_requirement": "From arms-down posture, raise hand above tabletop before reaching forward across table edge",
+  "initial_posture": "assets/robot-initial-posture.json",
+  "phases": [
+    "raise hand outside table footprint",
+    "once fingers and wrist clear tabletop, advance toward pregrasp",
+    "approach handle"
+  ],
+  "table_in_current_scene_m": {
+    "front_edge_x": 0.2,
+    "top_z": 0.75
+  },
+  "minimum_table_clearance_m": 0.02,
+  "margin_source": "engineering planning choice, not user measurement",
+  "collision_checks": [
+    "all robot contacts",
+    "20mm table clearance for collision geometry of both hands, wrists, forearms"
+  ],
+  "status": "constraint added to approach planner; new full trajectory not yet validated"
+}

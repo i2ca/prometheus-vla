@@ -1,0 +1,185 @@
+{
+  "layout": {
+    "chaleira": [
+      [
+        0.58,
+        -0.36
+      ],
+      180.0
+    ],
+    "coador": [
+      [
+        0.36,
+        -0.16
+      ],
+      -90.0
+    ],
+    "pote": [
+      [
+        0.36,
+        0.06
+      ],
+      0.0
+    ],
+    "scoop": [
+      [
+        0.22,
+        0.06
+      ],
+      90.0
+    ]
+  },
+  "markers": {
+    "red": [
+      0.46,
+      -0.4
+    ],
+    "cyan": [
+      0.64,
+      0.16
+    ],
+    "blue": [
+      0.62,
+      0.44
+    ],
+    "magenta": [
+      0.46,
+      0.4
+    ]
+  },
+  "mass_kg": {
+    "chaleira": 1.0,
+    "pote": 0.5,
+    "tampa": 0.1,
+    "scoop": 0.03
+  },
+  "objects": {
+    "chaleira": {
+      "source": "assets/glb/chaleira.glb",
+      "scale": [
+        0.20561314113673082,
+        0.20561314113673082,
+        0.2350979718003654
+      ],
+      "extents_m": [
+        0.20516666108040013,
+        0.1633321072837238,
+        0.232
+      ],
+      "collision_parts": 17,
+      "dimension_spec": {
+        "fit": {
+          "height_m": 0.232,
+          "diameter_m": 0.11,
+          "radius_percentile": 30
+        },
+        "note": "JAR-001: altura total 232 mm, base 110, boca 90, largura com alca e bico 159. Percentil 30 do raio ~ corpo sem alca/bico",
+        "max_parts": 32
+      }
+    },
+    "coador": {
+      "source": "assets/glb/coador.glb",
+      "scale": [
+        0.15039073119126597,
+        0.15039073119126597,
+        0.20523152318140822
+      ],
+      "extents_m": [
+        0.08248906079994092,
+        0.08032646329491877,
+        0.205
+      ],
+      "collision_parts": 30,
+      "dimension_spec": {
+        "fit": {
+          "height_m": 0.205,
+          "diameter_m": 0.08,
+          "radius_percentile": 95
+        },
+        "note": "SUP-001: haste 205 mm de altura total, base 80 de diametro, filtro 70 de profundidade. Percentil 95 ~ borda da base/aro; o saco do modelo 3D tinha 105 mm de profundidade e foi comprimido para os 70 mm do desenho (a ponta sobe de 100 para 135 mm)",
+        "max_parts": 32,
+        "shorten_cone": {
+          "z_min": 0.09,
+          "r_max": 0.05,
+          "x_min": -0.03,
+          "depth_m": 0.07
+        }
+      },
+      "base_top_m": 0.002553,
+      "filter_tip_z_m": 0.135
+    },
+    "pote": {
+      "source": "assets/glb/pote.glb",
+      "scale": [
+        0.14857736435391083,
+        0.14857736435391083,
+        0.12579034512611487
+      ],
+      "extents_m": [
+        0.14838114415492254,
+        0.11984755946622822,
+        0.06
+      ],
+      "collision_parts": 24,
+      "dimension_spec": {
+        "fit": {
+          "height_m": 0.06,
+          "diameter_m": 0.11,
+          "radius_percentile": 50
+        },
+        "note": "PAC-001A: 110 mm de diametro (abertura e base), 60 de altura, 2 alcas com semicirculo de raio 15",
+        "max_parts": 24
+      }
+    },
+    "tampa": {
+      "source": "assets/glb/tampa.glb",
+      "scale": [
+        0.11350444731332392,
+        0.11350444731332392,
+        0.0760591186092226
+      ],
+      "extents_m": [
+        0.11336239437198742,
+        0.11349456984062062,
+        0.035
+      ],
+      "collision_parts": 8,
+      "dimension_spec": {
+        "fit": {
+          "height_m": 0.035,
+          "diameter_m": 0.11,
+          "radius_percentile": 90
+        },
+        "note": "TAM-001: 110 de diametro externo, 35 de altura total, torre central de 20 x 8, aba 6",
+        "max_parts": 8
+      }
+    },
+    "scoop": {
+      "source": "assets/glb/scoop.glb",
+      "scale": 0.11984245031570415,
+      "extents_m": [
+        0.12,
+        0.06179874937437765,
+        0.028169104589770316
+      ],
+      "collision_parts": 12,
+      "dimension_spec": {
+        "axis": "x",
+        "size_m": 0.12,
+        "note": "PAB-003: colher de 120 mm, concha eliptica 30 x 25",
+        "max_parts": 12
+      }
+    }
+  },
+  "coador_fixed": true,
+  "calibration_check": {
+    "markers_used": [
+      "red",
+      "cyan",
+      "blue",
+      "magenta"
+    ],
+    "fit_rms_px": 0.47586259456708696,
+    "heldout_max_px": 1.2416527380668902
+  }
+}

@@ -1,0 +1,61 @@
+{
+  "model": "gpt-6-astra",
+  "method": "Manual approximate tape digit centers and visible opening boundaries, linear scale fit.",
+  "observations": [
+    {
+      "file": "user-photo-01.jpeg",
+      "tape_cm": [
+        12,
+        13,
+        14
+      ],
+      "digit_center_y_px": [
+        799,
+        832,
+        865
+      ],
+      "boundary_y_px": [
+        774,
+        888
+      ],
+      "axis": "short gap, approximately x490",
+      "pixels_per_cm": 32.99999999999987,
+      "apparent_same_plane_extent_mm": 34.54545454545468
+    },
+    {
+      "file": "user-photo-02.jpeg",
+      "tape_cm": [
+        2,
+        4,
+        6,
+        8,
+        10,
+        12,
+        14,
+        16,
+        18
+      ],
+      "digit_center_y_px": [
+        571,
+        650,
+        732,
+        813,
+        896,
+        980,
+        1066,
+        1154,
+        1241
+      ],
+      "boundary_y_px": [
+        498,
+        1255
+      ],
+      "axis": "long gap, approximately x450",
+      "pixels_per_cm": 41.891666666666666,
+      "apparent_same_plane_extent_mm": 180.70419733439425
+    }
+  ],
+  "conclusion": "Naive same-plane readings are about35mm and181mm, inconsistent with user25/140mm. Both appear magnified by roughly1.3, compatible with tape behind near handle rim. These photographs cannot establish a unique perspective correction. Keep direct user measurements140x25mm as nominal, not these apparent values.",
+  "physical_dimension_estimates_updated": false,
+  "no_exactness_claim": true
+}
