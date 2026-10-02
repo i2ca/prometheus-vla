@@ -1,0 +1,58 @@
+<mujoco>
+  <!-- Dynamic props: textured visuals + stable approximate box colliders.
+       Meshes are in metres, Z up, with their bases at Z=0. -->
+  <asset>
+    <mesh name="workspace_chaleira" file="coffee_workspace/chaleira.obj"/>
+    <mesh name="workspace_coador" file="coffee_workspace/coador.obj"/>
+    <mesh name="workspace_pote" file="coffee_workspace/pote.obj"/>
+    <mesh name="workspace_tampa" file="coffee_workspace/tampa.obj"/>
+    <mesh name="workspace_scoop" file="coffee_workspace/scoop.obj"/>
+    <texture name="workspace_chaleira_tex" type="2d" file="meshes/coffee_workspace/chaleira.png"/>
+    <texture name="workspace_coador_tex" type="2d" file="meshes/coffee_workspace/coador.png"/>
+    <texture name="workspace_pote_tex" type="2d" file="meshes/coffee_workspace/pote.png"/>
+    <texture name="workspace_tampa_tex" type="2d" file="meshes/coffee_workspace/tampa.png"/>
+    <texture name="workspace_scoop_tex" type="2d" file="meshes/coffee_workspace/scoop.png"/>
+    <material name="workspace_chaleira_mat" texture="workspace_chaleira_tex" texuniform="false" specular="0.1" shininess="0.1"/>
+    <material name="workspace_coador_mat" texture="workspace_coador_tex" texuniform="false" specular="0.1" shininess="0.1"/>
+    <material name="workspace_pote_mat" texture="workspace_pote_tex" texuniform="false" specular="0.1" shininess="0.1"/>
+    <material name="workspace_tampa_mat" texture="workspace_tampa_tex" texuniform="false" specular="0.1" shininess="0.1"/>
+    <material name="workspace_scoop_mat" texture="workspace_scoop_tex" texuniform="false" specular="0.1" shininess="0.1"/>
+  </asset>
+  <worldbody>
+    <body name="chaleira" pos="0.32 0.28 0.752">
+      <joint name="workspace_chaleira_free" type="free" damping="0.01"/>
+      <geom name="workspace_chaleira_collision" type="box" size="0.110 0.08757 0.10879" pos="0 0 0.10879"
+        rgba="0 0 0 0" group="3" mass="0.6" condim="4"
+        friction="1.5 0.01 0.0001" solref="0.01 1" solimp="0.95 0.99 0.001"/>
+      <geom name="workspace_chaleira_visual" type="mesh" mesh="workspace_chaleira" material="workspace_chaleira_mat" contype="0" conaffinity="0" mass="0"/>
+    </body>
+    <body name="coador" pos="0.34 -0.22 0.752">
+      <joint name="workspace_coador_free" type="free" damping="0.01"/>
+      <geom name="workspace_coador_collision" type="box" size="0.04393 0.04278 0.080" pos="0 0 0.08"
+        rgba="0 0 0 0" group="3" mass="0.15" condim="4"
+        friction="1.5 0.01 0.0001" solref="0.01 1" solimp="0.95 0.99 0.001"/>
+      <geom name="workspace_coador_visual" type="mesh" mesh="workspace_coador" material="workspace_coador_mat" contype="0" conaffinity="0" mass="0"/>
+    </body>
+    <body name="pote" pos="0.29 -0.34 0.752">
+      <joint name="workspace_pote_free" type="free" damping="0.01"/>
+      <geom name="workspace_pote_collision" type="box" size="0.080 0.06462 0.03821" pos="0 0 0.03821"
+        rgba="0 0 0 0" group="3" mass="0.25" condim="4"
+        friction="1.5 0.01 0.0001" solref="0.01 1" solimp="0.95 0.99 0.001"/>
+      <geom name="workspace_pote_visual" type="mesh" mesh="workspace_pote" material="workspace_pote_mat" contype="0" conaffinity="0" mass="0"/>
+    </body>
+    <body name="tampa" pos="0.48 -0.23 0.752">
+      <joint name="workspace_tampa_free" type="free" damping="0.01"/>
+      <geom name="workspace_tampa_collision" type="box" size="0.06992 0.070 0.03222" pos="0 0 0.03222"
+        rgba="0 0 0 0" group="3" mass="0.06" condim="4"
+        friction="1.5 0.01 0.0001" solref="0.01 1" solimp="0.95 0.99 0.001"/>
+      <geom name="workspace_tampa_visual" type="mesh" mesh="workspace_tampa" material="workspace_tampa_mat" contype="0" conaffinity="0" mass="0"/>
+    </body>
+    <body name="scoop" pos="0.275 0.02 0.752">
+      <joint name="workspace_scoop_free" type="free" damping="0.01"/>
+      <geom name="workspace_scoop_collision" type="box" size="0.070 0.03605 0.01643" pos="0 0 0.01643"
+        rgba="0 0 0 0" group="3" mass="0.03" condim="4"
+        friction="1.5 0.01 0.0001" solref="0.01 1" solimp="0.95 0.99 0.001"/>
+      <geom name="workspace_scoop_visual" type="mesh" mesh="workspace_scoop" material="workspace_scoop_mat" contype="0" conaffinity="0" mass="0"/>
+    </body>
+  </worldbody>
+</mujoco>

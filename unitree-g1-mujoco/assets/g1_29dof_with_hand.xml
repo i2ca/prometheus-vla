@@ -324,6 +324,15 @@
                           rgba="0.7 0.7 0.7 1" mesh="left_wrist_pitch_link" />
                         <geom type="mesh" rgba="0.7 0.7 0.7 1" mesh="left_wrist_pitch_link" />
                         <body name="left_wrist_yaw_link" pos="0.046 0 0">
+                          <camera name="left_wrist_camera" pos="0.02 0 0.075"
+                            xyaxes="-0.25882 -0.96593 0.00000 0.25000 -0.06699 0.96593"
+                            fovy="42.5"/>
+                          <geom name="left_d435_body" type="box" size="0.0125 0.045 0.0125"
+                            pos="0.02 0 0.075" axisangle="0 0 1 -0.2618"
+                            rgba="0.55 0.55 0.57 1" contype="0" conaffinity="0" density="0"/>
+                          <geom name="left_d435_mount" type="box" size="0.012 0.02 0.008"
+                            pos="0.02 0 0.038" rgba="0.08 0.08 0.08 1"
+                            contype="0" conaffinity="0" density="0"/>
                           <inertial pos="0.0885506 0.00212216 -0.000374562"
                             quat="0.487149 0.493844 0.513241 0.505358" mass="0.457415"
                             diaginertia="0.00105989 0.000895419 0.000323842" />
@@ -475,6 +484,15 @@
                           rgba="0.7 0.7 0.7 1" mesh="right_wrist_pitch_link" />
                         <geom type="mesh" rgba="0.7 0.7 0.7 1" mesh="right_wrist_pitch_link" />
                         <body name="right_wrist_yaw_link" pos="0.046 0 0">
+                          <camera name="right_wrist_camera" pos="0.02 0 0.075"
+                            xyaxes="0.25882 -0.96593 0.00000 0.25000 0.06699 0.96593"
+                            fovy="42.5"/>
+                          <geom name="right_d435_body" type="box" size="0.0125 0.045 0.0125"
+                            pos="0.02 0 0.075" axisangle="0 0 1 0.2618"
+                            rgba="0.55 0.55 0.57 1" contype="0" conaffinity="0" density="0"/>
+                          <geom name="right_d435_mount" type="box" size="0.012 0.02 0.008"
+                            pos="0.02 0 0.038" rgba="0.08 0.08 0.08 1"
+                            contype="0" conaffinity="0" density="0"/>
                           <inertial pos="0.0885506 -0.00212216 0.000573742"
                             quat="0.507224 0.511377 0.494292 0.486717" mass="0.457415"
                             diaginertia="0.0010598 0.000895373 0.0003238" />
