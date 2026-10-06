@@ -34,7 +34,7 @@ def rpy_to_R(a, b, c):
 
 
 class Sim:
-    def __init__(self, cena):
+    def __init__(self, cena, objeto="copo"):
         self.m = m = mujoco.MjModel.from_xml_path(str(cena)); self.d = mujoco.MjData(m)
         self.act = {m.joint(m.actuator_trnid[i, 0]).name: i for i in range(m.nu)}
         self.qadr = np.array([m.jnt_qposadr[m.actuator_trnid[i, 0]] for i in range(m.nu)])
@@ -43,7 +43,7 @@ class Sim:
         for jn, i in self.act.items():
             if "hand" in jn: self.kp[i], self.kd[i] = 8, 0.3
             if jn in BRACO: k = BRACO.index(jn) % 7; self.kp[i], self.kd[i] = KP_BRACO[k], KD_BRACO[k]
-        self.copo = m.body("copo").id
+        self.copo = m.body(objeto).id   # objeto cuja subida e contatos de dedo são medidos
         self.mao_dir = {b for b in range(m.nbody) if m.body(b).name.startswith("right_hand")}
 
     def q(self, nomes): return np.array([self.d.qpos[self.qadr[self.act[j]]] for j in nomes])

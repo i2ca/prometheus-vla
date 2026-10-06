@@ -35,3 +35,14 @@ python render_video.py resultados/ep000_d6_s15_gravado.npz resultados/ep000_d6_s
 | 0, 20, 50, 79 | auto | 0,23 a 0,27 | 0,16 a 0,31 | 0,020 a 0,024 |
 
 Em replay o Ψ0 não bate a referência ingênua: depende do prefixo RTC e, realimentando a própria previsão sobre observações que não reagem a ela, trava numa pose. Só malha fechada decide. Números em `resultados/resultados_rtc.jsonl`.
+
+## Malha fechada no MuJoCo
+
+Cena `../cena/cena_task3.xml` (gerada por `../cena/gera_cena_task3.py`): mesa branca com a garrafa à frente e, à direita, mesa de madeira com bandeja, caneca e copinhos, como nos episódios. O robô começa na pose média do 1o quadro dos 80 episódios. Duas mãos e dois braços ativos; as pernas não são simuladas: a base segue vx, vy (com os limiares do cliente oficial) e o yaw alvo (a 0,5 rad/s), como um AMO ideal.
+
+```bash
+PSI0_REPO=<clone do Psi0> PSI0_CKPT=<pasta do checkpoint> CUDA_VISIBLE_DEVICES=1 <clone>/.venv-psi/bin/python servidor_task3.py 8778
+MUJOCO_GL=egl python rodar_mujoco_task3.py --out saida/t3_01 --blocos 80
+```
+
+Resultado (06/10/2026): não pega a garrafa. Gira até -52° na direção da bandeja com as mãos vazias, a 29 cm ou mais da garrafa. O 1o bloco já erra mesmo com o quadro real do treino (yaw -0,10 contra 0, cotovelo direito 0,06 contra 0,42); com a imagem simulada o yaw vai a -0,36.
