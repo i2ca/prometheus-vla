@@ -42,9 +42,7 @@ class Sim:
         self.kp, self.kd, self.q_des = np.full(m.nu, 200.0), np.full(m.nu, 5.0), np.zeros(m.nu)
         for jn, i in self.act.items():
             if "hand" in jn: self.kp[i], self.kd[i] = 8, 0.3
-            for s in ("left", "right"):
-                for k, j in enumerate(("shoulder_pitch", "shoulder_roll", "shoulder_yaw", "elbow", "wrist_roll", "wrist_pitch", "wrist_yaw")):
-                    if jn == f"{s}_{j}_joint": self.kp[i], self.kd[i] = KP_BRACO[k], KD_BRACO[k]
+            if jn in BRACO: k = BRACO.index(jn) % 7; self.kp[i], self.kd[i] = KP_BRACO[k], KD_BRACO[k]
         self.copo = m.body("copo").id
         self.mao_dir = {b for b in range(m.nbody) if m.body(b).name.startswith("right_hand")}
 

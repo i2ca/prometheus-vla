@@ -36,11 +36,9 @@
     <texture type="2d" colorspace="auto" name="groundplane" builtin="checker" mark="edge" rgb1="0.25 0.3 0.35" rgb2="0.15 0.2 0.25" markrgb="0.8 0.8 0.8" width="300" height="300"/>
     <texture type="2d" colorspace="linear" name="pote_tex" file="246290_pote_tex.png"/>
     <texture type="2d" colorspace="linear" name="tampa_tex" file="1110ab_tampa_tex.png"/>
-    <texture type="2d" colorspace="linear" name="scoop_tex" file="05aeb5_scoop_tex.png"/>
     <material name="groundplane" texture="groundplane" texrepeat="5 5" texuniform="true" reflectance="0.1"/>
     <material name="pote_mat" texture="pote_tex" specular="0.3" shininess="0.3"/>
     <material name="tampa_mat" texture="tampa_tex" specular="0.3" shininess="0.3"/>
-    <material name="scoop_mat" texture="scoop_tex" specular="0.3" shininess="0.3"/>
     <material name="ceramica_branca" specular="0.45" shininess="0.6" reflectance="0.02" rgba="0.93 0.93 0.91 1"/>
     <material name="aco_preto" specular="0.35" shininess="0.4" rgba="0.07 0.07 0.08 1"/>
     <material name="algodao" specular="0.02" shininess="0" rgba="0.92 0.91 0.87 1"/>
@@ -97,7 +95,6 @@
     <mesh name="right_hand_middle_1_link" content_type="model/stl" file="092942_right_hand_middle_1_link.STL"/>
     <mesh name="right_hand_index_0_link" content_type="model/stl" file="4a7dc3_right_hand_index_0_link.STL"/>
     <mesh name="right_hand_index_1_link" content_type="model/stl" file="4d65f4_right_hand_index_1_link.STL"/>
-    <mesh name="coador_col00" content_type="model/obj" file="aa4ed2_coador_col00.obj"/>
     <mesh name="coador_col01" content_type="model/obj" file="4a2941_coador_col01.obj"/>
     <mesh name="coador_col02" content_type="model/obj" file="03af0e_coador_col02.obj"/>
     <mesh name="coador_col03" content_type="model/obj" file="cb3566_coador_col03.obj"/>
@@ -130,11 +127,9 @@
     <mesh name="pote_col01" content_type="model/obj" file="4ffc3f_pote_col01.obj" scale="0.859 0.859 1"/>
     <mesh name="pote_col02" content_type="model/obj" file="4f6271_pote_col02.obj" scale="0.859 0.859 1"/>
     <mesh name="pote_col03" content_type="model/obj" file="84229a_pote_col03.obj" scale="0.859 0.859 1"/>
-    <mesh name="pote_col04" content_type="model/obj" file="a5d059_pote_col04.obj" scale="0.859 0.859 1"/>
     <mesh name="pote_col05" content_type="model/obj" file="44d068_pote_col05.obj" scale="0.859 0.859 1"/>
     <mesh name="pote_col06" content_type="model/obj" file="909075_pote_col06.obj" scale="0.859 0.859 1"/>
     <mesh name="pote_col07" content_type="model/obj" file="d2a224_pote_col07.obj" scale="0.859 0.859 1"/>
-    <mesh name="pote_col08" content_type="model/obj" file="45fa49_pote_col08.obj" scale="0.859 0.859 1"/>
     <mesh name="pote_col09" content_type="model/obj" file="368b4d_pote_col09.obj" scale="0.859 0.859 1"/>
     <mesh name="pote_col10" content_type="model/obj" file="79e5e8_pote_col10.obj" scale="0.859 0.859 1"/>
     <mesh name="pote_col11" content_type="model/obj" file="31f616_pote_col11.obj" scale="0.859 0.859 1"/>
@@ -145,10 +140,8 @@
     <mesh name="pote_col16" content_type="model/obj" file="0780fb_pote_col16.obj" scale="0.859 0.859 1"/>
     <mesh name="pote_col17" content_type="model/obj" file="d507e4_pote_col17.obj" scale="0.859 0.859 1"/>
     <mesh name="pote_col18" content_type="model/obj" file="916361_pote_col18.obj" scale="0.859 0.859 1"/>
-    <mesh name="pote_col19" content_type="model/obj" file="56243e_pote_col19.obj" scale="0.859 0.859 1"/>
     <mesh name="pote_col20" content_type="model/obj" file="a5adb0_pote_col20.obj" scale="0.859 0.859 1"/>
     <mesh name="pote_col21" content_type="model/obj" file="344963_pote_col21.obj" scale="0.859 0.859 1"/>
-    <mesh name="pote_col22" content_type="model/obj" file="93d666_pote_col22.obj" scale="0.859 0.859 1"/>
     <mesh name="pote_col23" content_type="model/obj" file="7b3cdb_pote_col23.obj" scale="0.859 0.859 1"/>
     <mesh name="tampa_visual" content_type="model/obj" file="7138f2_tampa_visual.obj" scale="0.909 0.909 1"/>
     <mesh name="tampa_col00" content_type="model/obj" file="31eaaa_tampa_col00.obj" scale="0.909 0.909 1"/>
@@ -159,19 +152,6 @@
     <mesh name="tampa_col05" content_type="model/obj" file="df2b53_tampa_col05.obj" scale="0.909 0.909 1"/>
     <mesh name="tampa_col06" content_type="model/obj" file="527337_tampa_col06.obj" scale="0.909 0.909 1"/>
     <mesh name="tampa_col07" content_type="model/obj" file="a1c8e5_tampa_col07.obj" scale="0.909 0.909 1"/>
-    <mesh name="scoop_visual" content_type="model/obj" file="51fd1f_scoop_visual.obj"/>
-    <mesh name="scoop_col00" content_type="model/obj" file="69b395_scoop_col00.obj"/>
-    <mesh name="scoop_col01" content_type="model/obj" file="f7ced2_scoop_col01.obj"/>
-    <mesh name="scoop_col02" content_type="model/obj" file="64e540_scoop_col02.obj"/>
-    <mesh name="scoop_col03" content_type="model/obj" file="e43a97_scoop_col03.obj"/>
-    <mesh name="scoop_col04" content_type="model/obj" file="afb39e_scoop_col04.obj"/>
-    <mesh name="scoop_col05" content_type="model/obj" file="40f01e_scoop_col05.obj"/>
-    <mesh name="scoop_col06" content_type="model/obj" file="180fbd_scoop_col06.obj"/>
-    <mesh name="scoop_col07" content_type="model/obj" file="18d37c_scoop_col07.obj"/>
-    <mesh name="scoop_col08" content_type="model/obj" file="d457d4_scoop_col08.obj"/>
-    <mesh name="scoop_col09" content_type="model/obj" file="852fdb_scoop_col09.obj"/>
-    <mesh name="scoop_col10" content_type="model/obj" file="82f765_scoop_col10.obj"/>
-    <mesh name="scoop_col11" content_type="model/obj" file="579d35_scoop_col11.obj"/>
     <mesh name="m_caneca" content_type="model/obj" file="ce0d55_caneca.obj"/>
     <mesh name="m_caneca_alca" content_type="model/obj" file="6d223e_caneca_alca.obj"/>
     <mesh name="m_filtro" content_type="model/obj" file="8eb04f_filtro.obj"/>

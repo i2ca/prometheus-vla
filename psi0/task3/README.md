@@ -53,9 +53,9 @@ python render_video.py resultados/ep000_d6_s15_gravado.npz resultados/ep000_d6_s
 | 79 | gravado | 0,083 | 0,030 | 0,021 |
 | 0, 20, 50, 79 | auto | 0,23 a 0,27 | 0,16 a 0,31 | 0,020 a 0,024 |
 
-Lido honestamente: em replay o Ψ0 não bate a referência ingênua. Ele depende muito do prefixo RTC (com prefixo zerado o erro vai a 0,22 a 0,28; com o gravado cai para 0,035 a 0,06 no bloco), e realimentando a própria previsão sobre observações gravadas ele trava numa pose. Replay não consegue validar uma política assim; só malha fechada (robô ou simulação da mesma cena) decide se ela faz a tarefa. O mesmo erro sem prefixo (0,18 a 0,23) sai com o carregador de treino oficial deles, então não é pré-processamento nosso. O exemplo oficial `examples/psi0/openloop_eval_simple.py` está desatualizado (a chave `raw_images` não existe mais).
+Lido honestamente: em replay o Ψ0 não bate a referência ingênua. Ele depende muito do prefixo RTC (com prefixo zerado o erro vai a 0,22 a 0,28; com o gravado cai para 0,035 a 0,06 no bloco), e realimentando a própria previsão sobre observações gravadas ele trava numa pose. Replay não consegue validar uma política assim; só malha fechada (robô ou simulação da mesma cena) decide se ela faz a tarefa. O mesmo erro sem prefixo (0,18 a 0,23) sai com o carregador de treino oficial deles, então não é pré-processamento nosso. Os números estão em `resultados/resultados_rtc.jsonl`. O exemplo oficial `examples/psi0/openloop_eval_simple.py` está desatualizado (a chave `raw_images` não existe mais).
 
-`resultados/*.npz` guarda tudo de cada episódio: ação executada a cada passo, quais passos são prefixo, blocos, ação gravada, estado, timestamp do episódio e log de cada inferência com hora de parede e latência.
+`python eval_rtc.py resultados ...` gera um `.npz` por episódio com tudo: ação executada a cada passo, quais passos são prefixo, blocos, ação gravada, estado, timestamp do episódio e log de cada inferência com hora de parede e latência.
 
 ## O que falta para o robô
 
