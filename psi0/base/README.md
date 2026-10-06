@@ -49,6 +49,6 @@ MUJOCO_GL=egl python rodar_mujoco.py --out saida/ep01 --blocos 40 --copo 0.26 -0
 - Use instruções no estilo do Humanoid Everyday (frases longas de `Psi0/assets/stats/task_description_dict.json`), por exemplo `"use the right hand to grab the handle of the kettle from the base and place it on the right side"`.
 - Saída: `qpos.npz` (qpos por passo, alvos, bloco, subida da caneca, dedos em contato), `trace.json` (estado, ações e latência de cada bloco com horário de parede) e `entradas/` (as imagens exatas enviadas ao modelo).
 
-## O que vimos (06/10/2026)
+## O que vimos
 
 Sem ajuste, nenhuma tarefa concluída. A instrução muda o comportamento (o punho difere até 27 cm entre instruções), mas ele não pega nada: com a mesa a 15 cm, na instrução da caneca o dedo médio encosta nela aos 4 s sem fechar a mão, e aos 19 s a mão esquerda derruba a jarra da base. Com a mesa colada no robô as mãos ficam perto do corpo. O próximo passo é o ajuste fino com demonstrações nesta cena.
