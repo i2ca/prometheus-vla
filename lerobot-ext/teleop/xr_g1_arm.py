@@ -413,6 +413,20 @@ class XRG1Arm(Teleoperator):
             rw[:3, 3] = alpha * t_now_r + (1.0 - alpha) * t_prev[1]
         self._wrist_filt_t = (t_now_l, t_now_r)
 
+    def _update_sim_controller_hands(self, tele_data) -> None:
+        if not self.config.is_simulation:
+            return
+        from sim_hand_control import SimulationHandControl
+        if not hasattr(self, "_sim_hand_control"):
+            self._sim_hand_control = SimulationHandControl(self._EMA_ALPHA)
+        left, right, signals = self._sim_hand_control.update(tele_data)
+        if not _left_arm_limp():
+            for name, value in zip(self._left_hand_names, left):
+                self.hand_joints[f"{name}.q"] = float(value)
+        for name, value in zip(self._right_hand_names, right):
+            self.hand_joints[f"{name}.q"] = float(value)
+        self.hand_joints.update(signals)
+
     def get_action(self) -> RobotAction:
         if not self._is_connected:
              raise ConnectionError("XR Teleoperator não está conectado.")
@@ -476,11 +490,15 @@ class XRG1Arm(Teleoperator):
         self.last_a_right_state = a_pressed_right
         self.last_b_right_state = b_pressed_right
 
-        # =========================
-        # 🚨 BLOQUEIO TOTAL AQUI
-        # =========================
+        # BLOQUEIO TOTAL: mantém braços, dedos e filtro no último estado.
         if not self.controller_enabled:
             return {**self.body_joints, **self.hand_joints}
+
+        # Simulation-only: update fingers only while controls are enabled.
+        hands_updated = (self.config.is_simulation and self.config.input_mode == "controller"
+                         and self.config.ee_type == "dex3" and self._has_arm_feedback)
+        if hands_updated:
+            self._update_sim_controller_hands(tele_data)
 
         # Em modo "hand": garante que as mãos estejam sendo rastreadas antes de mover.
         if self.config.input_mode == "hand":
@@ -621,7 +639,7 @@ class XRG1Arm(Teleoperator):
             # =========================================================
             # MODO 2: RASTREAMENTO POR CONTROLES (VR CONTROLLERS)
             # =========================================================
-            elif self.config.input_mode == "controller":
+            elif self.config.input_mode == "controller" and not hands_updated:
                 
                 # --- HACK DE MEMÓRIA: INJEÇÃO DE IMPEDÂNCIA (KP/KD) ---
                 if not hasattr(self, "kp_hacked"):

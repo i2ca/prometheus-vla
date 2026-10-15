@@ -103,7 +103,8 @@ class UnitreeG1Dex3Config(UnitreeG1Config):
             self.cameras = {
                 # A NOSSA ÚNICA CÂMERA RGB (HD para o VR e para a IA)
                 "head_camera": ZMQCameraConfig(
-                    server_address=self.robot_ip, port=5555, camera_name="head_camera", width=cam2_width, height=cam2_height
+                    server_address=self.robot_ip, port=5555, camera_name="head_camera", width=cam2_width, height=cam2_height,
+                    warmup_s=10 if self.is_simulation else 1
                 ),
             }
 
@@ -115,6 +116,7 @@ class UnitreeG1Dex3Config(UnitreeG1Config):
                     server_address=self.robot_ip,
                     port=5555,
                     camera_name="head_camera_depth",
+                    warmup_s=10 if self.is_simulation else 1,
                     width=cam2_width,
                     height=cam2_height,
                 )

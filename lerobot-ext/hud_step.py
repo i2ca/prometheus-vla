@@ -80,7 +80,7 @@ def _wrap(draw, text, font, width):
 
 
 @lru_cache(maxsize=32)
-def _layout(w, h, header, sub):
+def _layout(w, h, header, sub, subtitle_color=(140, 220, 255)):
     draw = ImageDraw.Draw(Image.new("RGB", (1, 1)))
     pad = max(4, round(min(w / 640, h / 480) * 12))
     width = w - 2 * pad
@@ -101,7 +101,7 @@ def _layout(w, h, header, sub):
         y, items = pad, []
         rows = [(line, font, (255, 255, 255)) for line in lines]
         if subtitle:
-            rows.append((subtitle, font_sub, (140, 220, 255)))
+            rows.append((subtitle, font_sub, subtitle_color))
         for text, face, color in rows:
             left, top, right, bottom = draw.textbbox((0, 0), text, font=face)
             items.append((text, face, color, (pad - left, y - top)))
@@ -110,6 +110,23 @@ def _layout(w, h, header, sub):
         if bar_h <= max_height and (not truncated or size == minimum):
             return bar_h, items
     return None
+
+
+def _status_style(status):
+    # Only the entire goal gets a green completion indication.
+    if status == "goal_completed":
+        return "OBJETIVO CONCLUÍDO", (18, 62, 22), (150, 255, 175), (70, 220, 100)
+    if status == "confirming_goal_completed":
+        return "CONFIRMANDO OBJETIVO", (0, 35, 55), (255, 220, 120), (0, 190, 255)
+    if status in {"completed", "confirming_completed"}:
+        return "", (0, 18, 34), (140, 220, 255), (0, 200, 255)
+    if status == "failed":
+        return "REPLANEJANDO", (15, 15, 65), (255, 170, 170), (70, 70, 240)
+    if status == "confirming_failed":
+        return "VERIFICANDO TENTATIVA", (0, 35, 55), (255, 220, 120), (0, 190, 255)
+    if status == "waiting":
+        return "AGUARDANDO EXECUÇÃO", (0, 18, 34), (140, 220, 255), (0, 200, 255)
+    return "", (0, 18, 34), (140, 220, 255), (0, 200, 255)
 
 
 class StepHud:
@@ -150,22 +167,23 @@ class StepHud:
             return frame
 
         header = f"PASSO {idx} — {desc}"
-        sub = f"({agent})" if agent else ""
+        label, background, subtitle_color, border = _status_style(step.get("status"))
+        sub = " · ".join(part for part in (label, agent) if part)
 
-        layout = _layout(w, h, header, sub)
+        layout = _layout(w, h, header, sub, subtitle_color)
         if layout is None:
             return frame
         bar_h, items = layout
         # Only convert/blend the banner, leaving the camera pixels below intact.
         banner = frame[:bar_h]
-        overlay = np.full_like(banner, (0, 18, 34))
+        overlay = np.full_like(banner, background)
         cv2.addWeighted(overlay, 0.82, banner, 0.18, 0, banner)
         img = Image.fromarray(cv2.cvtColor(banner, cv2.COLOR_BGR2RGB))
         dr = ImageDraw.Draw(img)
         for text, font, color, position in items:
             dr.text(position, text, font=font, fill=color)
         banner[:] = cv2.cvtColor(np.asarray(img), cv2.COLOR_RGB2BGR)
-        cv2.line(frame, (0, bar_h - 1), (w - 1, bar_h - 1), (0, 200, 255), 1)
+        cv2.line(frame, (0, bar_h - 1), (w - 1, bar_h - 1), border, 1)
         return frame
 
 

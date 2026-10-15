@@ -18,7 +18,8 @@
       <joint damping="0.05" armature="0.01" frictionloss="0.1"/>
     </default>
     <default class="finger_motor">
-      <joint damping="0.05" armature="0.01" frictionloss="0.1"/>
+      <!-- Simulation friction: let soft configured hand gains reopen the fingers. -->
+      <joint damping="0.05" armature="0.01" frictionloss="0.01"/>
     </default>
     <default class="d435i">
       <material specular="0" shininess="0.25"/>
@@ -239,7 +240,7 @@
 
 
           <body name="torso_link" pos="0 0 0.019">
-            <camera name="head_camera" pos="0.12 0.0 0.45" euler="0 -0.45 -1.57" fovy="43"/>
+            <camera name="head_camera" pos="0.12 0.0 0.45" euler="0 -0.45 -1.57" fovy="60"/>
 
             <camera name="head_camera_depth"    pos="0.12 0.0175 0.45" euler="0 -0.45 -1.57" fovy="58" />
             <camera name="d435i_ir_left"  pos="0.12 0.032 0.45" euler="0 -0.45 -1.57" fovy="58" />

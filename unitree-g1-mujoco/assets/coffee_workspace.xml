@@ -1,9 +1,9 @@
 <mujoco>
-  <!-- Dynamic props: textured visuals + stable approximate box colliders.
+  <!-- Dynamic props: textured visuals + approximate colliders; the dripper has an open compound collider.
        Meshes are in metres, Z up, with their bases at Z=0. -->
   <asset>
     <mesh name="workspace_chaleira" file="coffee_workspace/chaleira.obj"/>
-    <mesh name="workspace_coador" file="coffee_workspace/coador.obj"/>
+    <mesh name="workspace_coador" file="coffee_workspace/coador.obj" scale="1.5 1.5 1.5"/>
     <mesh name="workspace_pote" file="coffee_workspace/pote.obj"/>
     <mesh name="workspace_tampa" file="coffee_workspace/tampa.obj"/>
     <mesh name="workspace_scoop" file="coffee_workspace/scoop.obj"/>
@@ -18,36 +18,102 @@
     <material name="workspace_tampa_mat" texture="workspace_tampa_tex" texuniform="false" specular="0.1" shininess="0.1"/>
     <material name="workspace_scoop_mat" texture="workspace_scoop_tex" texuniform="false" specular="0.1" shininess="0.1"/>
   </asset>
+  <default>
+    <default class="coador_contact">
+      <geom rgba="0 0 0 0" group="3" mass="0" condim="4"
+        friction="1.5 0.01 0.0001" solref="0.01 1" solimp="0.95 0.99 0.001"/>
+    </default>
+  </default>
   <worldbody>
-    <body name="chaleira" pos="0.32 0.28 0.752">
+    <body name="chaleira" pos="0.52 0.30 0.752">
       <joint name="workspace_chaleira_free" type="free" damping="0.01"/>
       <geom name="workspace_chaleira_collision" type="box" size="0.110 0.08757 0.10879" pos="0 0 0.10879"
         rgba="0 0 0 0" group="3" mass="0.6" condim="4"
         friction="1.5 0.01 0.0001" solref="0.01 1" solimp="0.95 0.99 0.001"/>
       <geom name="workspace_chaleira_visual" type="mesh" mesh="workspace_chaleira" material="workspace_chaleira_mat" contype="0" conaffinity="0" mass="0"/>
     </body>
-    <body name="coador" pos="0.34 -0.22 0.752">
+    <!-- Rear stem faces away from the robot; front is open for the 78 mm cup.
+         Scale 1.5 gives 24 cm height and clearance below the funnel. -->
+    <body name="coador" pos="0.42 -0.22 0.752" quat="0 0 0 1">
       <joint name="workspace_coador_free" type="free" damping="0.01"/>
-      <geom name="workspace_coador_collision" type="box" size="0.04393 0.04278 0.080" pos="0 0 0.08"
-        rgba="0 0 0 0" group="3" mass="0.15" condim="4"
-        friction="1.5 0.01 0.0001" solref="0.01 1" solimp="0.95 0.99 0.001"/>
+      <geom name="workspace_coador_collision" class="coador_contact" type="cylinder"
+        size="0.064 0.0015" pos="0 0 0.0018" mass="0.085"/>
+      <!-- Four small pads inside the round plate give stable tabletop contact. -->
+      <geom name="workspace_coador_pad_0" class="coador_contact" type="box"
+        size="0.012 0.012 0.0015" pos="-0.03 -0.03 0.0015" mass="0.00375"/>
+      <geom name="workspace_coador_pad_1" class="coador_contact" type="box"
+        size="0.012 0.012 0.0015" pos="-0.03 0.03 0.0015" mass="0.00375"/>
+      <geom name="workspace_coador_pad_2" class="coador_contact" type="box"
+        size="0.012 0.012 0.0015" pos="0.03 -0.03 0.0015" mass="0.00375"/>
+      <geom name="workspace_coador_pad_3" class="coador_contact" type="box"
+        size="0.012 0.012 0.0015" pos="0.03 0.03 0.0015" mass="0.00375"/>
+      <geom name="workspace_coador_stem" class="coador_contact" type="capsule" size="0.0025"
+        fromto="-0.0638 0.0005 0.003 -0.0638 0.0005 0.231" mass="0.02"/>
+      <geom name="workspace_coador_funnel_0" class="coador_contact" type="capsule" size="0.0025"
+        fromto="0.000000 0.001000 0.119000 0.054000 0.003000 0.231000" mass="0.0025"/>
+      <geom name="workspace_coador_funnel_1" class="coador_contact" type="capsule" size="0.0025"
+        fromto="-0.001206 0.005500 0.119000 0.046229 0.032000 0.231000" mass="0.0025"/>
+      <geom name="workspace_coador_funnel_2" class="coador_contact" type="capsule" size="0.0025"
+        fromto="-0.004500 0.008794 0.119000 0.025000 0.053229 0.231000" mass="0.0025"/>
+      <geom name="workspace_coador_funnel_3" class="coador_contact" type="capsule" size="0.0025"
+        fromto="-0.009000 0.010000 0.119000 -0.004000 0.061000 0.231000" mass="0.0025"/>
+      <geom name="workspace_coador_funnel_4" class="coador_contact" type="capsule" size="0.0025"
+        fromto="-0.013500 0.008794 0.119000 -0.033000 0.053229 0.231000" mass="0.0025"/>
+      <geom name="workspace_coador_funnel_5" class="coador_contact" type="capsule" size="0.0025"
+        fromto="-0.016794 0.005500 0.119000 -0.054229 0.032000 0.231000" mass="0.0025"/>
+      <geom name="workspace_coador_funnel_6" class="coador_contact" type="capsule" size="0.0025"
+        fromto="-0.018000 0.001000 0.119000 -0.062000 0.003000 0.231000" mass="0.0025"/>
+      <geom name="workspace_coador_funnel_7" class="coador_contact" type="capsule" size="0.0025"
+        fromto="-0.016794 -0.003500 0.119000 -0.054229 -0.026000 0.231000" mass="0.0025"/>
+      <geom name="workspace_coador_funnel_8" class="coador_contact" type="capsule" size="0.0025"
+        fromto="-0.013500 -0.006794 0.119000 -0.033000 -0.047229 0.231000" mass="0.0025"/>
+      <geom name="workspace_coador_funnel_9" class="coador_contact" type="capsule" size="0.0025"
+        fromto="-0.009000 -0.008000 0.119000 -0.004000 -0.055000 0.231000" mass="0.0025"/>
+      <geom name="workspace_coador_funnel_10" class="coador_contact" type="capsule" size="0.0025"
+        fromto="-0.004500 -0.006794 0.119000 0.025000 -0.047229 0.231000" mass="0.0025"/>
+      <geom name="workspace_coador_funnel_11" class="coador_contact" type="capsule" size="0.0025"
+        fromto="-0.001206 -0.003500 0.119000 0.046229 -0.026000 0.231000" mass="0.0025"/>
+      <geom name="workspace_coador_rim_0" class="coador_contact" type="capsule" size="0.0025"
+        fromto="0.054000 0.003000 0.231000 0.046229 0.032000 0.231000"/>
+      <geom name="workspace_coador_rim_1" class="coador_contact" type="capsule" size="0.0025"
+        fromto="0.046229 0.032000 0.231000 0.025000 0.053229 0.231000"/>
+      <geom name="workspace_coador_rim_2" class="coador_contact" type="capsule" size="0.0025"
+        fromto="0.025000 0.053229 0.231000 -0.004000 0.061000 0.231000"/>
+      <geom name="workspace_coador_rim_3" class="coador_contact" type="capsule" size="0.0025"
+        fromto="-0.004000 0.061000 0.231000 -0.033000 0.053229 0.231000"/>
+      <geom name="workspace_coador_rim_4" class="coador_contact" type="capsule" size="0.0025"
+        fromto="-0.033000 0.053229 0.231000 -0.054229 0.032000 0.231000"/>
+      <geom name="workspace_coador_rim_5" class="coador_contact" type="capsule" size="0.0025"
+        fromto="-0.054229 0.032000 0.231000 -0.062000 0.003000 0.231000"/>
+      <geom name="workspace_coador_rim_6" class="coador_contact" type="capsule" size="0.0025"
+        fromto="-0.062000 0.003000 0.231000 -0.054229 -0.026000 0.231000"/>
+      <geom name="workspace_coador_rim_7" class="coador_contact" type="capsule" size="0.0025"
+        fromto="-0.054229 -0.026000 0.231000 -0.033000 -0.047229 0.231000"/>
+      <geom name="workspace_coador_rim_8" class="coador_contact" type="capsule" size="0.0025"
+        fromto="-0.033000 -0.047229 0.231000 -0.004000 -0.055000 0.231000"/>
+      <geom name="workspace_coador_rim_9" class="coador_contact" type="capsule" size="0.0025"
+        fromto="-0.004000 -0.055000 0.231000 0.025000 -0.047229 0.231000"/>
+      <geom name="workspace_coador_rim_10" class="coador_contact" type="capsule" size="0.0025"
+        fromto="0.025000 -0.047229 0.231000 0.046229 -0.026000 0.231000"/>
+      <geom name="workspace_coador_rim_11" class="coador_contact" type="capsule" size="0.0025"
+        fromto="0.046229 -0.026000 0.231000 0.054000 0.003000 0.231000"/>
       <geom name="workspace_coador_visual" type="mesh" mesh="workspace_coador" material="workspace_coador_mat" contype="0" conaffinity="0" mass="0"/>
     </body>
-    <body name="pote" pos="0.29 -0.34 0.752">
+    <body name="pote" pos="0.29 -0.38 0.752">
       <joint name="workspace_pote_free" type="free" damping="0.01"/>
       <geom name="workspace_pote_collision" type="box" size="0.080 0.06462 0.03821" pos="0 0 0.03821"
         rgba="0 0 0 0" group="3" mass="0.25" condim="4"
         friction="1.5 0.01 0.0001" solref="0.01 1" solimp="0.95 0.99 0.001"/>
       <geom name="workspace_pote_visual" type="mesh" mesh="workspace_pote" material="workspace_pote_mat" contype="0" conaffinity="0" mass="0"/>
     </body>
-    <body name="tampa" pos="0.48 -0.23 0.752">
+    <body name="tampa" pos="0.52 -0.38 0.752">
       <joint name="workspace_tampa_free" type="free" damping="0.01"/>
       <geom name="workspace_tampa_collision" type="box" size="0.06992 0.070 0.03222" pos="0 0 0.03222"
         rgba="0 0 0 0" group="3" mass="0.06" condim="4"
         friction="1.5 0.01 0.0001" solref="0.01 1" solimp="0.95 0.99 0.001"/>
       <geom name="workspace_tampa_visual" type="mesh" mesh="workspace_tampa" material="workspace_tampa_mat" contype="0" conaffinity="0" mass="0"/>
     </body>
-    <body name="scoop" pos="0.275 0.02 0.752">
+    <body name="scoop" pos="0.32 0.065 0.752">
       <joint name="workspace_scoop_free" type="free" damping="0.01"/>
       <geom name="workspace_scoop_collision" type="box" size="0.070 0.03605 0.01643" pos="0 0 0.01643"
         rgba="0 0 0 0" group="3" mass="0.03" condim="4"

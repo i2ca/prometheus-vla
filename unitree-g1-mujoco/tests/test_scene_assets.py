@@ -72,6 +72,30 @@ def test_astra_metadata_is_readable() -> None:
     assert cup_vertices.shape[1] == 3
 
 
+def test_teleop_objects_start_clear_of_robot_and_each_other() -> None:
+    model = load_scene("scene_43dof.xml")
+    data = mujoco.MjData(model)
+    mujoco.mj_forward(model, data)
+    props = {
+        model.body(name).id
+        for name in ("objeto_customizado", "chaleira", "coador", "pote", "tampa", "scoop")
+    }
+    robot_root = model.body("pelvis").id
+
+    def is_robot(body_id: int) -> bool:
+        while body_id:
+            if body_id == robot_root:
+                return True
+            body_id = int(model.body_parentid[body_id])
+        return False
+
+    for contact in data.contact:
+        first, second = (int(model.geom_bodyid[g]) for g in (contact.geom1, contact.geom2))
+        if first in props or second in props:
+            assert not (first in props and second in props and first != second), "Props overlap"
+            assert not (is_robot(first) or is_robot(second)), "Prop starts touching robot"
+
+
 def test_coffee_objects_settle_and_respond_to_force() -> None:
     model = load_scene("scene_43dof.xml")
     legacy = load_scene("scene_43dof_smart_ia_legacy.xml")

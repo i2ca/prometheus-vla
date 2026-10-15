@@ -16,6 +16,9 @@ Uso:
 
 import argparse
 import base64
+import datetime
+from pathlib import Path
+import math
 import json
 import os
 import sys
@@ -72,9 +75,23 @@ def main() -> int:
     parser.add_argument("--window", default="SIM_HEAD_CAM", help="titulo da janela (default SIM_HEAD_CAM)")
     parser.add_argument("--fps", type=float, default=30.0, help="taxa alvo de exibicao (default 30)")
     parser.add_argument("--roi", default=None, help="recorte central 'WxH' em pixels (ex: 400x300)")
+    parser.add_argument("--record", nargs="?", const="", default=None, metavar="VIDEO.mp4",
+                        help="grava a câmera sem HUD em MP4 (default: recordings/sim_head_DATA.mp4)")
     args = parser.parse_args()
 
-    assert args.scale > 0, "--scale deve ser > 0"
+    if not math.isfinite(args.scale) or args.scale <= 0:
+        parser.error("--scale deve ser > 0 e finito")
+    if not math.isfinite(args.fps) or args.fps <= 0:
+        parser.error("--fps deve ser > 0 e finito")
+    record_path = None
+    if args.record is not None:
+        record_path = Path(args.record) if args.record else Path("recordings") / (
+            "sim_head_" + datetime.datetime.now().strftime("%Y%m%d_%H%M%S_%f") + ".mp4")
+        if record_path.suffix.lower() != ".mp4":
+            parser.error("o arquivo de gravação deve ter extensão .mp4")
+        if record_path.exists():
+            parser.error(f"o arquivo já existe: {record_path}")
+        record_path.parent.mkdir(parents=True, exist_ok=True)
 
     ctx = zmq.Context.instance()
     endpoints = ["tcp://127.0.0.1:5558", "tcp://127.0.0.1:5555"]
@@ -116,7 +133,10 @@ def main() -> int:
     rx = 0
     shown = 0
     last_log = time.time()
-    _hud = StepHud()
+    _hud = StepHud() if record_path is None else None
+    writer = None
+    record_size = None
+    recorded = 0
 
     try:
         while True:
@@ -134,6 +154,20 @@ def main() -> int:
                 rx += 1
                 img = decode_frame(frames)
                 if img is not None:
+                    if record_path is not None:
+                        if writer is None:
+                            record_size = (img.shape[1], img.shape[0])
+                            if any(size % 2 for size in record_size):
+                                raise RuntimeError("MP4 requer dimensões pares para preservar o frame inteiro")
+                            writer = cv2.VideoWriter(str(record_path), cv2.VideoWriter_fourcc(*"mp4v"),
+                                                     args.fps, record_size)
+                            if not writer.isOpened():
+                                raise RuntimeError(f"Não foi possível abrir o MP4: {record_path}")
+                            print(f"[record] gravando: {record_path.resolve()} @ {args.fps} fps", flush=True)
+                        if (img.shape[1], img.shape[0]) != record_size:
+                            raise RuntimeError("A resolução da câmera mudou durante a gravação")
+                        writer.write(img)
+                        recorded += 1
                     if roi:
                         h, w = img.shape[:2]
                         cw, ch = roi
@@ -143,7 +177,8 @@ def main() -> int:
                     if args.scale != 1.0:
                         img = cv2.resize(img, None, fx=args.scale, fy=args.scale,
                                          interpolation=cv2.INTER_AREA)
-                    img = _hud.draw(img)
+                    if _hud is not None:
+                        img = _hud.draw(img)
                     cv2.imshow(args.window, img)
                     shown += 1
 
@@ -156,7 +191,12 @@ def main() -> int:
             if cv2.waitKey(1) & 0xFF == 27:  # ESC sai
                 break
             time.sleep(max(0.0, period - (time.perf_counter() - t0)))
+    except KeyboardInterrupt:
+        pass
     finally:
+        if writer is not None:
+            writer.release()
+            print(f"[record] salvo: {record_path.resolve()} ({recorded} frames)", flush=True)
         cv2.destroyAllWindows()
         sock.close()
         ctx.term()

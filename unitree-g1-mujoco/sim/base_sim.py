@@ -19,6 +19,7 @@ import yaml
 import os
 from .image_publish_utils import ImagePublishProcess
 from .depth_noise import DepthNoiseModel
+from .workspace_recovery import WorkspaceRecovery
 from .metric_utils import check_contact
 from .sim_utils import get_subtree_body_names
 from .unitree_sdk2py_bridge import ElasticBand, UnitreeSdk2Bridge
@@ -70,6 +71,9 @@ class DefaultEnv:
 
         # Initialize scene (defined in subclasses)
         self.init_scene()
+        self.workspace_recovery = WorkspaceRecovery(
+            self.mj_model, enabled=self.config.get("RECOVER_FALLEN_OBJECTS", False)
+        )
 
         # Setup offscreen rendering if needed (lazy init - renderers created on first use)
         self.offscreen = offscreen
@@ -440,6 +444,9 @@ class DefaultEnv:
         else:
             self.mj_data.ctrl = self.torques
         mujoco.mj_step(self.mj_model, self.mj_data)
+        recovered = self.workspace_recovery.update(self.mj_data)
+        if recovered:
+            print(f"[workspace] objetos devolvidos à mesa: {', '.join(recovered)}", flush=True)
         # self.check_self_collision()
 
         if hasattr(self, 'btn_jnt_id') and self.btn_jnt_id != -1:

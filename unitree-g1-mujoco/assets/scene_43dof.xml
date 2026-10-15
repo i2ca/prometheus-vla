@@ -7,42 +7,46 @@
   <option impratio="50" cone="elliptic" noslip_iterations="15"/>
   <statistic center="0.4 0 0.8" extent="1.5"/>
   <visual>
-    <headlight diffuse="0.6 0.6 0.6" ambient="0.3 0.3 0.3" specular="0 0 0"/>
+    <headlight active="0"/>
     <global azimuth="-130" elevation="-20" offwidth="1280" offheight="720"/>
   </visual>
   <asset>
     <texture type="skybox" builtin="gradient" rgb1="0.6 0.7 0.85" rgb2="0.2 0.25 0.35" width="256" height="1536"/>
     <texture type="2d" name="groundplane" builtin="checker" mark="edge"
       rgb1="0.25 0.3 0.35" rgb2="0.15 0.2 0.25" markrgb="0.8 0.8 0.8" width="300" height="300"/>
-    <material name="groundplane" texture="groundplane" texuniform="true" texrepeat="5 5" reflectance="0.1"/>
+    <material name="groundplane" texture="groundplane" texuniform="true" texrepeat="5 5" reflectance="0"/>
     <material name="astra_table" rgba="0.28 0.34 0.40 1"/>
     <material name="astra_table_leg" rgba="0.08 0.10 0.12 1"/>
     <material name="ceramica_branca" rgba="0.96 0.96 0.96 1" emission="0.55" specular="0.05" shininess="0.1"/>
     <mesh name="astra_cup" file="../cup.stl" scale="0.0013 0.0013 0.0013"/>
   </asset>
   <worldbody>
-    <light pos="0.5 0 2.0" dir="0 0 -1" directional="true"/>
+    <!-- Fixed diffuse lighting avoids shadow-map acne/shimmer on the tabletop. -->
+    <light name="workspace_key" pos="0.5 0 2.0" dir="0.15 0 -1" directional="true"
+      castshadow="false" ambient="0.22 0.22 0.22" diffuse="0.65 0.65 0.65" specular="0 0 0"/>
+    <light name="workspace_fill" pos="-0.5 -0.7 1.8" dir="0.6 0.5 -1" directional="true"
+      castshadow="false" ambient="0.08 0.08 0.08" diffuse="0.25 0.25 0.25" specular="0 0 0"/>
     <geom name="floor" size="0 0 0.05" type="plane" material="groundplane"/>
     <site name="com_marker" pos="0.1 0 0" size="0.05" rgba="1 0 0 1" type="sphere"/>
 
-    <!-- Astra work table: 50 x 100 cm top at 75 cm. -->
-    <body name="mesa" pos="0.45 0 0.375">
-      <geom name="geometria_mesa" type="box" size="0.25 0.5 0.375"
+    <!-- Teleop work table: 80 x 140 cm, top at 75 cm, front edge at X=0.20. -->
+    <body name="mesa" pos="0.60 0 0.375">
+      <geom name="geometria_mesa" type="box" size="0.40 0.70 0.375"
         rgba="0.28 0.34 0.40 0" friction="1 0.005 0.0001"/>
-      <geom name="table_visual" type="box" pos="0 0 0.355" size="0.25 0.5 0.020"
+      <geom name="table_visual" type="box" pos="0 0 0.355" size="0.40 0.70 0.020"
         material="astra_table" contype="0" conaffinity="0" density="0"/>
-      <geom name="table_leg_1" type="box" pos="-0.21 -0.45 -0.02" size="0.025 0.025 0.355"
+      <geom name="table_leg_1" type="box" pos="-0.36 -0.65 -0.02" size="0.025 0.025 0.355"
         material="astra_table_leg" contype="0" conaffinity="0" density="0"/>
-      <geom name="table_leg_2" type="box" pos="-0.21 0.45 -0.02" size="0.025 0.025 0.355"
+      <geom name="table_leg_2" type="box" pos="-0.36 0.65 -0.02" size="0.025 0.025 0.355"
         material="astra_table_leg" contype="0" conaffinity="0" density="0"/>
-      <geom name="table_leg_3" type="box" pos="0.21 -0.45 -0.02" size="0.025 0.025 0.355"
+      <geom name="table_leg_3" type="box" pos="0.36 -0.65 -0.02" size="0.025 0.025 0.355"
         material="astra_table_leg" contype="0" conaffinity="0" density="0"/>
-      <geom name="table_leg_4" type="box" pos="0.21 0.45 -0.02" size="0.025 0.025 0.355"
+      <geom name="table_leg_4" type="box" pos="0.36 0.65 -0.02" size="0.025 0.025 0.355"
         material="astra_table_leg" contype="0" conaffinity="0" density="0"/>
     </body>
 
     <!-- Keep the names consumed by base_sim.py and pickup tooling. -->
-    <body name="objeto_customizado" pos="0.35 -0.10 0.80">
+    <body name="objeto_customizado" pos="0.38 -0.10 0.752">
       <freejoint name="junta_livre_bloco"/>
       <geom name="copo_geom_visual" type="mesh" mesh="astra_cup"
         material="ceramica_branca" contype="0" conaffinity="0" mass="0"/>
