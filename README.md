@@ -2,6 +2,8 @@
 
 VR teleoperation, training, and deployment for the Unitree G1 humanoid robot with Dex3 hands.
 
+For MuJoCo Quest recording setup and debugging history, see [Licoes-Aprendidas.md](Licoes-Aprendidas.md).
+
 ## Quick Start
 
 ```bash

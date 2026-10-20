@@ -62,6 +62,11 @@ import warnings as _warnings
 _warnings.filterwarnings("ignore", message=r"pkg_resources is deprecated.*")
 
 import logging
+if __name__ == "__main__" and not any(arg in ("-h", "--help") for arg in sys.argv):
+    # Antes dos imports que abrem a telemetria/proxies desta própria sessão.
+    from session_ports import require_free_ports
+    require_free_ports((8012, 5555, 5558, 5557, 8765))
+
 import numpy as np
 import threading
 import time
@@ -954,14 +959,47 @@ _lr_mod.make_robot_from_config = _patched_make_robot_from_config
 # patchar o atributo do módulo basta (mesmo mecanismo da INJEÇÃO 0).
 _orig_record_loop = _lr_mod.record_loop
 
-def _patched_record_loop(*args, **kwargs):
-    events = kwargs.get("events", args[1] if len(args) > 1 else None)
-    dataset = kwargs.get("dataset", None)
+def _patched_record_loop(robot, events, fps, teleop_action_processor,
+                         robot_action_processor, robot_observation_processor,
+                         *args, **kwargs):
+    # O decorator do LeRobot esconde a assinatura; dataset e teleop vêm após os processors.
+    dataset = kwargs.get("dataset", args[0] if args else None)
     if events is not None and dataset is not None and events.get("exit_early"):
         events["exit_early"] = False
         print("\n[DEBOUNCE] ⏮️ exit_early tardio/repetido descartado no início do episódio "
               "(A apertado de novo durante o save) — evita save de episódio vazio.", flush=True)
-    return _orig_record_loop(*args, **kwargs)
+    teleop = kwargs.get("teleop", args[1] if len(args) > 1 else None)
+    build_feedback = getattr(teleop, "build_feedback", None)
+    send_feedback = getattr(teleop, "send_feedback", None)
+    timing = None
+    if dataset is not None and getattr(dataset, "root", None) is not None:
+        from recording_timing import CaptureTiming
+        timing = CaptureTiming(fps)
+        episode_index = dataset.episode_buffer["episode_index"]
+    if timing is not None or (callable(build_feedback) and callable(send_feedback)):
+        observation_processor = robot_observation_processor
+
+        def observation_with_feedback(obs):
+            # Este ponto roda após a leitura e antes do get_action, inclusive no reset.
+            if timing is not None:
+                timing.observe()
+            if callable(build_feedback) and callable(send_feedback):
+                feedback = build_feedback(obs)
+                if feedback is not None:
+                    send_feedback(feedback)
+            return observation_processor(obs)
+
+        robot_observation_processor = observation_with_feedback
+    completed = False
+    try:
+        result = _orig_record_loop(robot, events, fps, teleop_action_processor,
+                                   robot_action_processor, robot_observation_processor,
+                                   *args, **kwargs)
+        completed = True
+        return result
+    finally:
+        if timing is not None:
+            timing.save(dataset.root, episode_index, completed)
 
 _lr_mod.record_loop = _patched_record_loop
 
@@ -1046,37 +1084,6 @@ class IgnoreFPSWarningFilter(logging.Filter):
     def filter(self, record):
         return "Record loop is running slower" not in record.getMessage()
 
-def _free_stale_ports(ports=(5555, 5558, 8012, 5557, 8765)):
-    """Libera portas presas por processos órfãos de execuções anteriores.
-
-    Quando o script é morto com kill -9 (ou crasha), podem ficar órfãos segurando
-    a porta e causando 'Address already in use' na próxima execução:
-      5555 = publicador de imagens ZMQ · 5558 = stream RGB-only do VR
-      8012 = servidor Vuer
-      5557 = telemetria ao vivo (PUB) · 8765 = dashboard web (OmniView LIVE)
-    """
-    import os
-    import subprocess
-    for port in ports:
-        try:
-            out = subprocess.run(
-                ["ss", "-tlnp"], capture_output=True, text=True, timeout=5
-            ).stdout
-        except Exception:
-            return
-        for line in out.splitlines():
-            if f":{port} " not in line:
-                continue
-            for tok in line.split():
-                if tok.startswith("pid="):
-                    pid = tok.split("pid=")[1].split(",")[0]
-                    try:
-                        os.kill(int(pid), 9)
-                        print(f"[LIMPEZA] 🧹 Porta {port} liberada (matou PID órfão {pid})")
-                    except (ProcessLookupError, ValueError, PermissionError):
-                        pass
-
-
 # =========================================================================
 # 🚦 TERMINAL ENXUTO + PRÉ-FLIGHT
 # Concentra a experiência de terminal da gravação em poucas mensagens:
@@ -1132,6 +1139,8 @@ class _TermRouter:
                     self._term.write("   " + rep + "\n")
                     self._term.flush()
                     return
+            self._term.write(line + "\n")
+            self._term.flush()
 
     def flush(self):
         try:
@@ -1393,9 +1402,6 @@ if __name__ == "__main__":
         os.environ["G1_DEBUG_IO"] = _io_path
         print(f"\n[DEBUG-IO] 🐞 Gravando envio/recebimento do robô em: {_io_path}")
         print(f"[DEBUG-IO]    Analise depois com: python lerobot-ext/analyze_debug_io.py {_io_path}\n")
-
-    # Limpa portas presas por execuções anteriores que não encerraram limpo.
-    _free_stale_ports()
 
     force_sim = "--sim" in cli_args or "--simulation=true" in cli_args
     if "--sim" in sys.argv: sys.argv.remove("--sim")
@@ -1727,7 +1733,15 @@ if __name__ == "__main__":
             )
             print("[OmniView LIVE] 🖥️  Dashboard web iniciado — RGB+Depth :5555, 30 FPS — abrindo http://127.0.0.1:8765/live.html")
             print("                (G1_OMNIVIEW_RGB_ONLY=1 = RGB-only sem depth; G1_VIEWER=cv2 volta à janela OpenCV antiga)")
-    _atexit.register(lambda: _viewer_proc.poll() is None and _viewer_proc.terminate())
+    def _close_viewer():
+        if _viewer_proc.poll() is None:
+            _viewer_proc.terminate()
+            try:
+                _viewer_proc.wait(timeout=2)
+            except subprocess.TimeoutExpired:
+                _viewer_proc.kill()
+                _viewer_proc.wait(timeout=2)
+    _atexit.register(_close_viewer)
 
     # ADB connect + sensor de proximidade já foram tratados no PRÉ-FLIGHT (itens 5 e 6).
     # Aqui só abrimos o Vuer no browser do Quest (depende do --quest-ip).
@@ -1768,3 +1782,6 @@ if __name__ == "__main__":
         ui(f"❌ ERRO: {type(e).__name__}: {e}")
         ui(f"   Detalhes em: {_run_log_final if _ds_root_p.exists() else _run_log_tmp}")
         sys.exit(1)
+    finally:
+        _watchdog_stop.set()
+        _close_viewer()

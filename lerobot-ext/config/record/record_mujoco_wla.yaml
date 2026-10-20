@@ -1,0 +1,52 @@
+# RGB da cabeça e dos dois punhos; perfil exclusivo para MuJoCo.
+robot:
+  type: unitree_g1_dex3
+  is_simulation: true
+  control_mode: upper_body
+  cameras:
+    head_camera:
+      type: zmq
+      server_address: 127.0.0.1
+      camera_name: head_camera
+      port: 5555
+      width: 640
+      height: 480
+      warmup_s: 10
+    left_wrist_camera:
+      type: zmq
+      server_address: 127.0.0.1
+      camera_name: left_wrist_camera
+      port: 5555
+      width: 640
+      height: 480
+      warmup_s: 10
+    right_wrist_camera:
+      type: zmq
+      server_address: 127.0.0.1
+      camera_name: right_wrist_camera
+      port: 5555
+      width: 640
+      height: 480
+      warmup_s: 10
+
+teleop:
+  type: xr_g1_arm
+  is_simulation: true
+  zmq: true
+  input_mode: controller
+  display_mode: ego
+  ee_type: dex3
+
+dataset:
+  repo_id: felipe/mujoco_pick_up_cup
+  root: datasets/mujoco/pick_up_cup
+  push_to_hub: false
+  single_task: Pick up the white cup.
+  fps: 10
+  num_episodes: 1
+  episode_time_s: 3600
+  reset_time_s: 0
+  vcodec: h264
+  video_encoding_batch_size: 1
+
+play_sounds: false

@@ -48,6 +48,28 @@ python unitree-g1-mujoco/run_sim.py
 
 Capturas e prévias são artefatos locais: salve-as em `~/Pictures`, fora do repositório.
 
+### Gravar demonstrações para WLA
+
+Na raiz do repositório, sem outro simulador/teleop rodando:
+
+```bash
+bash lerobot-ext/start_record_mujoco_wla.sh
+```
+
+O launcher usa `g1_new`, prepara os certificados HTTPS do Quest e grava um
+episódio a 10 FPS com RGB da cabeça e dos dois punhos, sem depth. X habilita/congela
+o controle; A do controle direito salva; B descarta. Aguarde o salvamento terminar.
+Os dados ficam em `datasets/mujoco/pick_up_cup/<sessão>/`, ignorado pelo Git,
+sem modificar `recordings/`. Não há envio automático ao Hugging Face.
+
+Cada episódio gera `timing/episode_000000.json` com os tempos reais de captura.
+Antes de coletar em volume, confirme os três vídeos com o mesmo número de frames
+e `timing_ok: true` (diferença de duração de até 5%). `REVISAR ANTES DO TREINO`
+significa que o episódio deve ser inspecionado, não que os dados foram descartados.
+10 FPS é um ponto de partida, não uma garantia de desempenho: se ficar abaixo,
+reduza com `--dataset.fps=5` e valide novamente. Treino e executor devem usar a
+mesma frequência de ações; não misture episódios de 10 FPS com 30 FPS sem conversão.
+
 ### Espaço para teleoperação
 
 A mesa tem 80 × 140 cm, altura de 75 cm e borda frontal em X=0.20 m.

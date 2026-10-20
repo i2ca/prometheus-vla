@@ -6,6 +6,8 @@ import json
 import threading
 import logging
 import contextlib
+import atexit
+import socket
 import numpy as np
 from PIL import Image, ImageDraw, ImageFont
 from dataclasses import dataclass
@@ -21,6 +23,7 @@ from televuer import TeleVuerWrapper
 from teleop.robot_control.robot_arm_ik import G1_29_ArmIK
 from teleop.robot_control.hand_retargeting import HandRetargeting, HandType
 from hud_step import StepHud
+from session_ports import require_free_ports
 
 logger = logging.getLogger(__name__)
 
@@ -142,6 +145,7 @@ class XRG1Arm(Teleoperator):
         if self._is_connected:
             return
 
+        require_free_ports((8012,))
         logger.info("Iniciando conexão com o Vuer VR...")
         
         # 1. Inicia o servidor WebRTC / WebSocket do Vuer
@@ -155,36 +159,46 @@ class XRG1Arm(Teleoperator):
             webrtc=self.config.webrtc,
             webrtc_url=f"https://{self.config.img_server_ip}:60000/offer",
         )
-        
-        # 2. Inicia o Solver de Cinemática Inversa dos braços
-        logger.info("Carregando URDF e IK do Braço G1_29...")
-        self.arm_ik = G1_29_ArmIK()
+        atexit.register(self.disconnect)
+        try:
+            self._wait_for_vuer()
+            logger.info("Carregando URDF e IK do Braço G1_29...")
+            self.arm_ik = G1_29_ArmIK()
+            if self.config.ee_type == "dex3":
+                logger.info("Iniciando algoritmo de Retargeting para Dex3...")
+                self.hand_retargeter = HandRetargeting(HandType.UNITREE_DEX3)
 
-        # 3. Inicia o Retargeting Das Mãos
-        if self.config.ee_type == "dex3":
-            logger.info("Iniciando algoritmo de Retargeting para Dex3...")
-            self.hand_retargeter = HandRetargeting(HandType.UNITREE_DEX3)
+            self._video_stop.clear()
+            self._is_connected = True
+            if self.config.zmq and self.config.display_mode != "pass-through":
+                self.vr_cam_port = int(os.environ.get("G1_VR_CAM_PORT", "5558"))
+                self.vr_display_fps = float(os.environ.get("G1_VR_DISPLAY_FPS", "60"))
+                self.video_thread = threading.Thread(target=self._receive_video_feed, daemon=True)
+                self.video_render_thread = threading.Thread(target=self._render_video_feed, daemon=True)
+                self.video_thread.start()
+                self.video_render_thread.start()
+        except BaseException:
+            self.disconnect()
+            raise
 
-        self._is_connected = True
+        print(
+            "[CONTROLE VR] Servidor VR pronto. Atualize a página do Quest e entre no "
+            "modo VR nesta sessão; só então use X. Servidor pronto não significa "
+            "que os controles já estão conectados.", flush=True,
+        )
 
-        # Câmera do Quest: usa stream local RGB-only (:5558 por padrão), separado
-        # do stream completo RGB+Depth (:5555) usado pelo dataset/OmniView.
-        if self.config.zmq and self.config.display_mode != "pass-through":
-            self.vr_cam_port = int(os.environ.get("G1_VR_CAM_PORT", "5558"))
-            self.vr_display_fps = float(os.environ.get("G1_VR_DISPLAY_FPS", "60"))
-            logger.info(
-                "Conectando ao feed RGB-only do VR em %s:%d (render %.1f FPS)...",
-                self.config.img_server_ip,
-                self.vr_cam_port,
-                self.vr_display_fps,
-            )
-
-            self.video_thread = threading.Thread(target=self._receive_video_feed, daemon=True)
-            self.video_render_thread = threading.Thread(target=self._render_video_feed, daemon=True)
-            self.video_thread.start()
-            self.video_render_thread.start()
-
-        logger.info("VR Teleoperator Conectado! Visite o link do Vuer no navegador do headset.")
+    def _wait_for_vuer(self, timeout=10.0):
+        process = self.tv_wrapper.tvuer.process
+        deadline = time.monotonic() + timeout
+        while time.monotonic() < deadline:
+            if not process.is_alive():
+                raise RuntimeError("Vuer encerrou durante a inicialização; confira a porta 8012 e o HTTPS.")
+            try:
+                with socket.create_connection(("127.0.0.1", 8012), timeout=0.2):
+                    return
+            except OSError:
+                time.sleep(0.05)
+        raise TimeoutError("Vuer não abriu a porta 8012; não é seguro iniciar a teleoperação.")
 
     def _receive_video_feed(self):
         ctx = zmq.Context.instance()
@@ -232,21 +246,26 @@ class XRG1Arm(Teleoperator):
             time.sleep(max(0.0, period - (time.perf_counter() - start)))
 
     def disconnect(self) -> None:
-        if self._is_connected:
-            self._is_connected = False
-            self._video_stop.set()
-            
-            # Aguarda a thread de vídeo encerrar
-            if hasattr(self, 'video_thread') and self.video_thread.is_alive():
-                self.video_thread.join(timeout=1.0)
-            if hasattr(self, 'video_render_thread') and self.video_render_thread.is_alive():
-                self.video_render_thread.join(timeout=1.0)
-            
-            if self.tv_wrapper:
-                self.tv_wrapper.close()
-                
-            with contextlib.suppress(Exception):
-                self._latest_vr_frame = None
+        self._is_connected = False
+        self._video_stop.set()
+        for name in ("video_thread", "video_render_thread"):
+            thread = getattr(self, name, None)
+            if thread is not None and thread.is_alive():
+                thread.join(timeout=1.5)
+        wrapper, self.tv_wrapper = self.tv_wrapper, None
+        try:
+            if wrapper is not None:
+                process = wrapper.tvuer.process
+                try:
+                    wrapper.close()
+                finally:
+                    # TeleVuer só espera 0.5s; não deixar o filho segurando :8012.
+                    if process.is_alive():
+                        process.kill()
+                        process.join(timeout=2)
+        finally:
+            self._latest_vr_frame = None
+            atexit.unregister(self.disconnect)
 
     @property
     def is_connected(self) -> bool:
@@ -278,15 +297,12 @@ class XRG1Arm(Teleoperator):
     def send_feedback(self, feedback: dict[str, Any]) -> None:
         if "q" in feedback:
             self.current_arm_q = np.asarray(feedback["q"], dtype=float)[:14]
-            # Sincroniza body_joints com a pose física real: enquanto TRAVADO
-            # (controller_enabled=False), o get_action retorna esses valores como
-            # alvo → o robô fica parado na pose real. Antes o body_joints nascia
-            # zerado (linha 71) e, com o caminho lowcmd funcionando, o braço era
-            # comandado para q=0 (CAINDO na mesa) logo ao iniciar o teleop.
+            # Semeia o alvo uma vez; feedback posterior não altera a pose congelada.
             try:
                 from robot.unitree_g1.g1_utils import G1_29_JointArmIndex
-                for i, motor in enumerate(G1_29_JointArmIndex):
-                    self.body_joints[f"{motor.name}.q"] = float(self.current_arm_q[i])
+                if not self._has_arm_feedback:
+                    for i, motor in enumerate(G1_29_JointArmIndex):
+                        self.body_joints[f"{motor.name}.q"] = float(self.current_arm_q[i])
                 self._has_arm_feedback = True
             except Exception:
                 pass
@@ -304,7 +320,7 @@ class XRG1Arm(Teleoperator):
             from robot.unitree_g1.g1_utils import G1_29_JointArmIndex
             q = np.array([float(obs[f"{m.name}.q"]) for m in G1_29_JointArmIndex], dtype=float)
             dq = np.array([float(obs[f"{m.name}.dq"]) for m in G1_29_JointArmIndex], dtype=float)
-            if q.shape == (14,) and np.isfinite(q).all():
+            if q.shape == (14,) and np.isfinite(q).all() and np.isfinite(dq).all():
                 return {"q": q, "dq": dq}
         except (KeyError, TypeError, ValueError):
             # Observação ainda incompleta (ex: lowstate inicial) → sem feedback

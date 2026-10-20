@@ -140,3 +140,27 @@ def test_coffee_objects_settle_and_respond_to_force() -> None:
     assert np.isfinite(data.qpos).all()
     mujoco.mj_resetData(model, data)
     assert np.allclose(data.qpos, model.qpos0)
+
+
+def test_cup_settles_and_falls_when_unsupported() -> None:
+    model = load_scene("scene_43dof.xml")
+    model.opt.timestep = 0.004
+    data = mujoco.MjData(model)
+    qadr = int(model.joint("junta_livre_bloco").qposadr[0])
+    vadr = int(model.joint("junta_livre_bloco").dofadr[0])
+
+    def step():
+        data.qpos[:50] = model.qpos0[:50]
+        data.qvel[:49] = 0
+        mujoco.mj_step(model, data)
+
+    for _ in range(500):
+        step()
+    assert abs(data.qpos[qadr + 2] - 0.75) < 0.002
+    assert np.linalg.norm(data.qvel[vadr:vadr + 3]) < 0.01
+    data.qpos[qadr + 2] += 0.1
+    lifted_z = data.qpos[qadr + 2]
+    for _ in range(100):
+        step()
+    assert data.qpos[qadr + 2] < lifted_z - 0.05
+    assert np.isfinite(data.qpos).all()

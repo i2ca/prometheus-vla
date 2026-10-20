@@ -36,6 +36,34 @@ from .config_unitree_g1 import UnitreeG1Config
 logger = logging.getLogger(__name__)
 
 
+def connect_camera(cam, *, simulation: bool):
+    """Simulated ZMQ cameras are ready at the first frame; keep hardware warmup."""
+    if not simulation or cam.config.type != "zmq":
+        cam.connect()
+        return
+    cam.connect(warmup=False)
+    try:
+        cam.async_read(timeout_ms=cam.config.warmup_s * 1000)
+    except Exception:
+        cam.disconnect()
+        raise
+
+
+def disconnect_camera(cam):
+    """Stop the reader before the installed driver clears its stop_event/socket."""
+    if cam.config.type == "zmq":
+        if cam.stop_event is not None:
+            cam.stop_event.set()
+        if cam.thread is not None and cam.thread.is_alive():
+            # The driver's join(2s) is shorter than its default recv timeout (5s).
+            cam.thread.join(timeout=cam.timeout_ms / 1000 + 1)
+            if cam.thread.is_alive():
+                raise RuntimeError(f"Leitor de câmera não encerrou: {cam}")
+        if cam.socket is not None:
+            cam.socket.linger = 0
+    cam.disconnect()
+
+
 def left_arm_limp_enabled() -> bool:
     """True se --left-arm-limp (env G1_LEFT_ARM_LIMP) está ativo (lado esquerdo solto:
     braço juntas 15-21 + mão Dex3). Presença com valor real liga; '', '0', 'false' e
@@ -238,7 +266,8 @@ class UnitreeG1(Robot):
             
             lista_de_cameras = list(self.config.cameras.keys())
 
-            if "head_camera_depth" not in lista_de_cameras:
+            if (os.environ.get("CAMERA_EMIT_DEPTH", "1") not in ("", "0", "false", "False")
+                    and "head_camera_depth" not in lista_de_cameras):
                 lista_de_cameras.append("head_camera_depth")
             
             # Chamamos a sua função passando a lista de câmeras exigida!
@@ -264,7 +293,7 @@ class UnitreeG1(Robot):
         # Connect cameras
         for cam in self._cameras.values():
             if not cam.is_connected:
-                cam.connect()
+                connect_camera(cam, simulation=self.config.is_simulation)
 
         logger.info(f"Connected {len(self._cameras)} camera(s).")
 
@@ -362,6 +391,13 @@ class UnitreeG1(Robot):
             if self.subscribe_thread.is_alive():
                 logger.warning("Subscribe thread did not stop cleanly")
 
+        # Stop readers while the simulation publisher is still available.
+        for cam in self._cameras.values():
+            try:
+                disconnect_camera(cam)
+            except Exception:
+                logger.exception("Falha ao desconectar câmera %s", cam)
+
         # Close simulation environment
         if self.config.is_simulation and self.sim_env is not None:
             try:
@@ -382,10 +418,6 @@ class UnitreeG1(Robot):
                 logger.warning(f"Error closing sim_env: {e}")
             self.sim_env = None
             self._env_wrapper = None
-
-        # Disconnect cameras
-        for cam in self._cameras.values():
-            cam.disconnect()
 
     def get_observation(self) -> RobotObservation:
         lowstate = self._lowstate
