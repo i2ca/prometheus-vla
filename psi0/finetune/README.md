@@ -73,7 +73,18 @@ CUDA_VISIBLE_DEVICES=<gpu> PSI0_REPO=<repo do Psi0> PSI0_CKPT=<pasta da run> PSI
   python ../task3/servidor_task3.py 8779
 ```
 
-`PSI0_SEM_CORPO=1` diz ao servidor que o checkpoint usa estado de 28 ou 31 valores (sem pernas). A instrução tem de ser a mesma gravada nas demos (`info.json`, campo `instrucao`); a da etapa 2 é "the robot uses its right hand to pick up the white mug and place it under the coffee filter".
+`PSI0_SEM_CORPO=1` diz ao servidor que o checkpoint usa estado de 28 ou 31 valores (sem pernas). A instrução que vale é a do servidor (`PSI0_INSTR`); o `--instrucao` do cliente só vai para o `trace.json`. Ela tem de ser a mesma gravada nas demos (`info.json`, campo `instrucao`).
+
+Para a etapa 2 (checkpoint treinado nas demos `--humano --colocar`, mesa a 0,10 m):
+
+```bash
+CUDA_VISIBLE_DEVICES=<gpu> PSI0_REPO=<repo do Psi0> PSI0_CKPT=<pasta da run colocar> PSI0_PASSO=10000 PSI0_SEM_CORPO=1 \
+  PSI0_INSTR='the robot uses its right hand to pick up the white mug and place it under the coffee filter' \
+  python ../task3/servidor_task3.py 8781
+# no notebook:
+MUJOCO_GL=egl python ../base/rodar_mujoco.py --out saida/colocar_ep --ft --cintura --executa 15 --blocos 30 --afasta 0.10 \
+  --porta 8781 --copo 0.265 -0.17 --yaw-copo 68
+```
 
 No notebook, com túnel SSH para a porta:
 
