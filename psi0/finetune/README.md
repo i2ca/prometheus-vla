@@ -110,3 +110,8 @@ MUJOCO_GL=egl python replay_cego.py saida/demos_v3 --semente 100 --n 30 --cintur
 ## Armadilhas já encontradas
 
 A câmera da cabeça (FOV horizontal 54°) não vê a caneca em y menor ou igual a -0,22. A Dex3 fecha no plano x-y do punho e a caneca de 7,7 cm só cabe com o polegar aberto. Com cintura parada a mesa tem de ficar a 0,05 m para a mão alcançar. Girar a caneca com a mão quebra o punho em 70 a 90°, por isso a etapa 2 não gira. Ao soltar, abrir com o polegar para fora (`SOLTA`), senão ele arrasta a caneca. Avaliar sempre contra o replay cego numa região de sorteio larga: uma região de 6x7 cm não discriminava nada.
+
+## 6. Robô real
+
+`../base/rodar_real.py` fala o mesmo protocolo do `rodar_mujoco.py --ft` (servidor da etapa 5, porta 8781 por túnel) e comanda o G1 pelo `UnitreeG1Dex3`.
+É dry-run até passar `--enviar`. Os limites conhecidos (câmeras de punho, cintura, braço esquerdo) estão no topo do script. Teste sem robô: `python ../base/teste_rodar_real.py`.

@@ -99,7 +99,7 @@ def build_observation_batch(
         # HWC uint8 -> CHW float [0,1]
         return torch.from_numpy(img).to(device).permute(2, 0, 1).float().div_(255.0).unsqueeze(0)
 
-    rgb_img = obs["cam_rgb_high"]
+    rgb_img = obs.get("head_camera", obs.get("cam_rgb_high"))   # o driver atual publica "head_camera"
     depth_img = depth_camera.async_read()
 
     batch = {
