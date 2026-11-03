@@ -33,6 +33,8 @@ Sem `flash_attn` instalado o servidor usa `sdpa`.
 CUDA_VISIBLE_DEVICES=1 PSI0_REPO=<clone do Psi0> PSI0_PESOS=<pasta pesos> <clone>/.venv-psi/bin/python servidor_base.py 8777
 ```
 
+Os pesos são de jan/2026 e o código HEAD do Psi0 muda duas contas em silêncio; o servidor desfaz as duas: (1) `final_layer_norm` volta a False (cabeça legada `x*scale+shift`, `LEGACY_MODEL_CONFIG_DEFAULTS`; o servidor oficial só faz isso ao ler o `run_config.json` de um ckpt, e aqui a config vem do `.sh`) e (2) a posição volta a ser somada em todos os tokens (5236e63 passou a somar só no token de estado). `paridade_base.py` prova: em 30 quadros do Humanoid Everyday G1 a perda de flow cai de 0,70 (HEAD puro) para 0,35, idêntica bit a bit ao código de jan (57b52b1). Ao subir, imprime `pronto: final_layer_norm False ...`.
+
 Ele monta o modelo como o início do finetune deles e usa a configuração exata do pós-treino (`scripts/train/psi0/posttrain-he-psi0.sh`): estado cru (mãos Dex3 14 + braços 14), saída de 16 ações relativas normalizadas por q99 (`assets/stats/he_raw_rel_stats_combined_no_static.json`), imagem egocêntrica 240x320. Ao subir, deve imprimir `action header: 181 chaves, faltando 0, sobrando 0` e `pronto: chunk 16 dim 36 norma bounds_q99 normaliza estado False`. Escuta só em 127.0.0.1; ~8 GB de VRAM, ~0,24 s por bloco numa A100.
 
 ## 4. Cliente no MuJoCo (qualquer máquina)
@@ -51,4 +53,6 @@ MUJOCO_GL=egl python rodar_mujoco.py --out saida/ep01 --blocos 40 --copo 0.26 -0
 
 ## O que vimos
 
-Sem ajuste, nenhuma tarefa concluída. A instrução muda o comportamento (o punho difere até 27 cm entre instruções), mas ele não pega nada: com a mesa a 15 cm, na instrução da caneca o dedo médio encosta nela aos 4 s sem fechar a mão, e aos 19 s a mão esquerda derruba a jarra da base. Com a mesa colada no robô as mãos ficam perto do corpo. O próximo passo é o ajuste fino com demonstrações nesta cena.
+Antes da correção (código HEAD sem os dois ajustes), sem ajuste nenhuma tarefa concluída: a mão encostava na caneca sem fechar e derrubava a jarra.
+
+Com o servidor corrigido (06/10/2026, `g1-cup-grasp/results/psi0-base-fix/`), pose inicial do HE e ganhos do deploy, 9 rodadas de 40 s com 3 frases reais do HE (cubo, garrafa branca, chaleira): a mão direita vai até a caneca em 7 de 9 (distância mínima ≤ 15 mm), toca em 6, mas nunca envolve nem levanta. Em 6 de 9 ela inclina ou derruba a caneca (inclinação de 51 a 147°), em 1 a joga para cima (197 mm, sem dedo em contato). A melhor (garrafa_2: 3 dedos em contato por 6 s, mão fechando 0,81 rad) segura a caneca inclinada a 36° contra o lado dela e depois a derruba. Nenhum outro objeto foi derrubado. Zero-shot o base não pega a caneca; o próximo passo é o ajuste fino com demonstrações nesta cena.

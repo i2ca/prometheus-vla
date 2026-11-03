@@ -7,7 +7,7 @@
 
   <visual>
     <global azimuth="-130" elevation="-20" offwidth="1280" offheight="720"/>
-    <headlight ambient="0.36 0.36 0.38" diffuse="0.38 0.38 0.38" specular="0 0 0"/>
+    <headlight ambient="0.216 0.216 0.228" diffuse="0.228 0.228 0.228" specular="0 0 0"/>
   </visual>
 
   <default>
@@ -27,7 +27,7 @@
       <joint armature="0.01" damping="0.05" frictionloss="0.1"/>
     </default>
     <default class="finger_motor">
-      <joint armature="0.01" damping="0.05" frictionloss="0.1"/>
+      <joint armature="0.01" damping="0.05" frictionloss="0.03"/>
     </default>
   </default>
 
@@ -166,17 +166,18 @@
   </asset>
 
   <worldbody>
-    <geom name="floor" size="0 0 0.05" type="plane" material="groundplane"/>
-    <geom name="marker_red" size="0.016 0.016 0.0004" pos="0.46 -0.4 0.7505" type="box" contype="0" conaffinity="0" rgba="0.95 0.08 0.08 1" density="0"/>
-    <geom name="marker_cyan" size="0.016 0.016 0.0004" pos="0.64 0.16 0.7505" type="box" contype="0" conaffinity="0" rgba="0.05 0.95 0.95 1" density="0"/>
-    <geom name="marker_blue" size="0.016 0.016 0.0004" pos="0.62 0.44 0.7505" type="box" contype="0" conaffinity="0" rgba="0.08 0.12 0.95 1" density="0"/>
-    <geom name="marker_magenta" size="0.016 0.016 0.0004" pos="0.46 0.4 0.7505" type="box" contype="0" conaffinity="0" rgba="0.95 0.08 0.95 1" density="0"/>
+    <geom name="floor" size="0 0 0.05" type="plane" rgba="0.12 0.12 0.12 1"/>
+    <geom name="marker_red" size="0.016 0.016 0.0004" pos="0.46 -0.4 0.7505" type="box" contype="0" conaffinity="0" rgba="0 0 0 0" density="0"/>
+    <geom name="marker_cyan" size="0.016 0.016 0.0004" pos="0.64 0.16 0.7505" type="box" contype="0" conaffinity="0" rgba="0 0 0 0" density="0"/>
+    <geom name="marker_blue" size="0.016 0.016 0.0004" pos="0.62 0.44 0.7505" type="box" contype="0" conaffinity="0" rgba="0 0 0 0" density="0"/>
+    <geom name="marker_magenta" size="0.016 0.016 0.0004" pos="0.46 0.4 0.7505" type="box" contype="0" conaffinity="0" rgba="0 0 0 0" density="0"/>
+    <geom name="movel_fundo" size="0.25 0.8 0.4" pos="1.15 -0.2 0.4" type="box" contype="0" conaffinity="0" rgba="0.45 0.32 0.2 1"/>
     <camera name="view_left" quat="0.0156961 0.0123771 0.619071 0.785081" pos="0.45 1.25 1.15" fovy="40"/>
     <camera name="view_center" quat="0.552906 0.440789 0.440789 0.552906" pos="2.1 0 1.25" fovy="38"/>
     <camera name="side_view" quat="0.799007 0.599885 0.0249395 0.0332177" pos="0.45 -1.25 1.15" fovy="40"/>
     <camera name="global_view" quat="0.780989 0.469435 0.212216 0.353059" pos="1.6 -1.4 1.5"/>
-    <light pos="0.9 -0.8 2.2" dir="-0.317854 0.272446 -0.908153" diffuse="0.85 0.84 0.82" type="directional"/>
-    <light castshadow="false" pos="-0.5 1 1.8" dir="0.268328 -0.357771 -0.894427" diffuse="0.25 0.26 0.28" specular="0 0 0" type="directional"/>
+    <light pos="0.9 -0.8 2.2" dir="-0.317854 0.272446 -0.908153" diffuse="0.51 0.504 0.492" type="directional"/>
+    <light castshadow="false" pos="-0.5 1 1.8" dir="0.268328 -0.357771 -0.894427" diffuse="0.15 0.156 0.168" specular="0 0 0" type="directional"/>
     <body name="pelvis" pos="0 0 0.793">
       <inertial pos="0 0 -0.07605" quat="1 0 -0.000399148 0" mass="3.813" diaginertia="0.010549 0.0093089 0.0079184"/>
       <joint name="base_x" type="slide" damping="10000" axis="1 0 0"/>
@@ -190,35 +191,35 @@
         <inertial pos="0.002741 0.047791 -0.02606" quat="0.954862 0.293964 0.0302556 0.030122" mass="1.35" diaginertia="0.00181517 0.00153422 0.00116212"/>
         <joint name="left_hip_pitch_joint" class="leg_motor" range="-2.5307 2.8798" actuatorfrcrange="-88 88" axis="0 1 0"/>
         <geom type="mesh" contype="0" conaffinity="0" group="1" rgba="0.2 0.2 0.2 1" density="0" mesh="left_hip_pitch_link"/>
-        <geom type="mesh" rgba="0.2 0.2 0.2 1" mesh="left_hip_pitch_link"/>
+        <geom type="mesh" contype="0" conaffinity="0" rgba="0.2 0.2 0.2 1" mesh="left_hip_pitch_link"/>
         <body name="left_hip_roll_link" pos="0 0.052 -0.030465" quat="0.996179 0 -0.0873386 0">
           <inertial pos="0.029812 -0.001045 -0.087934" quat="0.977808 -1.97119e-05 0.205576 -0.0403793" mass="1.52" diaginertia="0.00254986 0.00241169 0.00148755"/>
           <joint name="left_hip_roll_joint" class="leg_motor" range="-0.5236 2.9671" actuatorfrcrange="-88 88" axis="1 0 0"/>
           <geom type="mesh" contype="0" conaffinity="0" group="1" rgba="0.7 0.7 0.7 1" density="0" mesh="left_hip_roll_link"/>
-          <geom type="mesh" rgba="0.7 0.7 0.7 1" mesh="left_hip_roll_link"/>
+          <geom type="mesh" contype="0" conaffinity="0" rgba="0.7 0.7 0.7 1" mesh="left_hip_roll_link"/>
           <body name="left_hip_yaw_link" pos="0.025001 0 -0.12412">
             <inertial pos="-0.057709 -0.010981 -0.15078" quat="0.600598 0.15832 0.223482 0.751181" mass="1.702" diaginertia="0.00776166 0.00717575 0.00160139"/>
             <joint name="left_hip_yaw_joint" class="leg_motor" range="-2.7576 2.7576" actuatorfrcrange="-88 88"/>
             <geom type="mesh" contype="0" conaffinity="0" group="1" rgba="0.7 0.7 0.7 1" density="0" mesh="left_hip_yaw_link"/>
-            <geom type="mesh" rgba="0.7 0.7 0.7 1" mesh="left_hip_yaw_link"/>
+            <geom type="mesh" contype="0" conaffinity="0" rgba="0.7 0.7 0.7 1" mesh="left_hip_yaw_link"/>
             <body name="left_knee_link" pos="-0.078273 0.0021489 -0.17734" quat="0.996179 0 0.0873386 0">
               <inertial pos="0.005457 0.003964 -0.12074" quat="0.923418 -0.0327699 0.0158246 0.382067" mass="1.932" diaginertia="0.0113804 0.0112778 0.00146458"/>
               <joint name="left_knee_joint" class="leg_motor" range="-0.087267 2.8798" actuatorfrcrange="-139 139" axis="0 1 0"/>
               <geom type="mesh" contype="0" conaffinity="0" group="1" rgba="0.7 0.7 0.7 1" density="0" mesh="left_knee_link"/>
-              <geom type="mesh" rgba="0.7 0.7 0.7 1" mesh="left_knee_link"/>
+              <geom type="mesh" contype="0" conaffinity="0" rgba="0.7 0.7 0.7 1" mesh="left_knee_link"/>
               <body name="left_ankle_pitch_link" pos="0 -9.4445e-05 -0.30001">
                 <inertial pos="-0.007269 0 0.011137" quat="0.603053 0.369225 0.369225 0.603053" mass="0.074" diaginertia="1.89e-05 1.40805e-05 6.9195e-06"/>
                 <joint name="left_ankle_pitch_joint" class="ankle_motor" range="-0.87267 0.5236" actuatorfrcrange="-50 50" axis="0 1 0"/>
                 <geom type="mesh" contype="0" conaffinity="0" group="1" rgba="0.7 0.7 0.7 1" density="0" mesh="left_ankle_pitch_link"/>
-                <geom type="mesh" rgba="0.7 0.7 0.7 1" mesh="left_ankle_pitch_link"/>
+                <geom type="mesh" contype="0" conaffinity="0" rgba="0.7 0.7 0.7 1" mesh="left_ankle_pitch_link"/>
                 <body name="left_ankle_roll_link" pos="0 0 -0.017558">
                   <inertial pos="0.026505 0 -0.016425" quat="-0.000481092 0.728482 -0.000618967 0.685065" mass="0.608" diaginertia="0.00167218 0.0016161 0.000217621"/>
                   <joint name="left_ankle_roll_joint" class="ankle_motor" range="-0.2618 0.2618" actuatorfrcrange="-50 50" axis="1 0 0"/>
                   <geom type="mesh" contype="0" conaffinity="0" group="1" rgba="0.2 0.2 0.2 1" density="0" mesh="left_ankle_roll_link"/>
-                  <geom size="0.005" pos="-0.05 0.025 -0.03" rgba="0.2 0.2 0.2 1"/>
-                  <geom size="0.005" pos="-0.05 -0.025 -0.03" rgba="0.2 0.2 0.2 1"/>
-                  <geom size="0.005" pos="0.12 0.03 -0.03" rgba="0.2 0.2 0.2 1"/>
-                  <geom size="0.005" pos="0.12 -0.03 -0.03" rgba="0.2 0.2 0.2 1"/>
+                  <geom size="0.005" pos="-0.05 0.025 -0.03" contype="0" conaffinity="0" rgba="0.2 0.2 0.2 1"/>
+                  <geom size="0.005" pos="-0.05 -0.025 -0.03" contype="0" conaffinity="0" rgba="0.2 0.2 0.2 1"/>
+                  <geom size="0.005" pos="0.12 0.03 -0.03" contype="0" conaffinity="0" rgba="0.2 0.2 0.2 1"/>
+                  <geom size="0.005" pos="0.12 -0.03 -0.03" contype="0" conaffinity="0" rgba="0.2 0.2 0.2 1"/>
                 </body>
               </body>
             </body>
@@ -229,35 +230,35 @@
         <inertial pos="0.002741 -0.047791 -0.02606" quat="0.954862 -0.293964 0.0302556 -0.030122" mass="1.35" diaginertia="0.00181517 0.00153422 0.00116212"/>
         <joint name="right_hip_pitch_joint" class="leg_motor" range="-2.5307 2.8798" actuatorfrcrange="-88 88" axis="0 1 0"/>
         <geom type="mesh" contype="0" conaffinity="0" group="1" rgba="0.2 0.2 0.2 1" density="0" mesh="right_hip_pitch_link"/>
-        <geom type="mesh" rgba="0.2 0.2 0.2 1" mesh="right_hip_pitch_link"/>
+        <geom type="mesh" contype="0" conaffinity="0" rgba="0.2 0.2 0.2 1" mesh="right_hip_pitch_link"/>
         <body name="right_hip_roll_link" pos="0 -0.052 -0.030465" quat="0.996179 0 -0.0873386 0">
           <inertial pos="0.029812 0.001045 -0.087934" quat="0.977808 1.97119e-05 0.205576 0.0403793" mass="1.52" diaginertia="0.00254986 0.00241169 0.00148755"/>
           <joint name="right_hip_roll_joint" class="leg_motor" range="-2.9671 0.5236" actuatorfrcrange="-88 88" axis="1 0 0"/>
           <geom type="mesh" contype="0" conaffinity="0" group="1" rgba="0.7 0.7 0.7 1" density="0" mesh="right_hip_roll_link"/>
-          <geom type="mesh" rgba="0.7 0.7 0.7 1" mesh="right_hip_roll_link"/>
+          <geom type="mesh" contype="0" conaffinity="0" rgba="0.7 0.7 0.7 1" mesh="right_hip_roll_link"/>
           <body name="right_hip_yaw_link" pos="0.025001 0 -0.12412">
             <inertial pos="-0.057709 0.010981 -0.15078" quat="0.751181 0.223482 0.15832 0.600598" mass="1.702" diaginertia="0.00776166 0.00717575 0.00160139"/>
             <joint name="right_hip_yaw_joint" class="leg_motor" range="-2.7576 2.7576" actuatorfrcrange="-88 88"/>
             <geom type="mesh" contype="0" conaffinity="0" group="1" rgba="0.7 0.7 0.7 1" density="0" mesh="right_hip_yaw_link"/>
-            <geom type="mesh" rgba="0.7 0.7 0.7 1" mesh="right_hip_yaw_link"/>
+            <geom type="mesh" contype="0" conaffinity="0" rgba="0.7 0.7 0.7 1" mesh="right_hip_yaw_link"/>
             <body name="right_knee_link" pos="-0.078273 -0.0021489 -0.17734" quat="0.996179 0 0.0873386 0">
               <inertial pos="0.005457 -0.003964 -0.12074" quat="0.923439 0.0345276 0.0116333 -0.382012" mass="1.932" diaginertia="0.011374 0.0112843 0.00146452"/>
               <joint name="right_knee_joint" class="leg_motor" range="-0.087267 2.8798" actuatorfrcrange="-139 139" axis="0 1 0"/>
               <geom type="mesh" contype="0" conaffinity="0" group="1" rgba="0.7 0.7 0.7 1" density="0" mesh="right_knee_link"/>
-              <geom type="mesh" rgba="0.7 0.7 0.7 1" mesh="right_knee_link"/>
+              <geom type="mesh" contype="0" conaffinity="0" rgba="0.7 0.7 0.7 1" mesh="right_knee_link"/>
               <body name="right_ankle_pitch_link" pos="0 9.4445e-05 -0.30001">
                 <inertial pos="-0.007269 0 0.011137" quat="0.603053 0.369225 0.369225 0.603053" mass="0.074" diaginertia="1.89e-05 1.40805e-05 6.9195e-06"/>
                 <joint name="right_ankle_pitch_joint" class="ankle_motor" range="-0.87267 0.5236" actuatorfrcrange="-50 50" axis="0 1 0"/>
                 <geom type="mesh" contype="0" conaffinity="0" group="1" rgba="0.7 0.7 0.7 1" density="0" mesh="right_ankle_pitch_link"/>
-                <geom type="mesh" rgba="0.7 0.7 0.7 1" mesh="right_ankle_pitch_link"/>
+                <geom type="mesh" contype="0" conaffinity="0" rgba="0.7 0.7 0.7 1" mesh="right_ankle_pitch_link"/>
                 <body name="right_ankle_roll_link" pos="0 0 -0.017558">
                   <inertial pos="0.026505 0 -0.016425" quat="0.000481092 0.728482 0.000618967 0.685065" mass="0.608" diaginertia="0.00167218 0.0016161 0.000217621"/>
                   <joint name="right_ankle_roll_joint" class="ankle_motor" range="-0.2618 0.2618" actuatorfrcrange="-50 50" axis="1 0 0"/>
                   <geom type="mesh" contype="0" conaffinity="0" group="1" rgba="0.2 0.2 0.2 1" density="0" mesh="right_ankle_roll_link"/>
-                  <geom size="0.005" pos="-0.05 0.025 -0.03" rgba="0.2 0.2 0.2 1"/>
-                  <geom size="0.005" pos="-0.05 -0.025 -0.03" rgba="0.2 0.2 0.2 1"/>
-                  <geom size="0.005" pos="0.12 0.03 -0.03" rgba="0.2 0.2 0.2 1"/>
-                  <geom size="0.005" pos="0.12 -0.03 -0.03" rgba="0.2 0.2 0.2 1"/>
+                  <geom size="0.005" pos="-0.05 0.025 -0.03" contype="0" conaffinity="0" rgba="0.2 0.2 0.2 1"/>
+                  <geom size="0.005" pos="-0.05 -0.025 -0.03" contype="0" conaffinity="0" rgba="0.2 0.2 0.2 1"/>
+                  <geom size="0.005" pos="0.12 0.03 -0.03" contype="0" conaffinity="0" rgba="0.2 0.2 0.2 1"/>
+                  <geom size="0.005" pos="0.12 -0.03 -0.03" contype="0" conaffinity="0" rgba="0.2 0.2 0.2 1"/>
                 </body>
               </body>
             </body>
@@ -318,9 +319,9 @@
                         <body name="left_wrist_yaw_link" pos="0.046 0 0">
                           <inertial pos="0.0885506 0.00212216 -0.000374562" quat="0.487149 0.493844 0.513241 0.505358" mass="0.457415" diaginertia="0.00105989 0.000895419 0.000323842"/>
                           <joint name="left_wrist_yaw_joint" class="wrist_motor" range="-1.61443 1.61443" actuatorfrcrange="-5 5"/>
-                          <geom name="left_d435_body" size="0.0125 0.045 0.0125" pos="0.02 0 0.075" quat="0.991445 0 0 -0.130526" type="box" contype="0" conaffinity="0" rgba="0.55 0.55 0.57 1" density="0"/>
-                          <geom name="left_d435_ball" size="0.006 0.012" pos="0.02 0 0.055" type="cylinder" contype="0" conaffinity="0" rgba="0.6 0.6 0.62 1" density="0"/>
-                          <geom name="left_d435_clamp" size="0.012 0.02 0.008" pos="0.02 0 0.038" type="box" contype="0" conaffinity="0" rgba="0.08 0.08 0.08 1" density="0"/>
+                          <geom name="left_d435_body" size="0.0125 0.045 0.0125" pos="0.02 0 0.075" quat="0.991445 0 0 -0.130526" type="box" contype="0" conaffinity="0" rgba="0 0 0 0" density="0"/>
+                          <geom name="left_d435_ball" size="0.006 0.012" pos="0.02 0 0.055" type="cylinder" contype="0" conaffinity="0" rgba="0 0 0 0" density="0"/>
+                          <geom name="left_d435_clamp" size="0.012 0.02 0.008" pos="0.02 0 0.038" type="box" contype="0" conaffinity="0" rgba="0 0 0 0" density="0"/>
                           <geom type="mesh" contype="0" conaffinity="0" group="1" rgba="0.055 0.055 0.06 1" density="0" mesh="left_wrist_yaw_link"/>
                           <geom type="mesh" rgba="0.055 0.055 0.06 1" mesh="left_wrist_yaw_link"/>
                           <geom pos="0.0415 0.003 0" quat="1 0 0 0" type="mesh" contype="0" conaffinity="0" group="1" rgba="0.055 0.055 0.06 1" density="0" mesh="left_hand_palm_link"/>
@@ -408,9 +409,9 @@
                         <body name="right_wrist_yaw_link" pos="0.046 0 0">
                           <inertial pos="0.0885506 -0.00212216 0.000573742" quat="0.507224 0.511377 0.494292 0.486717" mass="0.457415" diaginertia="0.0010598 0.000895373 0.0003238"/>
                           <joint name="right_wrist_yaw_joint" class="wrist_motor" range="-1.61443 1.61443" actuatorfrcrange="-5 5"/>
-                          <geom name="right_d435_body" size="0.0125 0.045 0.0125" pos="0.02 0 0.075" quat="0.991445 0 0 0.130526" type="box" contype="0" conaffinity="0" rgba="0.55 0.55 0.57 1" density="0"/>
-                          <geom name="right_d435_ball" size="0.006 0.012" pos="0.02 0 0.055" type="cylinder" contype="0" conaffinity="0" rgba="0.6 0.6 0.62 1" density="0"/>
-                          <geom name="right_d435_clamp" size="0.012 0.02 0.008" pos="0.02 0 0.038" type="box" contype="0" conaffinity="0" rgba="0.08 0.08 0.08 1" density="0"/>
+                          <geom name="right_d435_body" size="0.0125 0.045 0.0125" pos="0.02 0 0.075" quat="0.991445 0 0 0.130526" type="box" contype="0" conaffinity="0" rgba="0 0 0 0" density="0"/>
+                          <geom name="right_d435_ball" size="0.006 0.012" pos="0.02 0 0.055" type="cylinder" contype="0" conaffinity="0" rgba="0 0 0 0" density="0"/>
+                          <geom name="right_d435_clamp" size="0.012 0.02 0.008" pos="0.02 0 0.038" type="box" contype="0" conaffinity="0" rgba="0 0 0 0" density="0"/>
                           <geom type="mesh" contype="0" conaffinity="0" group="1" rgba="0.055 0.055 0.06 1" density="0" mesh="right_wrist_yaw_link"/>
                           <geom type="mesh" rgba="0.055 0.055 0.06 1" mesh="right_wrist_yaw_link"/>
                           <geom pos="0.0415 -0.003 0" quat="1 0 0 0" type="mesh" contype="0" conaffinity="0" group="1" rgba="0.055 0.055 0.06 1" density="0" mesh="right_hand_palm_link"/>
@@ -469,47 +470,48 @@
         </body>
       </body>
     </body>
-    <body name="mesa" pos="0.6 0 0.375">
-      <geom name="tampo" size="0.25 0.5 0.375" type="box" rgba="0 0 0 0"/>
+    <body name="mesa" pos="0.569 -0.239 0.405" quat="0.999406 0 0 -0.0344499">
+      <geom name="tampo" size="0.25 0.5 0.02" pos="0 0 0.355" type="box" friction="0.25 0.005 0.002" rgba="0 0 0 0"/>
       <geom name="table_visual" size="0.25 0.5 0.02" pos="0 0 0.355" type="box" contype="0" conaffinity="0" rgba="0.9 0.9 0.88 1" density="0"/>
-      <geom size="0.025 0.025 0.355" pos="-0.21 -0.45 -0.02" type="box" contype="0" conaffinity="0" rgba="0.08 0.1 0.12 1" density="0"/>
-      <geom size="0.025 0.025 0.355" pos="-0.21 0.45 -0.02" type="box" contype="0" conaffinity="0" rgba="0.08 0.1 0.12 1" density="0"/>
-      <geom size="0.025 0.025 0.355" pos="0.21 -0.45 -0.02" type="box" contype="0" conaffinity="0" rgba="0.08 0.1 0.12 1" density="0"/>
-      <geom size="0.025 0.025 0.355" pos="0.21 0.45 -0.02" type="box" contype="0" conaffinity="0" rgba="0.08 0.1 0.12 1" density="0"/>
+      <geom size="0.025 0.025 0.355" pos="-0.21 -0.45 -0.02" type="box" rgba="0.08 0.1 0.12 1" density="0"/>
+      <geom size="0.025 0.025 0.355" pos="-0.21 0.45 -0.02" type="box" rgba="0.08 0.1 0.12 1" density="0"/>
+      <geom size="0.025 0.025 0.355" pos="0.21 -0.45 -0.02" type="box" rgba="0.08 0.1 0.12 1" density="0"/>
+      <geom size="0.025 0.025 0.355" pos="0.21 0.45 -0.02" type="box" rgba="0.08 0.1 0.12 1" density="0"/>
     </body>
-    <body name="garrafa" pos="0.47 -0.13 0.75">
+    <body name="garrafa" pos="0.37 -0.14 0.78">
       <joint name="garrafa_livre" type="free"/>
-      <geom name="garrafa_corpo" size="0.0325 0.08" pos="0 0 0.08" type="cylinder" rgba="0.78 0.86 0.95 0.55" mass="0.4"/>
-      <geom name="garrafa_rotulo" size="0.033 0.02" pos="0 0 0.095" type="cylinder" contype="0" conaffinity="0" rgba="0.12 0.3 0.78 1" mass="0.005"/>
-      <geom name="garrafa_ombro" size="0.0325 0.0325 0.025" pos="0 0 0.16" type="ellipsoid" rgba="0.78 0.86 0.95 0.55" mass="0.02"/>
-      <geom name="garrafa_gargalo" size="0.0135 0.012" pos="0 0 0.19" type="cylinder" rgba="0.78 0.86 0.95 0.6" mass="0.01"/>
-      <geom name="garrafa_tampa" size="0.015 0.007" pos="0 0 0.198" type="cylinder" rgba="0.95 0.95 0.95 1" mass="0.005"/>
+      <geom name="garrafa_corpo" size="0.0325 0.08" pos="0 0 0.08" type="cylinder" condim="6" friction="0.25 0.005 0.002" rgba="0.62 0.64 0.66 0.45" mass="0.0226757"/>
+      <geom name="garrafa_rotulo" size="0.033 0.016" pos="0 0 0.095" type="cylinder" contype="0" conaffinity="0" condim="6" friction="0.25 0.005 0.002" rgba="0.92 0.92 0.94 1" mass="0.000283447"/>
+      <geom name="garrafa_ombro" size="0.0325 0.0325 0.025" pos="0 0 0.16" type="ellipsoid" condim="6" friction="0.25 0.005 0.002" rgba="0.62 0.64 0.66 0.45" mass="0.00113379"/>
+      <geom name="garrafa_gargalo" size="0.0135 0.012" pos="0 0 0.19" type="cylinder" condim="6" friction="0.25 0.005 0.002" rgba="0.62 0.64 0.66 0.45" mass="0.000566893"/>
+      <geom name="garrafa_tampa" size="0.015 0.007" pos="0 0 0.198" type="cylinder" condim="6" friction="0.25 0.005 0.002" rgba="0.93 0.93 0.95 1" mass="0.000283447"/>
+      <geom name="garrafa_faixa" size="0.0332 0.004" pos="0 0 0.113" type="cylinder" contype="0" conaffinity="0" condim="6" friction="0.25 0.005 0.002" rgba="0.12 0.3 0.78 1" mass="5.66893e-05"/>
     </body>
-    <body name="mesa2" pos="-0.1 -0.62 0">
-      <geom name="tampo2" size="0.4 0.25 0.01" pos="0 0 0.74" type="box" rgba="0.52 0.34 0.18 1"/>
+    <body name="mesa2" pos="0.25 -1.288 0">
+      <geom name="tampo2" size="0.4 0.25 0.01" pos="0 0 0.74" type="box" friction="0.25 0.005 0.002" rgba="0.52 0.34 0.18 1"/>
       <geom name="perna2_0" size="0.02 0.02 0.365" pos="-0.37 -0.22 0.365" type="box" rgba="0.15 0.12 0.1 1"/>
       <geom name="perna2_1" size="0.02 0.02 0.365" pos="-0.37 0.22 0.365" type="box" rgba="0.15 0.12 0.1 1"/>
       <geom name="perna2_2" size="0.02 0.02 0.365" pos="0.37 -0.22 0.365" type="box" rgba="0.15 0.12 0.1 1"/>
       <geom name="perna2_3" size="0.02 0.02 0.365" pos="0.37 0.22 0.365" type="box" rgba="0.15 0.12 0.1 1"/>
     </body>
-    <body name="bandeja" pos="0 -0.62 0.75">
-      <geom name="bandeja" size="0.2 0.15 0.0075" pos="0 0 0.0075" type="box" rgba="0.1 0.2 0.62 1"/>
+    <body name="bandeja" pos="0.35 -1.193 0.75">
+      <geom name="bandeja" size="0.2 0.15 0.0075" pos="0 0 0.0075" type="box" friction="0.25 0.005 0.002" rgba="0.1 0.2 0.62 1"/>
     </body>
-    <body name="caneca" pos="0 -0.6 0.765">
+    <body name="caneca" pos="0.35 -1.133 0.765">
       <joint name="caneca_livre" type="free"/>
       <geom name="caneca_vis" type="mesh" contype="0" conaffinity="0" group="1" rgba="0.8 0.86 0.7 1" density="0" mesh="m_caneca"/>
       <geom name="caneca_alca_vis" type="mesh" contype="0" conaffinity="0" group="1" rgba="0.95 0.72 0.62 1" density="0" mesh="m_caneca_alca"/>
       <geom name="caneca_col" size="0.04 0.045" pos="0 0 0.045" type="cylinder" group="3" rgba="0 0 0 0" mass="0.31"/>
     </body>
-    <body name="copinho_amarelo" pos="0.14 -0.72 0.765">
+    <body name="copinho_amarelo" pos="0.49 -1.253 0.765">
       <joint name="copinho_amarelo_livre" type="free"/>
       <geom size="0.025 0.028" pos="0 0 0.028" type="cylinder" rgba="0.95 0.78 0.1 1" mass="0.02"/>
     </body>
-    <body name="copinho_laranja" pos="0.08 -0.72 0.765">
+    <body name="copinho_laranja" pos="0.43 -1.253 0.765">
       <joint name="copinho_laranja_livre" type="free"/>
       <geom size="0.025 0.028" pos="0 0 0.028" type="cylinder" rgba="0.95 0.42 0.1 1" mass="0.02"/>
     </body>
-    <body name="brinquedo" pos="0.12 -0.53 0.765">
+    <body name="brinquedo" pos="0.47 -1.103 0.765">
       <joint name="brinquedo_livre" type="free"/>
       <geom size="0.045 0.006" pos="0 0 0.006" type="cylinder" rgba="0.15 0.62 0.3 1" mass="0.02"/>
       <geom size="0.035 0.035 0.022" pos="0 0 0.014" type="ellipsoid" rgba="0.95 0.55 0.3 1" mass="0.02"/>

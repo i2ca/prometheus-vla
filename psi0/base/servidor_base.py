@@ -15,10 +15,19 @@ from safetensors.torch import load_file
 from transformers import AutoProcessor, Qwen3VLForConditionalGeneration
 from psi.utils import parse_args_to_tyro_config, pad_to_len
 from psi.models.psi0 import Psi0Model
+import psi.models.psi0 as _psi0
+from psi.utils.utils import LEGACY_MODEL_CONFIG_DEFAULTS
 from diffusers.schedulers.scheduling_flow_match_euler_discrete import FlowMatchEulerDiscreteScheduler
 
 PORT = int(sys.argv[1]) if len(sys.argv) > 1 else 8777
 cfg = parse_args_to_tyro_config("scripts/train/psi0/posttrain-he-psi0.sh")
+# Os pesos são de jan/2026 (2601091803 / 2601131206) e o código HEAD do Psi0 muda em silêncio duas contas que eles usam
+# (paridade_base.py mede o efeito nos dados do Humanoid Everyday):
+# 1. cabeça final: final_layer_norm=True virou default; o ckpt foi treinado com a legada x*scale+shift. O servidor oficial só
+#    corrige isso ao ler o run_config.json do ckpt (load_launch_config); aqui a config vem do .sh, então aplicamos à mão.
+for k, v in LEGACY_MODEL_CONFIG_DEFAULTS.items(): setattr(cfg.model, k, v)
+# 2. posição: 5236e63 passou a somar a posição só no token de estado; o treino somava em todos os tokens [VLM..., estado].
+_psi0.ObservationProjection._add_obs_pos = lambda self, s_t, n: s_t + self.enc_pos(s_t)
 vlm = Qwen3VLForConditionalGeneration.from_pretrained(f"{B}/pre", attn_implementation="sdpa", dtype=torch.bfloat16)
 model = Psi0Model(model_cfg=cfg.model, vlm_model=vlm)
 sd = load_file(f"{B}/postpre/action_header.safetensors")
@@ -31,7 +40,7 @@ model.to("cuda:0").eval()
 field, mt = cfg.data.transform.field, cfg.data.transform.model
 from torchvision.transforms import v2
 prep = v2.Compose([mt.resize(), mt.center_crop()])
-print("pronto: chunk", cfg.model.action_chunk_size, "dim", cfg.model.action_dim, "norma", field.action_norm_type, "normaliza estado", field.normalize_state, flush=True)
+print("pronto: final_layer_norm", cfg.model.final_layer_norm, "chunk", cfg.model.action_chunk_size, "dim", cfg.model.action_dim, "norma", field.action_norm_type, "normaliza estado", field.normalize_state, flush=True)
 
 def recv(c):
     n = struct.unpack("!I", c.recv(4, socket.MSG_WAITALL))[0]; buf = b""

@@ -11,6 +11,10 @@ from PIL import Image
 sys.argv, args = sys.argv[:1], sys.argv[1:]
 from psi.deploy.serve_psi0_amo import Server
 from psi.utils import pad_to_len
+import psi.models.psi0 as _psi0
+# O checkpoint da Task 3 (jan/2026) foi treinado com a posição somada em TODOS os tokens [VLM..., estado] (código de 59b3fef);
+# o commit 5236e63 (sonic, 30/08/2026) passou a somar só no token de estado, o que derruba a política (paridade.py: perda 3,2-3,8 -> 0,3-1,8).
+_psi0.ObservationProjection._add_obs_pos = lambda self, s_t, n: s_t + self.enc_pos(s_t)
 D = Path(os.environ["PSI0_DATA"])
 out, d, s_exec, modo, eps = Path(args[0]), int(args[1]), int(args[2]), args[3], list(map(int, args[4:])); out.mkdir(parents=True, exist_ok=True)
 srv = Server(policy="psi", run_dir=Path(os.environ["PSI0_CKPT"]), ckpt_step=40000, device="cuda:0", enable_rtc=True)
@@ -18,9 +22,10 @@ lo, hi = np.array(srv.maxmin.action_min, np.float32), np.array(srv.maxmin.action
 I = "g1/pick_bottle_and_turn_and_pour_into_cup"  # o que o cliente oficial manda (deploy_psi0-rtc.sh), em minúsculas pelo servidor
 M = srv.model
 
-def obs(S_t, rpy, h):
-    o = pad_to_len(np.concatenate([S_t[:28], rpy, h]).astype(np.float32), 36, dim=0)[0]
-    return torch.from_numpy(srv.maxmin.normalize_state_func(o)[None, None].astype(np.float32)).to(srv.device)
+def obs(S_t, rpyh_norm=None):
+    o = srv.maxmin.normalize_state_func(pad_to_len(np.concatenate([S_t[:28], [0, 0, 0, 0.75]]).astype(np.float32), 36, dim=0)[0])
+    if rpyh_norm is not None: o[28:32] = rpyh_norm   # ação anterior já normalizada, sem renormalizar (oficial: replace_prev_actions_to_obs)
+    return torch.from_numpy(o[None, None].astype(np.float32)).to(srv.device)
 
 for ep in eps:
     df = pd.read_parquet(D / f"data/chunk-000/episode_{ep:06d}.parquet"); S = np.stack(df.states.values); A = np.stack(df.action.values)
@@ -29,12 +34,12 @@ for ep in eps:
     log = []; executed = np.zeros((n, 36), np.float32); prefixo = np.zeros(n, bool)
     def infer(t, prev=None):
         w = dt.datetime.now().isoformat(timespec="milliseconds"); t0 = time.perf_counter()
-        rpy, h = (np.zeros(3, np.float32), np.array([0.75], np.float32)) if prev is None else (prev[1][28:31], prev[1][31:32])
+        rpyh = None if prev is None else prev[1][28:32]
         with torch.inference_mode():
             if prev is None:
-                a = M.predict_action(observations=img(t), states=obs(S[t], rpy, h), traj2ds=None, instructions=[I], num_inference_steps=8)
+                a = M.predict_action(observations=img(t), states=obs(S[t], rpyh), traj2ds=None, instructions=[I], num_inference_steps=8)
             else:
-                a = M.predict_action_with_training_rtc_flow(observations=img(t), states=obs(S[t], rpy, h), traj2ds=None, instructions=[I],
+                a = M.predict_action_with_training_rtc_flow(observations=img(t), states=obs(S[t], rpyh), traj2ds=None, instructions=[I],
                         num_inference_steps=8, prev_actions=torch.from_numpy(prev[0][None]).to(srv.device), inference_delay=d, max_delay=8)
         a = a[0].float().cpu().numpy(); torch.cuda.synchronize()
         log.append({"t": t, "wall": w, "lat_s": round(time.perf_counter() - t0, 4)}); return a

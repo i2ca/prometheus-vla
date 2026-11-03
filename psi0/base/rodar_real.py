@@ -70,7 +70,7 @@ def rodar(robo, s, a, nomes, log=print):
             t = time.perf_counter()
             if a.enviar: robo.send_action({n: float(v) for n, v in zip(nomes, filtradas[k])})
             time.sleep(max(0, 1 / a.fps - (time.perf_counter() - t)))
-    json.dump(dict(instrucao="(vem do servidor)", cintura=a.cintura, punho=a.punho, enviar=a.enviar, executa=a.executa, trace=trace), open(f"{a.out}/trace.json", "w"))
+    json.dump(dict(cintura=a.cintura, punho=a.punho, enviar=a.enviar, executa=a.executa, trace=trace), open(f"{a.out}/trace.json", "w"))
 
 
 def main():

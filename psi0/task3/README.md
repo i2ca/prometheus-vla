@@ -18,6 +18,7 @@ CUDA_VISIBLE_DEVICES=1 serve_psi0_amo --host 0.0.0.0 --port 8014 --action_exec_h
 ## Replay
 
 `eval_rtc.py` simula o controlador RTC do servidor oficial passo a passo: replaneja a cada 15 passos com as 6 ações em fila como prefixo. `gravado` usa as ações gravadas como prefixo; `auto` usa a própria previsão. O erro conta só os passos previstos; a referência é repetir a última ação conhecida.
+`eval_sem_rtc.py` faz o replay sem RTC (um bloco a cada 15 quadros, imagem e estado do mesmo quadro). Os dois scripts e o servidor carregam a correção de `_add_obs_pos` (o checkpoint de jan/2026 espera a posição somada em todos os tokens, o HEAD do repo soma só no estado). Números de 06/10 em `resultados/resultados_rtc_v2.jsonl` e `resultados/resultados_sem_rtc.jsonl`; a tabela abaixo é anterior à correção.
 
 ```bash
 export PSI0_CKPT=<pasta do checkpoint> PSI0_DATA=<pasta do dataset>
@@ -45,4 +46,10 @@ PSI0_REPO=<clone do Psi0> PSI0_CKPT=<pasta do checkpoint> CUDA_VISIBLE_DEVICES=1
 MUJOCO_GL=egl python rodar_mujoco_task3.py --out saida/t3_01 --blocos 80
 ```
 
-Resultado (06/10/2026): não pega a garrafa. Gira até -52° na direção da bandeja com as mãos vazias, a 29 cm ou mais da garrafa. O 1o bloco já erra mesmo com o quadro real do treino (yaw -0,10 contra 0, cotovelo direito 0,06 contra 0,42); com a imagem simulada o yaw vai a -0,36.
+Resultado depois da correção de `_add_obs_pos` (06/10/2026, `results/psi0-task3-sim/t3_p*`, `t3_q*`, `t3_r*`): com a garrafa onde a cena a punha (0,37, -0,14, retroprojetada pela câmera) pega 0 de 3 (p1 levanta 10 cm e deixa cair aos 6,7 s; p2 e p3 derrubam a garrafa com os dedos aos 4,3 s). A FK do estado real no instante em que a mão fecha (80 eps, `results/psi0-task3-sim/fk_pega.py`) põe a garrafa em (0,348, -0,089); a câmera e a fita da mesa (gemeo/yaw_fita.json, 0,332, -0,128) dão 4 a 8 cm à direita disso, e a causa da diferença não está explicada (yaw real antes da pega é -3°). Adotei a FK porque a política é em espaço de juntas e leva a mão aonde a mão real foi. Com `--garrafa 0.348,-0.089` (6 rodadas, q e r) pega, levanta, gira e inclina sobre a bandeja 6 de 6; boca dentro do raio da caneca 4 de 6; solta de pé 4 de 6; sequência completa 3 de 6 (q1, q2, r2). `--contato-rigido` baixa a penetração dos dedos de 5 mm para 1,3 mm (p50). Sem esses dois flags o cliente ainda reproduz a falha. Melhor: t3_r2 (`t3_r2/lado_a_lado_r2.mp4`). O sim vai 1,5 a 4 s à frente do real.
+
+```bash
+MUJOCO_GL=egl python rodar_mujoco_task3.py --out saida/t3_r --blocos 80 --amo --atraso --garrafa 0.348,-0.089 --contato-rigido
+```
+
+Antes da correção: não pega a garrafa. Gira até -52° na direção da bandeja com as mãos vazias, a 29 cm ou mais da garrafa. O 1o bloco já erra mesmo com o quadro real do treino (yaw -0,10 contra 0, cotovelo direito 0,06 contra 0,42); com a imagem simulada o yaw vai a -0,36.
