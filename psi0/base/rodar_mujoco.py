@@ -119,20 +119,21 @@ def janela_ao_vivo(cena, dx, fila):
     import time, queue, mujoco.viewer
     m = mujoco.MjModel.from_xml_path(str(cena)); d = mujoco.MjData(m); afasta(m, d, dx)
     buf, fim, relogio, engasgos = [], False, None, 0
-    with mujoco.viewer.launch_passive(m, d) as v:
-        while v.is_running() and not (fim and not buf):
-            try:
-                while True:
-                    q = fila.get(timeout=0.005) if not buf else fila.get_nowait()
-                    if q is None: fim = True
-                    else: buf.append(q)
-            except queue.Empty: pass
-            if relogio is None and (len(buf) >= 30 or fim): relogio = time.monotonic()
-            if relogio is not None and time.monotonic() >= relogio:
-                if buf: d.qpos[:] = buf.pop(0); mujoco.mj_forward(m, d); v.sync(); relogio += 1 / 30
-                elif not fim: engasgos += 1; relogio = time.monotonic() + 1 / 30   # o cliente não acompanhou: a janela espera
-            time.sleep(0.002)
-        time.sleep(1.5 if v.is_running() else 0)
+    v = mujoco.viewer.launch_passive(m, d)
+    while v.is_running() and not (fim and not buf):
+        try:
+            while True:
+                q = fila.get(timeout=0.005) if not buf else fila.get_nowait()
+                if q is None: fim = True
+                else: buf.append(q)
+        except queue.Empty: pass
+        if relogio is None and (len(buf) >= 30 or fim): relogio = time.monotonic()
+        if relogio is not None and time.monotonic() >= relogio:
+            if buf: d.qpos[:] = buf.pop(0); mujoco.mj_forward(m, d); v.sync(); relogio += 1 / 30
+            elif not fim: engasgos += 1; relogio = time.monotonic() + 1 / 30   # o cliente não acompanhou: a janela espera
+        time.sleep(0.002)
+    time.sleep(1.5 if v.is_running() else 0)
+    if v.is_running(): v.close()   # fechar de novo uma janela que o usuário já fechou pode travar
     print(f"janela: {engasgos} esperas por falta de quadro", flush=True)
 
 
@@ -210,10 +211,12 @@ def main():
             SUB.append(1000 * float(d.xpos[sim.copo][2] - z0)); DED.append(sim.dedos_no_copo())
             INC.append(float(np.degrees(np.arccos(np.clip(d.xmat[sim.copo][8], -1, 1)))))
         print(f"bloco {b:02d} lat {r['lat_s']:.2f}s | caneca subiu {SUB[-1]:.1f} mm | dedos {DED[-1]}", flush=True)
-    if janela: fila.put(None); janela.join()   # deixa a janela terminar de tocar a rodada
     if a.ft: final = render_multicam(CENA, d.qpos.copy(), a.afasta)["head"]
     else: rend.update_scene(d, camera="head_camera"); final = rend.render().copy()
     cv2.imwrite(f"{a.out}/entradas/final_head.jpg", final[:, :, ::-1], [cv2.IMWRITE_JPEG_QUALITY, 92])   # estado depois do último bloco
+    if janela:   # deixa a janela terminar de tocar a rodada, mas nunca prende o resultado
+        fila.put(None); janela.join(timeout=10)
+        if janela.is_alive(): janela.kill()
     pico = int(np.argmax(SUB))
     np.savez_compressed(f"{a.out}/qpos.npz", qpos=np.array(Q), t=np.array(T), alvo=np.array(ALVO), chunk=np.array(CH),
                         subida_mm=np.array(SUB), dedos=np.array(DED), inclinacao_deg=np.array(INC), juntas=np.array(JUNTAS))
