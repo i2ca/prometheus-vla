@@ -1,7 +1,7 @@
 #!/bin/bash
 # Sobe o servidor do Ψ0 v24 (colocar a caneca sob o coador) na atena, GPU 0, porta 8781.
-# Uso, do notebook: ssh hercules@atena 'bash -s' < psi0/serve_v24.sh
-# Depois: ssh -f -N -L 8781:127.0.0.1:8781 hercules@atena
+# Uso, do notebook (atena-psi0 = alias no ~/.ssh/config): ssh atena-psi0 'bash -s' < psi0/serve_v24.sh
+# Depois: ssh -f -N -L 8781:127.0.0.1:8781 atena-psi0
 set -e
 D=/data/models/prometheus/psi0; LOG=/tmp/serve_v24_$USER.log
 if ss -ltn | grep -q ':8781 '; then echo "porta 8781 já ocupada, servidor provavelmente no ar"; exit 0; fi
