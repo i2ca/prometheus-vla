@@ -139,7 +139,10 @@ def main():
     ap.add_argument("--ft", action="store_true", help="checkpoint do ajuste fino (../finetune): ações absolutas em blocos de 30; use --executa 15 --afasta 0.05")
     ap.add_argument("--cintura", action="store_true", help="com --ft: estado e ação com a cintura (31 valores: 28 + roll, pitch, yaw)")
     ap.add_argument("--yaw-copo", type=float, default=90, help="giro da caneca em graus (90 = alça para o robô, como na cena)")
+    ap.add_argument("--semente", type=int, help="sorteia a caneca na região de treino da v24 (x 0,26-0,27; y -0,18 a -0,16; yaw 90 ± 20), no lugar de --copo/--yaw-copo")
     a = ap.parse_args(); os.makedirs(f"{a.out}/entradas", exist_ok=True)
+    if a.semente is not None:
+        rng = np.random.default_rng(a.semente); a.copo = [float(rng.uniform(0.26, 0.27)), float(rng.uniform(-0.18, -0.16))]; a.yaw_copo = float(90 + rng.uniform(-20, 20))
     sim = Sim(CENA); m, d = sim.m, sim.d
     pose = list(POSE0.items()) if a.pose == "antiga" else list(zip(JUNTAS, POSE_HE))
     rend, n_sub = monta(sim, dict(pose), a.copo, a.afasta, ganhos=a.ganhos, yaw_copo=np.radians(a.yaw_copo), render=not a.ft)
@@ -169,11 +172,15 @@ def main():
             SUB.append(1000 * float(d.xpos[sim.copo][2] - z0)); DED.append(sim.dedos_no_copo())
             INC.append(float(np.degrees(np.arccos(np.clip(d.xmat[sim.copo][8], -1, 1)))))
         print(f"bloco {b:02d} lat {r['lat_s']:.2f}s | caneca subiu {SUB[-1]:.1f} mm | dedos {DED[-1]}", flush=True)
+    if a.ft: final = render_multicam(CENA, d.qpos.copy(), a.afasta)["head"]
+    else: rend.update_scene(d, camera="head_camera"); final = rend.render().copy()
+    cv2.imwrite(f"{a.out}/entradas/final_head.jpg", final[:, :, ::-1], [cv2.IMWRITE_JPEG_QUALITY, 92])   # estado depois do último bloco
+    pico = int(np.argmax(SUB))
     np.savez_compressed(f"{a.out}/qpos.npz", qpos=np.array(Q), t=np.array(T), alvo=np.array(ALVO), chunk=np.array(CH),
                         subida_mm=np.array(SUB), dedos=np.array(DED), inclinacao_deg=np.array(INC), juntas=np.array(JUNTAS))
     json.dump(dict(instrucao=a.instrucao, copo=a.copo, yaw_copo=a.yaw_copo, ft=a.ft, cintura=a.cintura, afasta=a.afasta, pose=a.pose, ganhos=a.ganhos, blocos=a.blocos, executa=a.executa, trace=log), open(f"{a.out}/trace.json", "w"))
     cod = d.xpos[m.body("coador").id]; alvo = np.array([cod[0] - 0.006, cod[1] - 0.020]); erro_colocar = 1000 * float(np.linalg.norm(d.xpos[sim.copo][:2] - alvo))
-    print(json.dumps(dict(subida_max_mm=max(SUB), subida_final_mm=SUB[-1], dedos_final=DED[-1], inclinacao_max_deg=max(INC), inclinacao_final_deg=INC[-1], erro_colocar_mm=erro_colocar, passos=len(Q), latencia_mediana_s=float(np.median([x["latencia_s"] for x in log])))))
+    print(json.dumps(dict(subida_max_mm=max(SUB), subida_final_mm=SUB[-1], dedos_final=DED[-1], dedos_no_pico=DED[pico], inclinacao_no_pico_deg=INC[pico], inclinacao_max_deg=max(INC), inclinacao_final_deg=INC[-1], erro_colocar_mm=erro_colocar, passos=len(Q), copo=a.copo, yaw_copo=a.yaw_copo, latencia_mediana_s=float(np.median([x["latencia_s"] for x in log])))))
 
 
 if __name__ == "__main__":
