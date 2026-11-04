@@ -105,25 +105,57 @@ def monta(sim, pose, copo, dx, ganhos="deploy", yaw_copo=np.pi / 2, render=True)
     return (mujoco.Renderer(m, 480, 640) if render else None), int(round((1 / 30) / m.opt.timestep))
 
 
-def render_camera(cena, qpos, nome, dx, conn):
-    """Renderiza uma vista em processo próprio para impedir mistura de buffers EGL entre câmeras."""
-    m = mujoco.MjModel.from_xml_path(str(cena)); d = mujoco.MjData(m); afasta(m, d, dx); d.qpos[:] = qpos; mujoco.mj_forward(m, d)
-    r = mujoco.Renderer(m, 480, 640); r.update_scene(d, camera=f"{nome}_camera"); conn.send(r.render()); conn.close(); r.close()
+def render_camera(cena, nome, dx, conn):
+    """Uma câmera por processo (sem mistura de buffers EGL), que carrega a cena uma vez e renderiza cada qpos que receber."""
+    m = mujoco.MjModel.from_xml_path(str(cena)); d = mujoco.MjData(m); afasta(m, d, dx); r = mujoco.Renderer(m, 480, 640)
+    while (qpos := conn.recv()) is not None:
+        d.qpos[:] = qpos; mujoco.mj_forward(m, d); r.update_scene(d, camera=f"{nome}_camera"); conn.send(r.render())
+    r.close()
+
+
+def janela_ao_vivo(cena, dx, fila):
+    """Visualizador do MuJoCo em processo próprio (spawn, para não contaminar o EGL das câmeras). Toca os qpos no tempo da
+    simulação, 30 por segundo, depois de juntar 1 s de folga: a espera pela inferência não aparece como robô parado."""
+    import time, queue, mujoco.viewer
+    m = mujoco.MjModel.from_xml_path(str(cena)); d = mujoco.MjData(m); afasta(m, d, dx)
+    buf, fim, relogio, engasgos = [], False, None, 0
+    with mujoco.viewer.launch_passive(m, d) as v:
+        while v.is_running() and not (fim and not buf):
+            try:
+                while True:
+                    q = fila.get(timeout=0.005) if not buf else fila.get_nowait()
+                    if q is None: fim = True
+                    else: buf.append(q)
+            except queue.Empty: pass
+            if relogio is None and (len(buf) >= 30 or fim): relogio = time.monotonic()
+            if relogio is not None and time.monotonic() >= relogio:
+                if buf: d.qpos[:] = buf.pop(0); mujoco.mj_forward(m, d); v.sync(); relogio += 1 / 30
+                elif not fim: engasgos += 1; relogio = time.monotonic() + 1 / 30   # o cliente não acompanhou: a janela espera
+            time.sleep(0.002)
+        time.sleep(1.5 if v.is_running() else 0)
+    print(f"janela: {engasgos} esperas por falta de quadro", flush=True)
+
+
+_CAMERAS = {}
 
 
 def render_multicam(cena, qpos, dx):
-    nomes = ("head", "left_wrist", "right_wrist"); ps = []; conns = []
-    for nome in nomes:
-        pai, filho = mp.Pipe(False); p = mp.Process(target=render_camera, args=(cena, qpos, nome, dx, filho)); p.start(); filho.close(); ps.append(p); conns.append(pai)
-    imagens = {nome: conn.recv() for nome, conn in zip(nomes, conns)}
-    for p in ps: p.join()
-    if any(p.exitcode for p in ps): raise RuntimeError("falha ao renderizar câmeras")
-    return imagens
+    """As 3 câmeras da policy. Os processos ficam vivos entre chamadas (antes, recarregar a cena 3 vezes por bloco custava ~1 s)."""
+    nomes = ("head", "left_wrist", "right_wrist")
+    if (cena, dx) not in _CAMERAS:
+        conns = []
+        for nome in nomes:
+            pai, filho = mp.Pipe(); p = mp.Process(target=render_camera, args=(cena, nome, dx, filho), daemon=True); p.start(); conns.append(pai)
+        _CAMERAS[(cena, dx)] = conns
+    conns = _CAMERAS[(cena, dx)]
+    for conn in conns: conn.send(qpos)
+    return {nome: conn.recv() for nome, conn in zip(nomes, conns)}
 
 
 def pede(s, imagens, est, instr, ft_k=None):
     """Base: 16 deltas. Com ft_k (ajuste fino servido por ../task3/servidor_task3.py): 30 ações absolutas, RTC com prefixo do bloco anterior."""
-    msg = {"images": imagens, "state": est, "primeiro": ft_k == 0, "k": ft_k} if ft_k is not None else {"image": imagens["head"], "state": est, "instruction": instr, "steps": 10}
+    jpeg = {n: cv2.imencode(".jpg", im[:, :, ::-1], [cv2.IMWRITE_JPEG_QUALITY, 95])[1].tobytes() for n, im in imagens.items()}   # ~20x menos bytes no túnel
+    msg = {"images": jpeg, "state": est, "primeiro": ft_k == 0, "k": ft_k} if ft_k is not None else {"image": imagens["head"], "state": est, "instruction": instr, "steps": 10}
     b = pickle.dumps(msg); s.sendall(struct.pack("!I", len(b)) + b)
     n = struct.unpack("!I", s.recv(4, socket.MSG_WAITALL))[0]; buf = b""
     while len(buf) < n: buf += s.recv(n - len(buf))
@@ -140,6 +172,7 @@ def main():
     ap.add_argument("--cintura", action="store_true", help="com --ft: estado e ação com a cintura (31 valores: 28 + roll, pitch, yaw)")
     ap.add_argument("--yaw-copo", type=float, default=90, help="giro da caneca em graus (90 = alça para o robô, como na cena)")
     ap.add_argument("--semente", type=int, help="sorteia a caneca na região de treino da v24 (x 0,26-0,27; y -0,18 a -0,16; yaw 90 ± 20), no lugar de --copo/--yaw-copo")
+    ap.add_argument("--janela", action="store_true", help="abre o visualizador do MuJoCo na tela e executa em tempo real (30 passos de controle por segundo)")
     a = ap.parse_args(); os.makedirs(f"{a.out}/entradas", exist_ok=True)
     if a.semente is not None:
         rng = np.random.default_rng(a.semente); a.copo = [float(rng.uniform(0.26, 0.27)), float(rng.uniform(-0.18, -0.16))]; a.yaw_copo = float(90 + rng.uniform(-20, 20))
@@ -147,6 +180,10 @@ def main():
     pose = list(POSE0.items()) if a.pose == "antiga" else list(zip(JUNTAS, POSE_HE))
     rend, n_sub = monta(sim, dict(pose), a.copo, a.afasta, ganhos=a.ganhos, yaw_copo=np.radians(a.yaw_copo), render=not a.ft)
     s = socket.create_connection(("127.0.0.1", a.porta))
+    janela = None
+    if a.janela:
+        ctx = mp.get_context("spawn"); fila = ctx.Queue()
+        janela = ctx.Process(target=janela_ao_vivo, args=(CENA, a.afasta, fila)); janela.start()
     J = JUNTAS + CINTURA if a.cintura else JUNTAS
     alvo = sim.q(J).copy(); z0 = d.xpos[sim.copo][2]
     Q, T, ALVO, CH, SUB, DED, INC, log = [], [], [], [], [], [], [], []
@@ -168,10 +205,12 @@ def main():
         log.append(dict(bloco=b, enviado=w0, latencia_s=round(r["lat_s"], 4), estado=est.tolist(), **({"acoes": acoes.tolist()} if a.ft else {"delta": r["delta"].tolist()})))
         for k in range(a.executa):
             alvo = acoes[k].copy() if a.ft else alvo + r["delta"][k]; sim.alvo(J, alvo); sim.passo(n_sub)
+            if janela: fila.put(d.qpos.copy())
             Q.append(d.qpos.copy()); T.append(d.time); ALVO.append(alvo.copy()); CH.append(b)
             SUB.append(1000 * float(d.xpos[sim.copo][2] - z0)); DED.append(sim.dedos_no_copo())
             INC.append(float(np.degrees(np.arccos(np.clip(d.xmat[sim.copo][8], -1, 1)))))
         print(f"bloco {b:02d} lat {r['lat_s']:.2f}s | caneca subiu {SUB[-1]:.1f} mm | dedos {DED[-1]}", flush=True)
+    if janela: fila.put(None); janela.join()   # deixa a janela terminar de tocar a rodada
     if a.ft: final = render_multicam(CENA, d.qpos.copy(), a.afasta)["head"]
     else: rend.update_scene(d, camera="head_camera"); final = rend.render().copy()
     cv2.imwrite(f"{a.out}/entradas/final_head.jpg", final[:, :, ::-1], [cv2.IMWRITE_JPEG_QUALITY, 92])   # estado depois do último bloco

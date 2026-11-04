@@ -2,13 +2,13 @@
 (serve_psi0_amo.RealTimeChunkController) feito de forma síncrona: o 1o bloco sai de predict_action; os seguintes,
 de predict_action_with_training_rtc_flow com o resto do bloco anterior como prefixo (atraso d) e o rpy/altura do estado
 trocados pela ação de 2 passos antes, como no oficial. Socket local, pickle com prefixo de tamanho.
-Pedido {images {head,left_wrist,right_wrist} (ajuste fino) ou image (Task 3): uint8 480x640x3, state float32[28] (mãos 14 + braços 14) ou [31] (+ cintura roll, pitch, yaw), primeiro bool, k int (ações executadas do bloco atual)};
+Pedido {images {head,left_wrist,right_wrist} (ajuste fino) ou image (Task 3): uint8 480x640x3 ou bytes JPEG (20x menos rede), state float32[28] (mãos 14 + braços 14) ou [31] (+ cintura roll, pitch, yaw), primeiro bool, k int (ações executadas do bloco atual)};
 resposta {acoes float32[30,36] desnormalizadas, lat_s}.
 Uso: PSI0_REPO=<clone do Psi0> PSI0_CKPT=<pasta do checkpoint task3> python servidor_task3.py [porta]
 Ajuste fino da caneca (../finetune): PSI0_CKPT=<run> PSI0_PASSO=<passo> PSI0_INSTR="<frase do dataset>" PSI0_SEM_CORPO=1
 (sem pernas: o estado não recebe rpy/altura da ação anterior, como no treino, em que essas dimensões são zero).
 """
-import os, sys, socket, pickle, struct, time
+import io, os, sys, socket, pickle, struct, time
 CKPT = os.path.abspath(os.environ.get("PSI0_CKPT", "task3"))
 os.chdir(os.environ.get("PSI0_REPO", "Psi0")); sys.path.insert(0, "src")
 from pathlib import Path
@@ -39,6 +39,9 @@ def obs(est, rpyh_norm=None):
     if rpyh_norm is not None and not SEM_CORPO: o[28:32] = rpyh_norm   # como o oficial: rpy/altura da ação anterior, já normalizados
     return torch.from_numpy(o[None, None].astype(np.float32)).to(srv.device)
 
+def imagem(x):
+    return Image.open(io.BytesIO(x)).convert("RGB") if isinstance(x, bytes) else Image.fromarray(x)
+
 def recv(c):
     n = struct.unpack("!I", c.recv(4, socket.MSG_WAITALL))[0]; buf = b""
     while len(buf) < n: buf += c.recv(n - len(buf))
@@ -51,10 +54,10 @@ while True:
         while True:
             q = recv(c); t0 = time.perf_counter()
             if "images" in q:   # ajuste fino multicâmera
-                nomes = ("head", "left_wrist", "right_wrist"); prep = srv.preprocess_image({n: Image.fromarray(q["images"][n]) for n in nomes})
+                nomes = ("head", "left_wrist", "right_wrist"); prep = srv.preprocess_image({n: imagem(q["images"][n]) for n in nomes})
                 img = [[prep[n][0] for n in nomes]]
             else:   # Task 3 (rodar_mujoco_task3.py): só a câmera da cabeça
-                img = [srv.preprocess_image({"cam0": Image.fromarray(q["image"])})["cam0"]]
+                img = [srv.preprocess_image({"cam0": imagem(q["image"])})["cam0"]]
             with torch.inference_mode():
                 if q["primeiro"] or A is None:
                     a = M.predict_action(observations=img, states=obs(q["state"]), traj2ds=None, instructions=[INSTR], num_inference_steps=8)
