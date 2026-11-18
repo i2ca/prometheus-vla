@@ -16,7 +16,7 @@ import argparse, json, pickle, socket, struct, datetime as dt, multiprocessing a
 from pathlib import Path
 import numpy as np, mujoco, cv2
 
-CENA = Path(__file__).resolve().parents[1] / "cena" / "cena_cafe_medidas.xml"
+CENA = Path(os.environ.get("PSI0_CENA") or Path(__file__).resolve().parents[1] / "cena" / "cena_cafe_medidas.xml")   # PSI0_CENA troca a cena (ex.: câmera da cabeça na pose real)
 # Dex3 no vetor do Ψ0 = ordem dos motores do SDK, igual nas duas mãos: thumb 0-2, middle 0-1, index 0-1
 # (Psi0 real/teleop/robot_control/hand_retargeting.py:42-47 e scripts/data/merge_posttrain_sonic.py:76-83)
 MAO = ["left_hand_thumb_0_joint", "left_hand_thumb_1_joint", "left_hand_thumb_2_joint", "left_hand_middle_0_joint", "left_hand_middle_1_joint",
@@ -108,8 +108,23 @@ def monta(sim, pose, copo, dx, ganhos="deploy", yaw_copo=np.pi / 2, render=True)
 def render_camera(cena, nome, dx, conn):
     """Uma câmera por processo (sem mistura de buffers EGL), que carrega a cena uma vez e renderiza cada qpos que receber."""
     m = mujoco.MjModel.from_xml_path(str(cena)); d = mujoco.MjData(m); afasta(m, d, dx); r = mujoco.Renderer(m, 480, 640)
+    virtual = os.environ.get("PSI0_CABECA_VIRTUAL") if nome == "head" else None   # XML com a câmera da cabeça na pose real: reprojeta para a de treino
+    if virtual:
+        from camera_virtual import reprojeta
+        mr = mujoco.MjModel.from_xml_path(virtual); dr = mujoco.MjData(mr); afasta(mr, dr, dx); rr = mujoco.Renderer(mr, 480, 640); rp = mujoco.Renderer(mr, 480, 640); rp.enable_depth_rendering()
+        cr, ct = mr.camera("head_camera").id, m.camera("head_camera").id; quant = os.environ.get("PSI0_CABECA_QUANTIZA") == "1"
     while (qpos := conn.recv()) is not None:
-        d.qpos[:] = qpos; mujoco.mj_forward(m, d); r.update_scene(d, camera=f"{nome}_camera"); conn.send(r.render())
+        d.qpos[:] = qpos; mujoco.mj_forward(m, d)
+        if virtual:
+            dr.qpos[:] = qpos; mujoco.mj_forward(mr, dr); rr.update_scene(dr, camera="head_camera"); rp.update_scene(dr, camera="head_camera")
+            img, _ = reprojeta(rr.render(), rp.render(), dr.cam_xpos[cr], dr.cam_xmat[cr].reshape(3, 3), mr.cam_fovy[cr],
+                               d.cam_xpos[ct], d.cam_xmat[ct].reshape(3, 3), m.cam_fovy[ct], quantiza=quant)
+            if os.environ.get("PSI0_CABECA_FUNDO"):   # buracos vêm de uma imagem fixa (cena parada no início, sem o estado atual)
+                img[_] = np.load(os.environ["PSI0_CABECA_FUNDO"])[_]
+            elif os.environ.get("PSI0_CABECA_DIAG_BURACO") == "1":   # SÓ diagnóstico (privilegiado): buracos vêm da câmera de treino
+                r.update_scene(d, camera="head_camera"); img[_] = r.render()[_]
+            conn.send(img); continue
+        r.update_scene(d, camera=f"{nome}_camera"); conn.send(r.render())
     r.close()
 
 
@@ -140,17 +155,51 @@ def janela_ao_vivo(cena, dx, fila):
 _CAMERAS = {}
 
 
-def render_multicam(cena, qpos, dx):
+def render_multicam(cena, qpos, dx, canal=0):
     """As 3 câmeras da policy. Os processos ficam vivos entre chamadas (antes, recarregar a cena 3 vezes por bloco custava ~1 s)."""
     nomes = ("head", "left_wrist", "right_wrist")
-    if (cena, dx) not in _CAMERAS:
+    if (cena, dx, canal) not in _CAMERAS:   # canal: outro conjunto de processos, para duas threads renderizarem ao mesmo tempo
         conns = []
         for nome in nomes:
             pai, filho = mp.Pipe(); p = mp.Process(target=render_camera, args=(cena, nome, dx, filho), daemon=True); p.start(); conns.append(pai)
-        _CAMERAS[(cena, dx)] = conns
-    conns = _CAMERAS[(cena, dx)]
+        _CAMERAS[(cena, dx, canal)] = conns
+    conns = _CAMERAS[(cena, dx, canal)]
     for conn in conns: conn.send(qpos)
     return {nome: conn.recv() for nome, conn in zip(nomes, conns)}
+
+
+PALMA = ("right_hand_thumb_0_link", "right_hand_middle_0_link", "right_hand_index_0_link")
+# No modo --ft o cliente não manda frase: vale a PSI0_INSTR do servidor (../serve_v24.sh). --instrucao só vale sem --ft.
+FRASE_V24 = "the robot uses its right hand to pick up the white mug and place it under the coffee filter"
+
+
+def palma(m, fk, qpos, nomes=None, vals=None):
+    """Palma direita (média de 3 elos da Dex3) para um qpos, trocando opcionalmente algumas juntas (os alvos do modelo)."""
+    fk.qpos[:] = qpos
+    if nomes is not None:
+        for n, v in zip(nomes, vals): fk.qpos[m.jnt_qposadr[m.joint(n).id]] = v
+    mujoco.mj_kinematics(m, fk)
+    return fk.xpos[[m.body(n).id for n in PALMA]].mean(0).copy()
+
+
+def render_observador(cena, dx, conn):
+    """Câmera de fora (960x540) para o painel: recebe (qpos, caminho previsto, quantos executa, caminho real) e devolve jpeg."""
+    m = mujoco.MjModel.from_xml_path(str(cena)); d = mujoco.MjData(m); afasta(m, d, dx); r = mujoco.Renderer(m, 540, 960)
+    cam = mujoco.MjvCamera(); cam.type = mujoco.mjtCamera.mjCAMERA_FREE
+    cam.lookat[:] = [0.24, -0.16, 0.86]; cam.distance, cam.azimuth, cam.elevation = 1.05, 125, -34   # lado direito do robô, à frente: a chaleira não tapa a caneca
+
+    def linha(p, q, rgba, w):
+        scn = r.scene
+        if scn.ngeom >= scn.maxgeom: return
+        g = scn.geoms[scn.ngeom]; scn.ngeom += 1
+        mujoco.mjv_initGeom(g, mujoco.mjtGeom.mjGEOM_CAPSULE, np.zeros(3), np.zeros(3), np.eye(3).ravel(), np.array(rgba, np.float32))
+        mujoco.mjv_connector(g, mujoco.mjtGeom.mjGEOM_CAPSULE, w, np.asarray(p, float), np.asarray(q, float))
+    while True:
+        qpos, prev, ex, real = conn.recv()
+        d.qpos[:] = qpos; mujoco.mj_forward(m, d); r.update_scene(d, camera=cam)
+        for j in range(len(prev) - 1): linha(prev[j], prev[j + 1], (1, .55, .1, 1) if j < ex - 1 else (.6, .6, .6, .8), .005)
+        for j in range(len(real) - 1): linha(real[j], real[j + 1], (.15, .35, 1, 1), .004)
+        conn.send(cv2.imencode(".jpg", r.render()[:, :, ::-1], [cv2.IMWRITE_JPEG_QUALITY, 85])[1].tobytes())
 
 
 def pede(s, imagens, est, instr, ft_k=None):
@@ -174,7 +223,11 @@ def main():
     ap.add_argument("--yaw-copo", type=float, default=90, help="giro da caneca em graus (90 = alça para o robô, como na cena)")
     ap.add_argument("--semente", type=int, help="sorteia a caneca na região de treino da v24 (x 0,26-0,27; y -0,18 a -0,16; yaw 90 ± 20), no lugar de --copo/--yaw-copo")
     ap.add_argument("--janela", action="store_true", help="abre o visualizador do MuJoCo na tela e executa em tempo real (30 passos de controle por segundo)")
+    ap.add_argument("--painel", action="store_true", help="grava <out>/painel/ ao vivo (run.json, blocos.jsonl, obs/*.jpg, resultado.json) para o app Prometheus Painel")
+    ap.add_argument("--frase-servidor", default=FRASE_V24, help="só para registro no painel: a PSI0_INSTR com que o servidor foi subido")
     a = ap.parse_args(); os.makedirs(f"{a.out}/entradas", exist_ok=True)
+    P = f"{a.out}/painel"
+    if a.painel: os.makedirs(f"{P}/obs", exist_ok=True)
     if a.semente is not None:
         rng = np.random.default_rng(a.semente); a.copo = [float(rng.uniform(0.26, 0.27)), float(rng.uniform(-0.18, -0.16))]; a.yaw_copo = float(90 + rng.uniform(-20, 20))
     sim = Sim(CENA); m, d = sim.m, sim.d
@@ -188,6 +241,14 @@ def main():
     J = JUNTAS + CINTURA if a.cintura else JUNTAS
     alvo = sim.q(J).copy(); z0 = d.xpos[sim.copo][2]
     Q, T, ALVO, CH, SUB, DED, INC, log = [], [], [], [], [], [], [], []
+    if a.painel:
+        fk = mujoco.MjData(m); REAL = []
+        obs_pai, obs_filho = mp.Pipe(); mp.Process(target=render_observador, args=(CENA, a.afasta, obs_filho), daemon=True).start()
+        run_json = dict(status="rodando", inicio=dt.datetime.now().isoformat(timespec="seconds"), frase=a.frase_servidor if a.ft else a.instrucao,
+                        frase_enviada=not a.ft, copo=a.copo, yaw_copo=a.yaw_copo, afasta=a.afasta, blocos=a.blocos, executa=a.executa,
+                        ft=a.ft, cintura=a.cintura, porta=a.porta, juntas=J, caneca_xyz=d.xpos[sim.copo].tolist(), coador_xyz=d.xpos[m.body("coador").id].tolist())
+        json.dump(run_json, open(f"{P}/run.json", "w"))
+        open(f"{P}/blocos.jsonl", "w").close()
     for b in range(a.blocos):
         if a.ft:
             imagens = render_multicam(CENA, d.qpos.copy(), a.afasta)
@@ -204,12 +265,21 @@ def main():
                 alvo = alvo + passo; passo_anterior = passo; filtradas.append(alvo.copy())
             acoes = np.array(filtradas)
         log.append(dict(bloco=b, enviado=w0, latencia_s=round(r["lat_s"], 4), estado=est.tolist(), **({"acoes": acoes.tolist()} if a.ft else {"delta": r["delta"].tolist()})))
+        prev = [palma(m, fk, d.qpos, J, x) for x in acoes] if a.painel and a.ft else []
         for k in range(a.executa):
             alvo = acoes[k].copy() if a.ft else alvo + r["delta"][k]; sim.alvo(J, alvo); sim.passo(n_sub)
             if janela: fila.put(d.qpos.copy())
             Q.append(d.qpos.copy()); T.append(d.time); ALVO.append(alvo.copy()); CH.append(b)
             SUB.append(1000 * float(d.xpos[sim.copo][2] - z0)); DED.append(sim.dedos_no_copo())
             INC.append(float(np.degrees(np.arccos(np.clip(d.xmat[sim.copo][8], -1, 1)))))
+            if a.painel:
+                REAL.append(palma(m, fk, d.qpos)); obs_pai.send((d.qpos.copy(), prev, a.executa, REAL))
+                open(f"{P}/obs/b{b:03d}_{k:02d}.jpg", "wb").write(obs_pai.recv())
+        if a.painel:   # uma linha por bloco, escrita só depois dos quadros: o app nunca lê um bloco sem imagens
+            n0 = len(Q) - a.executa
+            linha = dict(log[-1], prev=np.round(prev, 4).tolist(), real=np.round(REAL[n0:], 4).tolist(), subida_mm=np.round(SUB[n0:], 1).tolist(),
+                         dedos=DED[n0:], inclinacao_deg=np.round(INC[n0:], 1).tolist(), caneca_xyz=np.round(d.xpos[sim.copo], 4).tolist())
+            with open(f"{P}/blocos.jsonl", "a") as f: f.write(json.dumps(linha) + "\n")
         print(f"bloco {b:02d} lat {r['lat_s']:.2f}s | caneca subiu {SUB[-1]:.1f} mm | dedos {DED[-1]}", flush=True)
     if a.ft: final = render_multicam(CENA, d.qpos.copy(), a.afasta)["head"]
     else: rend.update_scene(d, camera="head_camera"); final = rend.render().copy()
@@ -222,7 +292,11 @@ def main():
                         subida_mm=np.array(SUB), dedos=np.array(DED), inclinacao_deg=np.array(INC), juntas=np.array(JUNTAS))
     json.dump(dict(instrucao=a.instrucao, copo=a.copo, yaw_copo=a.yaw_copo, ft=a.ft, cintura=a.cintura, afasta=a.afasta, pose=a.pose, ganhos=a.ganhos, blocos=a.blocos, executa=a.executa, trace=log), open(f"{a.out}/trace.json", "w"))
     cod = d.xpos[m.body("coador").id]; alvo = np.array([cod[0] - 0.006, cod[1] - 0.020]); erro_colocar = 1000 * float(np.linalg.norm(d.xpos[sim.copo][:2] - alvo))
-    print(json.dumps(dict(subida_max_mm=max(SUB), subida_final_mm=SUB[-1], dedos_final=DED[-1], dedos_no_pico=DED[pico], inclinacao_no_pico_deg=INC[pico], inclinacao_max_deg=max(INC), inclinacao_final_deg=INC[-1], erro_colocar_mm=erro_colocar, passos=len(Q), copo=a.copo, yaw_copo=a.yaw_copo, latencia_mediana_s=float(np.median([x["latencia_s"] for x in log])))))
+    res = dict(subida_max_mm=max(SUB), subida_final_mm=SUB[-1], dedos_final=DED[-1], dedos_no_pico=DED[pico], inclinacao_no_pico_deg=INC[pico], inclinacao_max_deg=max(INC), inclinacao_final_deg=INC[-1], erro_colocar_mm=erro_colocar, passos=len(Q), copo=a.copo, yaw_copo=a.yaw_copo, latencia_mediana_s=float(np.median([x["latencia_s"] for x in log])))
+    print(json.dumps(res))
+    if a.painel:
+        json.dump(res, open(f"{P}/resultado.json", "w"))
+        json.dump(dict(run_json, status="terminou", fim=dt.datetime.now().isoformat(timespec="seconds")), open(f"{P}/run.json", "w"))
 
 
 if __name__ == "__main__":

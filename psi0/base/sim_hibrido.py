@@ -232,6 +232,12 @@ class SimuladorHibrido:
             with self.shm_qpos.get_lock():
                 np.frombuffer(self.shm_qpos.get_obj(), dtype=np.float64, count=self.m.nq)[:] = self.d.qpos
 
+    def _publica_todas(self, imgs: dict):
+        """Cabeça (como antes) + punhos, para a rota /quadro/<camera>."""
+        with self.lock:
+            self.ultimos_punhos = {c: self._codifica_jpeg(imgs[c][:, :, ::-1], 85) for c in ("left_wrist", "right_wrist") if c in imgs}
+        self._publica_quadro(imgs["head"])
+
     def _publica_quadro(self, head_rgb: np.ndarray):
         """Atualiza o quadro limpo (para o orquestrador/LLM) e publica o quadro com HUD no Quest 3 e ZMQ :5555."""
         bgr_limpo = head_rgb[:, :, ::-1]
@@ -363,6 +369,9 @@ class SimuladorHibrido:
         """Executa o Ψ0 v24 DENTRO desta mesma simulação MuJoCo (sem recriar cena nem mexer nos objetos)."""
         with self.vla_lock:
             os.makedirs(f"{run_dir}/entradas", exist_ok=True)
+            # os renders do trabalhador (canal 1) nascem por fork: criados depois do socket, herdariam a conexão com o Ψ0
+            # e o servidor (um cliente por vez) ficaria preso nela depois do close
+            render_multicam(CENA, self.d.qpos.copy(), self.a.afasta, canal=1)
             s = socket.create_connection(("127.0.0.1", porta_psi0), timeout=5)
             try:
                 # 1. Trava o teleop VR e assume o modo VLA
@@ -389,10 +398,12 @@ class SimuladorHibrido:
                         self.sim.passo(self.n_sub)
                         qpos_snap = self.d.qpos.copy()
                         self._atualiza_shm()
-                    imgs = render_multicam(CENA, qpos_snap, self.a.afasta)
-                    self._publica_quadro(imgs["head"])
+                    if i % 3 == 0:
+                        self._publica_todas(render_multicam(CENA, qpos_snap, self.a.afasta))
                     time.sleep(max(0.0, 1 / 30 - (time.perf_counter() - t0)))
 
+                if os.getenv("PSI0_RTC", "1") == "1":   # tempo real: o mundo não para enquanto o modelo pensa (executor_rtc.py)
+                    return self._vla_rtc(s, run_dir, blocos * executa, executa)
                 # 3. Malha fechada do Ψ0 v24 (30 blocos) na mesma cena
                 alvo = self.sim.q(J_TODOS).copy()
                 z0 = float(self.d.xpos[self.sim.copo][2])
@@ -484,6 +495,78 @@ class SimuladorHibrido:
                     self.vr_ativo = False
                     self.clutch_anchored = False
 
+    def _vla_rtc(self, s, run_dir: str, n_passos: int, executa: int) -> dict:
+        """Ψ0 com o executor RTC (o mesmo de rodar_tempo_real.py, 108 runs sem atraso): um trabalhador consulta o modelo
+        em paralelo enquanto a física segue a 30 Hz. As 3 câmeras saem a ~10 Hz para o app."""
+        import queue
+        from executor_rtc import ExecutorRTC
+        instr = "the robot uses its right hand to pick up the white mug and place it under the coffee filter"
+        pedidos, respostas = queue.Queue(), queue.Queue()
+
+        def trabalhador():
+            while (job := pedidos.get()) is not None:
+                qpos, est, primeiro, k, n = job
+                imgs = render_multicam(CENA, qpos, self.a.afasta, canal=1)
+                for nome, img in imgs.items():
+                    cv2.imwrite(f"{run_dir}/entradas/bloco_{n - 1:03d}_{nome}.jpg", img[:, :, ::-1], [cv2.IMWRITE_JPEG_QUALITY, 92])
+                ida = time.perf_counter()
+                try: r = pede(s, imgs, est, instr, 0 if primeiro else k)
+                except Exception as e:
+                    import traceback; print(f"[sim_hibrido] pedido {n} falhou: {e!r}\n{traceback.format_exc()[-600:]}", flush=True); r = None
+                respostas.put((n, r, time.perf_counter() - ida))
+
+        s.settimeout(30)
+        th = threading.Thread(target=trabalhador, daemon=True); th.start()
+        ex = ExecutorRTC(self.sim.q(J_TODOS), executa=executa)
+        z0 = float(self.d.xpos[self.sim.copo][2]); Q, T, ALVO, SUB, DED, INC, log = [], [], [], [], [], [], []
+        relogio = time.perf_counter(); atrasados = falhas = 0
+        for passo in range(n_passos):
+            try:
+                n, r, ida = respostas.get_nowait()
+                if r is None: ex.pendente = None; falhas += 1; raise queue.Empty
+                troca = ex.chegou(r["acoes"][:, :len(J_TODOS)], passo)
+                log.append(dict(bloco=n - 1, passo=passo, latencia_s=round(r["lat_s"], 4), ida_e_volta_s=round(ida, 3), **troca))
+                self.atualiza_hud({"description": f"VLA Ψ0 em tempo real: bloco {n} (atraso {troca['d']} passos)", "status": "in_progress"})
+            except queue.Empty:
+                pass
+            if ex.quer_pedir():
+                primeiro, k = ex.pedido(passo)
+                with self.lock: pedidos.put((self.d.qpos.copy(), self.sim.q(J_TODOS).astype(np.float32), primeiro, k, ex.n_pedidos))
+            alvo = ex.proximo()
+            with self.lock:
+                self.sim.alvo(J_TODOS, alvo); self.sim.passo(self.n_sub)
+                qpos_k = self.d.qpos.copy(); T.append(float(self.d.time))
+                SUB.append(1000 * float(self.d.xpos[self.sim.copo][2] - z0)); DED.append(self.sim.dedos_no_copo())
+                INC.append(float(np.degrees(np.arccos(np.clip(self.d.xmat[self.sim.copo][8], -1, 1)))))
+                self._atualiza_shm()
+            Q.append(qpos_k); ALVO.append(alvo.copy())
+            if passo % 3 == 0:
+                self._publica_todas(render_multicam(CENA, qpos_k, self.a.afasta))
+            espera = relogio + (passo + 1) / 30 - time.perf_counter()
+            if espera > 0: time.sleep(espera)
+            elif -espera > 1 / 30: atrasados += 1
+            if passo % 30 == 29:
+                print(f"[sim_hibrido] t {(passo + 1) / 30:4.1f}s | caneca subiu {SUB[-1]:.1f} mm | dedos {DED[-1]} | pedidos {ex.n_pedidos}", flush=True)
+        parede = time.perf_counter() - relogio; pedidos.put(None); th.join(timeout=30)   # não fecha o socket com pedido no ar (o servidor só atende um cliente)
+        with self.lock:
+            qpos_fim = self.d.qpos.copy(); cod = self.d.xpos[self.m.body("coador").id].copy(); pos_copo = self.d.xpos[self.sim.copo][:2].copy()
+        final = render_multicam(CENA, qpos_fim, self.a.afasta); self._publica_todas(final)
+        cv2.imwrite(f"{run_dir}/entradas/final_head.jpg", final["head"][:, :, ::-1], [cv2.IMWRITE_JPEG_QUALITY, 92])
+        pico = int(np.argmax(SUB))
+        np.savez_compressed(f"{run_dir}/qpos.npz", qpos=np.array(Q), t=np.array(T), alvo=np.array(ALVO), subida_mm=np.array(SUB),
+                            dedos=np.array(DED), inclinacao_deg=np.array(INC), juntas=np.array(JUNTAS))
+        json.dump(dict(instrucao=instr, ft=True, cintura=True, rtc=True, afasta=self.a.afasta, passos=n_passos, executa=executa, trace=log),
+                  open(f"{run_dir}/trace.json", "w"))
+        erro_colocar = 1000 * float(np.linalg.norm(pos_copo - np.array([cod[0] - 0.006, cod[1] - 0.020])))
+        metricas = dict(subida_max_mm=max(SUB), subida_final_mm=SUB[-1], dedos_final=DED[-1], dedos_no_pico=DED[pico],
+                        inclinacao_no_pico_deg=INC[pico], inclinacao_max_deg=max(INC), inclinacao_final_deg=INC[-1],
+                        erro_colocar_mm=erro_colocar, passos=len(Q), copo=list(self.a.copo), yaw_copo=self.a.yaw_copo,
+                        latencia_mediana_s=float(np.median([x["latencia_s"] for x in log])) if log else None,
+                        fator_tempo_real=round(n_passos / 30 / parede, 3), passos_atrasados=atrasados, falhas_resposta=falhas,
+                        bloco_esgotou_passos=ex.esgotou)
+        cauda = [f"bloco {x['bloco']:02d} no passo {x['passo']} lat {x['latencia_s']:.2f}s atraso {x['d']}" for x in log] + [json.dumps(metricas)]
+        return {"ok": True, "metricas": metricas, "output_tail": "\n".join(cauda[-40:]), "run_dir": run_dir}
+
     def loop_principal(self):
         """Mantém a física e a câmera rodando a 30 Hz enquanto estiver em modo TELEOP."""
         while not self.parar.is_set():
@@ -494,8 +577,7 @@ class SimuladorHibrido:
                     self.sim.passo(self.n_sub)
                     qpos_snap = self.d.qpos.copy()
                     self._atualiza_shm()
-                head = render_multicam(CENA, qpos_snap, self.a.afasta)["head"]
-                self._publica_quadro(head)
+                self._publica_todas(render_multicam(CENA, qpos_snap, self.a.afasta))
             time.sleep(max(0.002, 1 / 30 - (time.perf_counter() - t0)))
 
     def fechar(self):
@@ -533,6 +615,10 @@ def cria_servidor_http(sim_hibrido: SimuladorHibrido, porta: int) -> ThreadingHT
                         "passo_concluido_vr": sim_hibrido.passo_concluido_vr,
                         "hud": sim_hibrido.hud,
                     })
+            if self.path in ("/quadro/left_wrist", "/quadro/right_wrist"):
+                with sim_hibrido.lock:
+                    jpg = getattr(sim_hibrido, "ultimos_punhos", {}).get(self.path.rsplit("/", 1)[1])
+                return self.manda(jpg, tipo="image/jpeg") if jpg else self.manda({"erro": "sem quadro"}, cod=404)
             if self.path.startswith("/quadro"):
                 with sim_hibrido.lock:
                     return self.manda(sim_hibrido.ultimo_jpeg_limpo, tipo="image/jpeg")
