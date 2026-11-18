@@ -19,6 +19,10 @@ import argparse, json, pickle, socket, struct, sys, time, datetime as dt
 from pathlib import Path
 import numpy as np, cv2
 
+LEROBOT_EXT = Path(__file__).resolve().parents[2] / "lerobot-ext"
+if str(LEROBOT_EXT) not in sys.path:
+    sys.path.insert(0, str(LEROBOT_EXT))
+
 # Ordem do vetor do Ψ0 (igual ao rodar_mujoco.py): mãos 14 (esq: thumb0-2, middle0-1, index0-1; dir idem), braços 14 (esq 7, dir 7), cintura 3.
 # Aqui as juntas são endereçadas pelo NOME do robô, então a ordem física dos dedos da direita (índice antes do médio no DDS) não importa.
 MAO = [f"{l}_hand_{d}_{i}_joint" for l in ("left", "right") for d, n in (("thumb", 3), ("middle", 2), ("index", 2)) for i in range(n)]
@@ -26,7 +30,10 @@ MAX_VEL, MAX_ACC = 2.5 / 30, 35 / 900   # rad por passo de 30 Hz: mesmos limites
 
 
 def nomes_robo():
-    from lerobot.robots.unitree_g1.g1_utils import G1_29_JointArmIndex
+    try:
+        from lerobot.robots.unitree_g1.g1_utils import G1_29_JointArmIndex
+    except ImportError:
+        from robot.unitree_g1.g1_utils import G1_29_JointArmIndex
     return [f"{n}.q" for n in MAO] + [f"{m.name}.q" for m in G1_29_JointArmIndex]
 
 
@@ -81,8 +88,12 @@ def main():
     ap.add_argument("--punho", choices=("cabeca", "preto"), default="cabeca"); ap.add_argument("--bgr", action="store_true", help="a câmera do robô entrega BGR")
     ap.add_argument("--enviar", action="store_true", help="comanda o robô de verdade (sem isso é dry-run)")
     a = ap.parse_args()
-    from lerobot.robots.unitree_g1.unitree_g1_dex3 import UnitreeG1Dex3, UnitreeG1Dex3Config
-    robo = UnitreeG1Dex3(UnitreeG1Dex3Config(robot_ip=a.robot_ip, use_loco=False)); robo.connect()
+    try:
+        from lerobot.robots.unitree_g1.unitree_g1_dex3 import UnitreeG1Dex3, UnitreeG1Dex3Config
+    except ImportError:
+        from robot.unitree_g1.unitree_g1_dex3 import UnitreeG1Dex3, UnitreeG1Dex3Config
+    robo = UnitreeG1Dex3(UnitreeG1Dex3Config(robot_ip=a.robot_ip, is_simulation=False, use_loco=False))
+    robo.connect(calibrate=False)
     s = socket.create_connection(("127.0.0.1", a.porta))
     try: rodar(robo, s, a, nomes_robo())
     except KeyboardInterrupt: print("interrompido, parando de enviar", file=sys.stderr)
