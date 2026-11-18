@@ -1,6 +1,7 @@
 """UnifoLM-ER-1-4B (Unitree, sobre Qwen3-VL-4B) servindo apontamento de objeto por HTTP, na GPU do notebook.
 
 POST /apontar {"jpg": base64, "objeto": "white mug"} -> {"u": px, "v": px, "texto": resposta crua}
+     com "tipo": "caixa" -> {"caixa": [x1, y1, x2, y2] em px, "texto": ...}
 Qwen3-VL devolve pontos em coordenadas 0-1000 da imagem; aqui viram pixels.
 Uso (conda unifolm-er1): python servidor_er1.py [--modelo ~/I2CA/modelos/UnifoLM-ER-1] [--porta 8796] [--bits 4|16]
 """
@@ -11,6 +12,8 @@ import torch
 from PIL import Image
 from transformers import AutoProcessor, Qwen3VLForConditionalGeneration, BitsAndBytesConfig
 
+PEDIDO_CAIXA = ('Locate the {obj} in the image. Output the bounding box in JSON format: '
+                '[{{"bbox_2d": [x1, y1, x2, y2], "label": "{obj}"}}]')
 PEDIDO = ('Point to the {obj} in the image. Output the point coordinates in JSON format: '
           '[{{"point_2d": [x, y], "label": "{obj}"}}]')
 
@@ -21,12 +24,24 @@ def carrega(caminho, bits):
     return m, AutoProcessor.from_pretrained(caminho)
 
 
-def aponta(m, proc, img, obj):
-    msgs = [{"role": "user", "content": [{"type": "image", "image": img}, {"type": "text", "text": PEDIDO.format(obj=obj)}]}]
+def pergunta(m, proc, img, texto):
+    msgs = [{"role": "user", "content": [{"type": "image", "image": img}, {"type": "text", "text": texto}]}]
     ent = proc.apply_chat_template(msgs, tokenize=True, add_generation_prompt=True, return_dict=True, return_tensors="pt").to(m.device)
     with torch.inference_mode():
         out = m.generate(**ent, max_new_tokens=128, do_sample=False)
-    texto = proc.batch_decode(out[:, ent["input_ids"].shape[1]:], skip_special_tokens=True)[0]
+    return proc.batch_decode(out[:, ent["input_ids"].shape[1]:], skip_special_tokens=True)[0]
+
+
+def caixa(m, proc, img, obj):
+    texto = pergunta(m, proc, img, PEDIDO_CAIXA.format(obj=obj))
+    b = re.search(r'"bbox_2d"\s*:\s*\[\s*([\d.]+)\s*,\s*([\d.]+)\s*,\s*([\d.]+)\s*,\s*([\d.]+)', texto)
+    if not b: return None, texto
+    w, h = img.size
+    return [float(b.group(i)) / 1000 * (w if i % 2 else h) for i in range(1, 5)], texto
+
+
+def aponta(m, proc, img, obj):
+    texto = pergunta(m, proc, img, PEDIDO.format(obj=obj))
     p = re.search(r'"point_2d"\s*:\s*\[\s*([\d.]+)\s*,\s*([\d.]+)', texto)
     if not p: return None, None, texto
     w, h = img.size
@@ -45,8 +60,11 @@ def main():
         def do_POST(self):
             q = json.loads(self.rfile.read(int(self.headers["Content-Length"])))
             img = Image.open(io.BytesIO(base64.b64decode(q["jpg"]))).convert("RGB")
-            with trava: u, v, t = aponta(m, proc, img, q.get("objeto", "white mug"))
-            corpo = json.dumps({"u": u, "v": v, "texto": t}).encode()
+            with trava:
+                if q.get("tipo") == "caixa":
+                    bb, t = caixa(m, proc, img, q.get("objeto", "white mug")); corpo = json.dumps({"caixa": bb, "texto": t}).encode()
+                else:
+                    u, v, t = aponta(m, proc, img, q.get("objeto", "white mug")); corpo = json.dumps({"u": u, "v": v, "texto": t}).encode()
             self.send_response(200); self.send_header("Content-Type", "application/json"); self.end_headers(); self.wfile.write(corpo)
 
     ThreadingHTTPServer(("127.0.0.1", a.porta), H).serve_forever()
