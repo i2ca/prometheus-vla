@@ -552,6 +552,19 @@ def cria_servidor_http(sim_hibrido: SimuladorHibrido, porta: int) -> ThreadingHT
                 with sim_hibrido.lock:
                     sim_hibrido.passo_concluido_vr = True
                 return self.manda({"ok": True})
+            if self.path == "/detectar":   # UnifoLM-ER-1 na câmera da cabeça (er1_cena.py em processo próprio)
+                import subprocess, tempfile
+                with sim_hibrido.lock:
+                    q = sim_hibrido.d.qpos.copy()
+                arq = Path(tempfile.mkstemp(suffix=".npy")[1]); np.save(arq, q)
+                img = str(Path(corpo.get("saida_jpg", "/tmp/prometheus_chat/er1_ultimo.jpg")))
+                r = subprocess.run([sys.executable, str(AQUI / "er1_cena.py"), str(arq), str(sim_hibrido.a.afasta),
+                                    json.dumps(corpo.get("objetos", ["center of the white mug"])), img],
+                                   capture_output=True, text=True, timeout=300, cwd=AQUI)
+                arq.unlink(missing_ok=True)
+                if r.returncode != 0:
+                    return self.manda({"ok": False, "error": r.stderr[-800:]}, cod=500)
+                return self.manda({"ok": True, "imagem": img, **json.loads(r.stdout.strip().splitlines()[-1])})
             if self.path == "/reset_cena":
                 sim_hibrido.resetar_cena()
                 return self.manda({"ok": True})
